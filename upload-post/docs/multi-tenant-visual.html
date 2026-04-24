@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multi-Tenant Integration — PostForMe API</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+  :root{
+    --bg:#0a0a0a;
+    --surface:#111113;
+    --surface-2:#18181b;
+    --border:#27272a;
+    --text:#fafafa;
+    --text-muted:#a1a1aa;
+    --brand-green:#10b981;
+    --brand-green-dim:#064e3b;
+    --brand-blue:#06b6d4;
+    --brand-blue-dim:#083344;
+    --brand-amber:#f59e0b;
+    --brand-amber-dim:#451a03;
+    --brand-purple:#a855f7;
+    --brand-purple-dim:#3b0764;
+    --glass:rgba(255,255,255,.04);
+    --glass-border:rgba(255,255,255,.08);
+  }
+
+  html{font-size:16px}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    padding:24px 24px 20px;
+    overflow-x:hidden;
+  }
+
+  .canvas{
+    width:100%;
+    max-width:1400px;
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+  }
+
+  /* ── HEADER ─────────────────────────────────────── */
+  .page-title{
+    text-align:center;
+    font-size:2.25rem;
+    font-weight:700;
+    letter-spacing:-.03em;
+    line-height:1.2;
+    opacity:0;
+    animation:fadeSlideUp .7s ease forwards;
+  }
+  .page-title span{color:var(--brand-purple)}
+
+  .page-subtitle{
+    text-align:center;
+    font-size:1.1rem;
+    color:var(--text-muted);
+    margin-top:6px;
+    opacity:0;
+    animation:fadeSlideUp .7s ease .15s forwards;
+  }
+
+  /* ── SAAS CONTAINER ─────────────────────────────── */
+  .saas-box{
+    border:1.5px solid var(--glass-border);
+    border-radius:20px;
+    background:var(--glass);
+    backdrop-filter:blur(12px);
+    padding:22px 30px 26px;
+    position:relative;
+    opacity:0;
+    animation:fadeSlideUp .7s ease .35s forwards;
+  }
+  .saas-box::before{
+    content:'';
+    position:absolute;
+    inset:-1px;
+    border-radius:21px;
+    background:linear-gradient(135deg,rgba(168,85,247,.15),transparent 50%,rgba(6,182,212,.1));
+    z-index:-1;
+    pointer-events:none;
+  }
+
+  .saas-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:16px;
+    margin-bottom:18px;
+  }
+  .saas-label{
+    font-size:1.35rem;
+    font-weight:600;
+    letter-spacing:-.02em;
+  }
+
+  .api-key-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:var(--brand-purple-dim);
+    border:1px solid rgba(168,85,247,.3);
+    border-radius:10px;
+    padding:8px 16px;
+    font-size:.85rem;
+    font-family:'SF Mono','Fira Code',monospace;
+    color:var(--brand-purple);
+    opacity:0;
+    animation:fadeSlideUp .5s ease .6s forwards;
+  }
+  .api-key-badge .key-icon{font-size:1.1rem}
+  .api-key-badge .key-label{color:var(--text-muted);font-family:inherit;font-size:.8rem}
+
+  /* ── BRAND CARDS ────────────────────────────────── */
+  .brands-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:20px;
+  }
+  @media(max-width:960px){.brands-grid{grid-template-columns:1fr}}
+
+  .brand-card{
+    border-radius:16px;
+    padding:18px 20px;
+    position:relative;
+    overflow:hidden;
+    opacity:0;
+  }
+  .brand-card::after{
+    content:'';
+    position:absolute;
+    top:0;left:0;right:0;
+    height:3px;
+    border-radius:16px 16px 0 0;
+  }
+
+  .brand-card--green{
+    background:linear-gradient(180deg,rgba(16,185,129,.08),var(--surface));
+    border:1px solid rgba(16,185,129,.18);
+    animation:fadeSlideUp .6s ease .8s forwards;
+  }
+  .brand-card--green::after{background:var(--brand-green)}
+
+  .brand-card--blue{
+    background:linear-gradient(180deg,rgba(6,182,212,.08),var(--surface));
+    border:1px solid rgba(6,182,212,.18);
+    animation:fadeSlideUp .6s ease 1s forwards;
+  }
+  .brand-card--blue::after{background:var(--brand-blue)}
+
+  .brand-card--amber{
+    background:linear-gradient(180deg,rgba(245,158,11,.08),var(--surface));
+    border:1px solid rgba(245,158,11,.18);
+    animation:fadeSlideUp .6s ease 1.2s forwards;
+  }
+  .brand-card--amber::after{background:var(--brand-amber)}
+
+  .brand-name{
+    font-size:1.05rem;
+    font-weight:600;
+    margin-bottom:4px;
+  }
+  .brand-type{
+    font-size:.75rem;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:var(--text-muted);
+    margin-bottom:10px;
+  }
+
+  .account-list{display:flex;flex-direction:column;gap:6px}
+
+  .account-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:6px 10px;
+    border-radius:10px;
+    background:var(--glass);
+    border:1px solid var(--glass-border);
+    font-size:.82rem;
+  }
+  .platform-icon{
+    width:24px;
+    height:24px;
+    border-radius:7px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:.7rem;
+    font-weight:700;
+    flex-shrink:0;
+    color:#fff;
+    letter-spacing:.02em;
+  }
+  .pi-ig{background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)}
+  .pi-tt{background:#010101;border:1px solid #333}
+  .pi-yt{background:#ff0000}
+  .pi-li{background:#0a66c2}
+
+  .account-handle{color:var(--text);font-weight:500}
+  .account-id{
+    margin-left:auto;
+    font-family:'SF Mono','Fira Code',monospace;
+    font-size:.72rem;
+    color:var(--text-muted);
+    background:rgba(255,255,255,.04);
+    padding:2px 8px;
+    border-radius:5px;
+  }
+
+  /* ── ARROW SECTION ──────────────────────────────── */
+  .arrow-section{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+    opacity:0;
+    animation:fadeSlideUp .5s ease 1.5s forwards;
+  }
+  .arrow-line{
+    width:2px;
+    height:24px;
+    background:linear-gradient(180deg,var(--brand-purple),rgba(168,85,247,.2));
+    border-radius:1px;
+  }
+  .arrow-tip{
+    width:0;height:0;
+    border-left:8px solid transparent;
+    border-right:8px solid transparent;
+    border-top:10px solid var(--brand-purple);
+  }
+  .arrow-label{
+    font-size:.9rem;
+    color:var(--text-muted);
+    text-align:center;
+    max-width:600px;
+    line-height:1.5;
+  }
+  .arrow-label strong{color:var(--text)}
+
+  /* ── POSTFORME BOX ──────────────────────────────── */
+  .pfm-box{
+    border:1.5px solid rgba(168,85,247,.2);
+    border-radius:20px;
+    background:linear-gradient(180deg,rgba(168,85,247,.04),var(--surface));
+    padding:22px 30px 24px;
+    opacity:0;
+    animation:fadeSlideUp .7s ease 1.8s forwards;
+  }
+  .pfm-header{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:14px;
+  }
+  .pfm-logo{
+    width:40px;height:40px;
+    border-radius:10px;
+    background:linear-gradient(135deg,var(--brand-purple),#7c3aed);
+    display:flex;align-items:center;justify-content:center;
+    font-size:1.1rem;font-weight:800;color:#fff;
+  }
+  .pfm-title{font-size:1.3rem;font-weight:600}
+  .pfm-subtitle{
+    font-size:.8rem;
+    color:var(--text-muted);
+    margin-top:2px;
+  }
+  .pfm-callout{
+    display:inline-block;
+    margin-left:auto;
+    font-size:.8rem;
+    background:rgba(168,85,247,.12);
+    border:1px solid rgba(168,85,247,.25);
+    color:var(--brand-purple);
+    padding:6px 14px;
+    border-radius:8px;
+    font-weight:500;
+  }
+
+  .flat-list{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:10px;
+  }
+  .flat-item{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:10px 14px;
+    border-radius:10px;
+    background:var(--glass);
+    border:1px solid var(--glass-border);
+    font-family:'SF Mono','Fira Code',monospace;
+    font-size:.82rem;
+    color:var(--text-muted);
+    opacity:0;
+  }
+  .flat-item:nth-child(1){animation:popIn .4s ease 2.1s forwards}
+  .flat-item:nth-child(2){animation:popIn .4s ease 2.2s forwards}
+  .flat-item:nth-child(3){animation:popIn .4s ease 2.3s forwards}
+  .flat-item:nth-child(4){animation:popIn .4s ease 2.4s forwards}
+  .flat-item:nth-child(5){animation:popIn .4s ease 2.5s forwards}
+  .flat-item:nth-child(6){animation:popIn .4s ease 2.6s forwards}
+  .flat-item:nth-child(7){animation:popIn .4s ease 2.7s forwards}
+
+  .flat-dot{
+    width:8px;height:8px;
+    border-radius:50%;
+    flex-shrink:0;
+  }
+
+  .no-tenant-banner{
+    margin-top:12px;
+    text-align:center;
+    font-size:.85rem;
+    color:var(--text-muted);
+    padding:12px;
+    border:1px dashed rgba(255,255,255,.1);
+    border-radius:10px;
+    opacity:0;
+    animation:fadeSlideUp .5s ease 3s forwards;
+  }
+  .no-tenant-banner strong{color:var(--brand-purple)}
+
+  /* ── MAPPING LINES (SVG Overlay) ────────────────── */
+  .mapping-lines{
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    z-index:0;
+  }
+
+  /* ── CONNECTING DOTS ────────────────────────────── */
+  .connect-dots{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    opacity:0;
+    animation:fadeSlideUp .4s ease 1.45s forwards;
+  }
+  .dot{
+    width:5px;height:5px;
+    border-radius:50%;
+    background:var(--brand-purple);
+    opacity:.4;
+  }
+  .dot:nth-child(2){opacity:.6}
+  .dot:nth-child(3){opacity:.8}
+
+  /* ── ANIMATIONS ─────────────────────────────────── */
+  @keyframes fadeSlideUp{
+    from{opacity:0;transform:translateY(22px)}
+    to{opacity:1;transform:translateY(0)}
+  }
+  @keyframes popIn{
+    0%{opacity:0;transform:scale(.85)}
+    60%{opacity:1;transform:scale(1.04)}
+    100%{opacity:1;transform:scale(1)}
+  }
+
+  /* ── PULSE on the API key ───────────────────────── */
+  .api-key-badge::before{
+    content:'';
+    position:absolute;
+    inset:-3px;
+    border-radius:13px;
+    background:rgba(168,85,247,.12);
+    animation:keyPulse 2.5s ease-in-out infinite;
+    z-index:-1;
+  }
+  @keyframes keyPulse{
+    0%,100%{opacity:.3;transform:scale(1)}
+    50%{opacity:.6;transform:scale(1.04)}
+  }
+  .api-key-badge{position:relative}
+
+  /* ── LEGEND ─────────────────────────────────────── */
+  .legend{
+    display:flex;
+    justify-content:center;
+    gap:24px;
+    flex-wrap:wrap;
+    margin-top:4px;
+    opacity:0;
+    animation:fadeSlideUp .5s ease 3.2s forwards;
+  }
+  .legend-item{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:.78rem;
+    color:var(--text-muted);
+  }
+  .legend-dot{
+    width:10px;height:10px;
+    border-radius:3px;
+  }
+</style>
+</head>
+<body>
+<div class="canvas">
+
+  <!-- HEADER -->
+  <div>
+    <h1 class="page-title">Multi-Tenant Integration with <span>PostForMe</span></h1>
+    <p class="page-subtitle">One API key. Multiple brands. Zero tenant leakage.</p>
+  </div>
+
+  <!-- SAAS APP CONTAINER -->
+  <div class="saas-box">
+    <div class="saas-header">
+      <div class="saas-label">Your SaaS App &mdash; CFW Social</div>
+      <div class="api-key-badge">
+        <span class="key-icon">&#x1F511;</span>
+        <span class="key-label">PostForMe API Key</span>
+        <span>pfm_live_k8x...m2q</span>
+      </div>
+    </div>
+
+    <!-- BRAND CARDS -->
+    <div class="brands-grid">
+
+      <!-- Brand 1 -->
+      <div class="brand-card brand-card--green">
+        <div class="brand-name" style="color:var(--brand-green)">Mr Growth Guide</div>
+        <div class="brand-type">Your Brand</div>
+        <div class="account-list">
+          <div class="account-row">
+            <div class="platform-icon pi-ig">IG</div>
+            <span class="account-handle">@mrgrowthguide</span>
+            <span class="account-id">spc_001</span>
+          </div>
+          <div class="account-row">
+            <div class="platform-icon pi-tt">TT</div>
+            <span class="account-handle">@mrgrowthguide</span>
+            <span class="account-id">spc_002</span>
+          </div>
+          <div class="account-row">
+            <div class="platform-icon pi-yt">YT</div>
+            <span class="account-handle">@mrgrowthguide</span>
+            <span class="account-id">spc_003</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Brand 2 -->
+      <div class="brand-card brand-card--blue">
+        <div class="brand-name" style="color:var(--brand-blue)">Client A &mdash; Fitness Coach</div>
+        <div class="brand-type">Customer</div>
+        <div class="account-list">
+          <div class="account-row">
+            <div class="platform-icon pi-ig">IG</div>
+            <span class="account-handle">@fitcoachsarah</span>
+            <span class="account-id">spc_004</span>
+          </div>
+          <div class="account-row">
+            <div class="platform-icon pi-tt">TT</div>
+            <span class="account-handle">@fitcoachsarah</span>
+            <span class="account-id">spc_005</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Brand 3 -->
+      <div class="brand-card brand-card--amber">
+        <div class="brand-name" style="color:var(--brand-amber)">Client B &mdash; Real Estate</div>
+        <div class="brand-type">Customer</div>
+        <div class="account-list">
+          <div class="account-row">
+            <div class="platform-icon pi-ig">IG</div>
+            <span class="account-handle">@luxhomes</span>
+            <span class="account-id">spc_006</span>
+          </div>
+          <div class="account-row">
+            <div class="platform-icon pi-li">LI</div>
+            <span class="account-handle">@luxhomes</span>
+            <span class="account-id">spc_007</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ARROW BRIDGE -->
+  <div class="arrow-section">
+    <div class="arrow-line"></div>
+    <div class="connect-dots">
+      <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+    </div>
+    <div class="arrow-tip"></div>
+    <div class="arrow-label">
+      <strong>Your app</strong> maps brands to account IDs.<br>
+      <strong>PostForMe</strong> just sees a flat list of IDs &mdash; no brand or tenant awareness.
+    </div>
+  </div>
+
+  <!-- POSTFORME API -->
+  <div class="pfm-box">
+    <div class="pfm-header">
+      <div class="pfm-logo">P</div>
+      <div>
+        <div class="pfm-title">PostForMe API</div>
+        <div class="pfm-subtitle">What PostForMe actually sees</div>
+      </div>
+      <div class="pfm-callout">Tenant-unaware</div>
+    </div>
+
+    <div class="flat-list">
+      <div class="flat-item">
+        <span class="flat-dot" style="background:var(--brand-green)"></span>
+        spc_001
+      </div>
+      <div class="flat-item">
+        <span class="flat-dot" style="background:var(--brand-green)"></span>
+        spc_002
+      </div>
+      <div class="flat-item">
+        <span class="flat-dot" style="background:var(--brand-green)"></span>
+        spc_003
+      </div>
+      <div class="flat-item">
+        <span class="flat-dot" style="background:var(--brand-blue)"></span>
+        spc_004
+      </div>
+      <div class="flat-item">
+        <span class="flat-dot" style="background:var(--brand-blue)"></span>
+        spc_005
+      </div>
+      <div class="flat-item">
+        <span class="flat-dot" style="background:var(--brand-amber)"></span>
+        spc_006
+      </div>
+      <div class="flat-item">
+        <span class="flat-dot" style="background:var(--brand-amber)"></span>
+        spc_007
+      </div>
+    </div>
+
+    <div class="no-tenant-banner">
+      PostForMe has <strong>no concept of brands or customers</strong>. Your SaaS app owns the mapping layer.
+    </div>
+  </div>
+
+  <!-- LEGEND -->
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--brand-green)"></div>Mr Growth Guide</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--brand-blue)"></div>Client A</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--brand-amber)"></div>Client B</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--brand-purple)"></div>PostForMe API</div>
+  </div>
+
+</div>
+</body>
+</html>

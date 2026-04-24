@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+# Create (and optionally schedule) a social post — with idempotency + duplicate verification.
+#
+# Usage: ./create-post.sh <caption> <social_account_ids_csv> [media_url] [scheduled_at_iso8601] [--dry-run]
+#
+# Idempotency:
+#   Scripts computes a deterministic `external_id` from SHA256(caption + media_url + sorted_accounts).
+#   Before creating, it lists recent posts and aborts if a post with that external_id already exists,
+#   printing the existing post_id. This makes re-runs safe even if a previous call looked like it failed.
+#
+# Verification:
+#   After creating, scripts re-lists posts in the last 60 s and warns loudly if MORE THAN ONE
+#   post matches the caption+media — catches partial failures (like unquoted $@ word-splitting)
+#   that slip through client-side errors.
+#
+# Override idempotency check with IDEMPOTENCY=off env var (not recommended).
+#
+# Examples:
+#   ./create-post.sh "Hello world" "spc_abc,spc_def"
+#   ./create-post.sh "Launch!" "spc_abc" "https://cdn/img.jpg"
+#   ./create-post.sh "Tomorrow" "spc_abc" "" "2026-12-31T10:00:00Z"
+set -euo pipefail
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "$DIR/_common.sh"
+# Brand analytics ledger (best-effort, non-blocking). Resolves to
+# posting-tools/shared/ledger.sh from this script's location.
+LEDGER_LIB="$DIR/../../../../shared/ledger.sh"
+# shellcheck disable=SC1090
+[ -f "$LEDGER_LIB" ] && source "$LEDGER_LIB"
+require_key
+
+filter_args "$@"; ARGS=("${CLEAN_ARGS[@]+"${CLEAN_ARGS[@]}"}")
+CAPTION="${ARGS[0]:?Usage: create-post.sh <caption> <social_account_ids_csv> [media_url] [scheduled_at]}"
+ACCOUNTS_CSV="${ARGS[1]:?Provide comma-separated social_account IDs}"
+MEDIA_URL="${ARGS[2]:-}"
+SCHEDULED_AT="${ARGS[3]:-}"
+IDEMPOTENCY="${IDEMPOTENCY:-on}"
+
+# --- Compute idempotency key: stable hash of (caption + media_url + sorted_accounts) ---
+# Note: short hex (first 16 chars) fits well inside PostForMe's external_id field.
+SORTED_ACCOUNTS=$(printf '%s' "$ACCOUNTS_CSV" | tr ',' '\n' | sort | paste -sd, -)
+IDEMPOTENCY_KEY=$(printf '%s|%s|%s' "$CAPTION" "$MEDIA_URL" "$SORTED_ACCOUNTS" \
+  | shasum -a 256 | cut -c1-16)
+
+# --- Pre-check: have we already published this exact (caption+media+accounts)? ---
+if [ "$IDEMPOTENCY" = "on" ] && [ "${DRY_RUN}" != "1" ]; then
+  # Fetch last 50 posts and grep for our external_id. Silent on miss.
+  EXISTING=$(curl -sS -H "Authorization: Bearer ${POSTFORME_API_KEY}" \
+    "${POSTFORME_BASE_URL}/${POSTFORME_API_VERSION}/social-posts?limit=50" \
+    | (command -v jq >/dev/null \
+         && jq -r ".data[]? | select(.external_id==\"mggpub-${IDEMPOTENCY_KEY}\") | .id" \
+         || echo "") )
+  if [ -n "$EXISTING" ]; then
+    echo "{\"deduped\": true, \"existing_post_id\": \"${EXISTING}\", \"idempotency_key\": \"mggpub-${IDEMPOTENCY_KEY}\"}" >&2
+    echo "{\"id\": \"${EXISTING}\", \"deduped\": true}"
+    exit 0
+  fi
+fi
+
+# --- Build JSON body ---
+ACCOUNTS_JSON=$(printf '%s' "$ACCOUNTS_CSV" | awk -F, '{
+  printf "["
+  for (i=1;i<=NF;i++){ printf "%s\"%s\"", (i>1?",":""), $i }
+  printf "]"
+}')
+
+MEDIA_JSON="null"
+if [ -n "$MEDIA_URL" ]; then
+  MEDIA_JSON="[{\"url\":\"${MEDIA_URL}\"}]"
+fi
+
+SCHED_JSON="null"
+if [ -n "$SCHEDULED_AT" ]; then
+  SCHED_JSON="\"${SCHEDULED_AT}\""
+fi
+
+BODY=$(cat <<JSON
+{
+  "caption": $(printf '%s' "$CAPTION" | python3 -c "import sys,json;print(json.dumps(sys.stdin.read()))"),
+  "social_accounts": ${ACCOUNTS_JSON},
+  "media": ${MEDIA_JSON},
+  "scheduled_at": ${SCHED_JSON},
+  "external_id": "mggpub-${IDEMPOTENCY_KEY}"
+}
+JSON
+)
+
+# --- Create the post ---
+RESPONSE=$(run_curl POST "/social-posts" --data "$BODY")
+printf '%s\n' "$RESPONSE"
+
+# --- Brand analytics ledger (best-effort, never breaks the publish) ---
+# Set BRAND env var (folder slug under ~/vasanth-hq/) to opt in.
+# SOURCE_ISSUE / SOURCE_BRIEF_ID env vars are optional provenance.
+if [ "${DRY_RUN}" != "1" ] && [ -n "${BRAND:-}" ] && declare -f ledger_record_post >/dev/null 2>&1; then
+  POST_ID=$(printf '%s' "$RESPONSE" | (command -v jq >/dev/null && jq -r '.id // empty' || echo ""))
+  if [ -n "$POST_ID" ]; then
+    ledger_record_post \
+      "$BRAND" "$POST_ID" "postforme" "$CAPTION" "$MEDIA_URL" \
+      "mggpub-${IDEMPOTENCY_KEY}" "${SOURCE_ISSUE:-}" "${SOURCE_BRIEF_ID:-}" \
+      || true
+  fi
+fi
+
+# --- Post-create verification: count posts matching our external_id ---
+if [ "${DRY_RUN}" != "1" ]; then
+  sleep 1
+  COUNT=$(curl -sS -H "Authorization: Bearer ${POSTFORME_API_KEY}" \
+    "${POSTFORME_BASE_URL}/${POSTFORME_API_VERSION}/social-posts?limit=10" \
+    | (command -v jq >/dev/null \
+         && jq "[.data[]? | select(.external_id==\"mggpub-${IDEMPOTENCY_KEY}\")] | length" \
+         || echo "1") )
+  if [ "${COUNT:-1}" -gt 1 ]; then
+    echo "" >&2
+    echo "⚠️  WARNING: ${COUNT} posts matching idempotency key mggpub-${IDEMPOTENCY_KEY} — possible duplicate." >&2
+    echo "   List with: list-posts.sh 10 | grep mggpub-${IDEMPOTENCY_KEY}" >&2
+    echo "   This usually means a prior call partially succeeded despite a client-side error." >&2
+  fi
+fi

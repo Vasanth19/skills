@@ -1,14 +1,14 @@
 ---
 name: pipeline-ai-character
-description: AI character animated short pipeline. Produces a 9:16 short using Gemini character-consistent scene images animated via Hailuo i2v. No dialogue — visual storytelling with music. Requires a character lock audit before any scene generation.
+description: AI character animated short pipeline. Produces a 9:16 short using Gemini character-consistent scene images animated via Hailuo i2v. Works for any character type — human, plush toy (Labubu/Tiny Tales style), mascot, or fantasy. No dialogue — visual storytelling with music. Requires 6-attribute character lock audit before any generation.
 disable-model-invocation: true
-argument-hint: "[brand] [production-name] [story-concept]"
+argument-hint: "[brand] [production-name] [story-concept] [--type human|plush]"
 allowed-tools: Bash, Read, Write
 ---
 
 # pipeline-ai-character — AI Character Short (9:16)
 
-Visual storytelling: Gemini character images → Hailuo animation → music → assembled short.
+Visual storytelling: character lock → Gemini scene images → Hailuo animation → music assembly.
 
 ## Arguments
 
@@ -17,79 +17,114 @@ Visual storytelling: Gemini character images → Hailuo animation → music → 
 | brand | Yes | — | Brand slug |
 | production_name | Yes | — | Folder name |
 | story_concept | Yes | — | One-paragraph story concept |
-| character_description | Yes | — | Visual character description for prompts |
+| character_description | Yes | — | Visual character description (all 6 attributes) |
 | audio_track | Yes | — | Path to music/audio track |
+| type | No | `human` | `human` or `plush` — controls character audit checklist and prompt tone |
 | num_scenes | No | `5` | Number of scenes |
 | character_method | No | `gemini` | `gemini` or `floe` |
 | crossfade | No | `0.3s` | Crossfade duration between scenes |
 
-## Steps
+---
 
-### Step 0 — Character Lock Audit ⛔ CHECKPOINT
+## Step 0 — Character Lock Audit ⛔ HARD GATE
 
-Before ANY generation: run 6/6 character audit.
-Verify character description covers: face shape, hair, eyes, clothing, distinctive feature, color palette.
-All 6 must be present and specific.
+Before ANY generation, verify `character_description` covers all 6 attributes.
 
-If any missing: stop and complete the description before proceeding.
+**If `--type human`:**
+1. Face shape (oval, square, angular…)
+2. Hair: color, length, style
+3. Eyes: color, shape, expression
+4. Clothing: color, pattern, texture
+5. Distinctive feature (scar, glasses, accessory…)
+6. Color palette (primary + accent)
+
+**If `--type plush` (Labubu / Tiny Tales style):**
+1. Body type / plush material (soft, vinyl, fuzzy…)
+2. Face: eye shape, eye color, nose/mouth style
+3. Ear/head shape (rabbit ears? round head? spiky?)
+4. Outfit: color, pattern, texture
+5. Accessories or distinctive features
+6. Color palette (primary + accent)
+
+**All 6 must be specific and visual. Vague = fail. STOP until complete.**
+
+Also establish **divergence protocol**: after each generated image, check character has same attributes as char-ref. Any divergence in face, outfit, or distinctive feature = regenerate immediately. Do NOT animate a diverged scene.
+
 **Gate: Character description passes all 6 audit points.**
 
-### Step 1 — Story Arc ⛔ CHECKPOINT
+---
+
+## Step 1 — Story Arc ⛔ CHECKPOINT
 
 Write 5-act story structure (`num_scenes` scenes):
+
 - Act 1: Establish character + world
 - Act 2: Introduce tension/desire
-- Act 3: Rising action
-- Act 4: Climax moment
-- Act 5: Resolution
+- Act 3: Rising action / attempt + obstacle
+- Act 4: Climax (emotional or comedic peak)
+- Act 5: Resolution (heartwarming / funny payoff)
 
-Each scene: visual description + emotion + camera angle + motion cue
+Each scene: visual description + emotion + camera angle + motion cue.
+
+For `--type plush`: keep emotional register toylike and playful. Physical movements should be exaggerated and charming.
 
 **Gate: User approves story arc.**
 
-### Step 2 — Character Reference
+---
 
-→ Skill: `ai-media` → `gemini-character-ref`
-→ `--model pro` (never flash — consistency issues)
+## Step 2 — Character Reference
+
+→ Skill: `ai-media` → `gemini-character-ref` (`--model pro` — never flash, consistency issues)
+→ Prompt: full `character_description` + "product photography, white background, full body, clean studio lighting"
 → Output: `interim/broll/gfx/char-ref.png`
 
-This reference image MUST be passed to every scene generation call.
+This reference image MUST be passed to every scene generation call. Never skip it.
 
-### Step 3 — Scene Generation ⛔ CHECKPOINT
+---
 
-For each scene (in order):
+## Step 3 — Scene Images ⛔ CHECKPOINT
+
+For each scene (generate in order):
 → Skill: `ai-media` → `gemini-character-scene`
 → Pass `char-ref.png` to EVERY call — no exceptions
-→ Motion prompts: 1–2 sentences, gentle words (slow, subtle, still)
+→ Motion prompts: 1–2 sentences, gentle words (slow, subtle, still, drifting)
 → Output: `interim/broll/segments/scene-{N}.png`
 
-Run per-scene divergence audit after each image:
-- Check character has same face/hair/clothing as char-ref.png
-- If diverged: regenerate before moving to next scene
+After each image: run divergence check. Regenerate before moving on if diverged.
 
-**Gate: User approves all scene images.**
+For `--type plush`: include "plush toy", "soft fabric texture", "photorealistic toy photography" in every prompt.
 
-### Step 4 — Animation (Hailuo i2v)
+**Gate: User approves all scene images. No diverged images proceed.**
 
-For each scene image:
+---
+
+## Step 4 — Animation (Hailuo i2v)
+
+For each approved scene image:
 → Submit to Hailuo image-to-video via Floe API
-→ Motion prompt: match scene description motion cue
+→ Motion prompt: match scene motion cue (short, gentle)
 → Poll for completion (5–10 min per clip)
 → Output: `interim/broll/segments/scene-{N}-anim.mp4`
 
-### Step 5 — Trim Clips
+---
 
-→ Skill: `ffmpeg` → trim each animated clip to target duration (cover story beat)
-→ Trim to match audio track pacing
+## Step 5 — Trim + Assemble
 
-### Step 6 — Assemble
+→ Skill: `ffmpeg`:
+1. Trim each clip to match audio track pacing
+2. Scale to 1080×1920 if not already portrait
+3. Crossfade concat with `$crossfade` duration
+4. Mux with `$audio_track`
+5. Loudness: -14 LUFS
 
-→ Skill: `ffmpeg` → concat with `$crossfade`s crossfade filter
-→ Mux with `$audio_track`
-→ Loudness: -14 LUFS
 → Output: `video/compositing/composite-v1.mp4`
 
-### Step 7 — Delivery ⛔ CHECKPOINT
+---
 
-→ Verify output → `final/pr-aimg01-{desc}.mp4`
-**Gate: User reviews final.**
+## Step 6 — Delivery ⛔ CHECKPOINT
+
+→ Skill: `ffmpeg` → 12-point delivery checklist
+→ Verify output: codec, resolution, audio
+→ Move to: `final/pr-aimg01-{desc}.mp4`
+
+**Gate: User reviews final animation quality.**
