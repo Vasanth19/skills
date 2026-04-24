@@ -1,0 +1,79 @@
+---
+name: heygen
+description: HeyGen avatar video rendering for the creative studio. Use for avatar green-screen renders, submitting via MCP or API, browser-based UI rendering, delegating to human via Discord, polling render status, downloading completed MP4s, and verifying green-screen quality.
+when_to_use: Trigger on HeyGen, avatar render, green screen render, talking head, avatar video, heygen API, heygen MCP, poll render, download avatar, verify green screen, avatar MP4.
+allowed-tools: Bash
+---
+
+# HeyGen — Avatar Render System
+
+## Render Path Priority
+
+| Path | When | Cost |
+|------|------|------|
+| 1. Human (Discord) | Default when credits not a concern | Lowest |
+| 2. MCP Tool | Automated pipeline integration | api_credits |
+| 3. Browser UI | When MCP unavailable | premium_credits |
+| 4. REST API | Scripted/batch automation | api_credits |
+
+## Green Screen Standard (Non-Negotiable)
+
+**Always use `#00FF00` (0x00FF00).** Never sample from video. Never trust b-roll plan color values.
+
+Two-pass colorkey: `colorkey=0x00FF00:0.25:0.05,colorkey=0x00FF00:0.40:0.01`
+
+`chromakey` filter NOT available — always use `colorkey`.
+
+## Path 1: Human Delegation (Discord)
+
+Full script as ONE request (hook through CTA). TTS-clean only.
+
+Channel routing (`~/.gsai/openclaw-routing.json`): VAS→`#personal`, CFW→`#cfw`, GRO→`#gsai`
+
+## Path 2: HeyGen MCP
+
+Use `mcp__heygen__generate_avatar_video`. Only send segment-specific text per render.
+
+Credit pool: OAuth MCP → `premium_credits`, Stdio MCP + API key → `api_credits`. Check before submitting — pool mismatch is #1 failure mode.
+
+## Path 3: Browser UI
+
+See **[references/browser-render.md](references/browser-render.md)** for Chrome automation steps.
+
+Critical order: avatar/look/motion/background FIRST → script LAST (Script Writer AI rewrites typed text — always use `ClipboardEvent('paste')`).
+
+## Path 4: REST API
+
+```bash
+curl -s -X POST "https://api.heygen.com/v2/video/generate" \
+  -H "X-Api-Key: $HEYGEN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "video_inputs": [{"character": {"type": "avatar", "avatar_id": "$AVATAR_ID"},
+      "voice": {"type": "text", "input_text": "$SCRIPT", "voice_id": "$VOICE_ID"},
+      "background": {"type": "color", "value": "#00FF00"}}],
+    "dimension": {"width": 1280, "height": 720}}'
+```
+Auth: `X-Api-Key` header (NOT Bearer).
+
+## Polling via Floe API
+
+Poll every 60s. Short clips: 3–5 min. Long VSLs (6 min+): 15–20 min.
+
+```bash
+RESULT=$(curl -s -X POST "https://floe-production.up.railway.app/api/v1/id-to-heygen-url" \
+  -H "Content-Type: application/json" -H "X-API-Key: $FLOE_API_KEY" \
+  -d "{\"execution_id\": \"poll-$(date +%s)\", \"input_fields\": {\"video_id\": \"$VIDEO_ID\"}}")
+STATUS=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('status',''))")
+```
+Check `status: "success"` at top level (NOT `"completed"`). Unique `execution_id` per poll.
+
+## Output Paths
+
+- Green-screen: `{production}/interim/video/base/{name}-green-screen.mp4`
+- On background: `{production}/interim/video/base/{name}-avatar-on-bg.mp4`
+- Pre-render with `-g 25` (keyframe/1s) for seek accuracy
+
+## References
+
+- **[references/browser-render.md](references/browser-render.md)** — Chrome automation, script paste method, gotchas.
