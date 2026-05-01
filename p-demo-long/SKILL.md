@@ -1,5 +1,5 @@
 ---
-name: demo-to-long-distribution
+name: p-demo-long
 description: "Use when converting raw screen recordings, OBS demos, rough voice explanations, product walkthroughs, or long-form demo footage into a complete long-form distribution asset: YouTube explainer, transcript, hook/value/CTA structure, B-roll map, ElevenLabs voiceover, captions, HyperFrames or Remotion composition, final render, speed-adjusted export, and delivery QA."
 metadata:
   short-description: Turn raw demos into polished long-form videos
@@ -16,7 +16,7 @@ Create a production folder with:
 - `script/`: full transcript, clean TTS script, narration timing, caption script
 - `audio/`: ElevenLabs outputs and model logs
 - `captions/`: timed caption files such as `.srt`, `.vtt`, and composition-ready JSON
-- `broll/` or `segments/`: extracted clips with timestamp notes
+- `c-broll/` or `segments/`: extracted clips with timestamp notes
 - `renders/`: HyperFrames or Remotion project
 - `interim/`: still checks and temporary exports
 - `final/`: master, requested speed-adjusted final, thumbnails

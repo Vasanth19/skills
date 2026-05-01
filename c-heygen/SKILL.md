@@ -1,7 +1,7 @@
 ---
-name: heygen
+name: c-heygen
 description: HeyGen avatar video rendering for the creative studio. Use for avatar green-screen renders, submitting via MCP or API, browser-based UI rendering, delegating to human via Discord, polling render status, downloading completed MP4s, and verifying green-screen quality.
-when_to_use: Trigger on HeyGen, avatar render, green screen render, talking head, avatar video, heygen API, heygen MCP, poll render, download avatar, verify green screen, avatar MP4.
+when_to_use: Trigger on HeyGen, avatar render, green screen render, talking head, avatar video, HeyGen API, HeyGen MCP, poll render, download avatar, verify green screen, avatar MP4.
 allowed-tools: Bash
 ---
 
@@ -61,7 +61,7 @@ Auth: `X-Api-Key` header (NOT Bearer).
 Poll every 60s. Short clips: 3–5 min. Long VSLs (6 min+): 15–20 min.
 
 ```bash
-RESULT=$(curl -s -X POST "https://floe-production.up.railway.app/api/v1/id-to-heygen-url" \
+RESULT=$(curl -s -X POST "https://floe-production.up.railway.app/api/v1/id-to-c-heygen-url" \
   -H "Content-Type: application/json" -H "X-API-Key: $FLOE_API_KEY" \
   -d "{\"execution_id\": \"poll-$(date +%s)\", \"input_fields\": {\"video_id\": \"$VIDEO_ID\"}}")
 STATUS=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('status',''))")

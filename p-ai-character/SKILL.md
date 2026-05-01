@@ -1,5 +1,5 @@
 ---
-name: pipeline-ai-character
+name: p-ai-character
 description: AI character animated short pipeline. Produces a 9:16 short using Gemini character-consistent scene images animated via Hailuo i2v. Works for any character type — human, plush toy (Labubu/Tiny Tales style), mascot, or fantasy. No dialogue — visual storytelling with music. Requires 6-attribute character lock audit before any generation.
 disable-model-invocation: true
 argument-hint: "[brand] [production-name] [story-concept] [--type human|plush]"
@@ -76,7 +76,7 @@ For `--type plush`: keep emotional register toylike and playful. Physical moveme
 
 ## Step 2 — Character Reference
 
-→ Skill: `ai-media` → `gemini-character-ref` (`--model pro` — never flash, consistency issues)
+→ Skill: `c-ai-media` → `gemini-character-ref` (`--model pro` — never flash, consistency issues)
 → Prompt: full `character_description` + "product photography, white background, full body, clean studio lighting"
 → Output: `interim/broll/gfx/char-ref.png`
 
@@ -87,7 +87,7 @@ This reference image MUST be passed to every scene generation call. Never skip i
 ## Step 3 — Scene Images ⛔ CHECKPOINT
 
 For each scene (generate in order):
-→ Skill: `ai-media` → `gemini-character-scene`
+→ Skill: `c-ai-media` → `gemini-character-scene`
 → Pass `char-ref.png` to EVERY call — no exceptions
 → Motion prompts: 1–2 sentences, gentle words (slow, subtle, still, drifting)
 → Output: `interim/broll/segments/scene-{N}.png`
@@ -112,7 +112,7 @@ For each approved scene image:
 
 ## Step 5 — Trim + Assemble
 
-→ Skill: `ffmpeg`:
+→ Skill: `c-ffmpeg`:
 1. Trim each clip to match audio track pacing
 2. Scale to 1080×1920 if not already portrait
 3. Crossfade concat with `$crossfade` duration
@@ -125,7 +125,7 @@ For each approved scene image:
 
 ## Step 6 — Delivery ⛔ CHECKPOINT
 
-→ Skill: `ffmpeg` → 12-point delivery checklist
+→ Skill: `c-ffmpeg` → 12-point delivery checklist
 → Verify output: codec, resolution, audio
 → Move to: `final/pr-aimg01-{desc}.mp4`
 

@@ -1,5 +1,5 @@
 ---
-name: fal-ai
+name: c-fal-ai
 description: fal.ai image and video generation. Use for FLUX image gen, and async queue-based video generation (Kling, Seedance, WAN, Veo, MiniMax). Direct API calls via curl.
 when_to_use: Trigger on fal.ai, FAL_KEY, FLUX image, Kling video, Seedance video, WAN video, Veo video, MiniMax video, fal queue, image-to-video fal, text-to-video fal.
 allowed-tools: Bash
@@ -10,14 +10,14 @@ allowed-tools: Bash
 ## Step 0 — Always run first (model cache auto-sync)
 
 ```bash
-bash /Users/vasanth/Code/skills/fal-ai/sync-models.sh
+bash /Users/vasanth/Code/skills/c-fal-ai/sync-models.sh
 ```
 
 Refreshes `models.jsonl` if > 4 days old. Query available models:
 
 ```bash
 # List all models
-tail -n +2 /Users/vasanth/Code/skills/fal-ai/models.jsonl | python3 -c "
+tail -n +2 /Users/vasanth/Code/skills/c-fal-ai/models.jsonl | python3 -c "
 import sys,json
 for line in sys.stdin:
     m=json.loads(line)
@@ -25,7 +25,7 @@ for line in sys.stdin:
 "
 
 # Filter by operation (e.g. image-to-video)
-tail -n +2 /Users/vasanth/Code/skills/fal-ai/models.jsonl | python3 -c "
+tail -n +2 /Users/vasanth/Code/skills/c-fal-ai/models.jsonl | python3 -c "
 import sys,json
 for line in sys.stdin:
     m=json.loads(line)
@@ -49,7 +49,7 @@ source ~/.gsai/secrets.env
 ## Image Generation (synchronous)
 
 ```bash
-curl -s -X POST "https://fal.run/fal-ai/flux/dev" \
+curl -s -X POST "https://fal.run/c-fal-ai/flux/dev" \
   -H "Authorization: Key $FAL_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -62,7 +62,7 @@ curl -s -X POST "https://fal.run/fal-ai/flux/dev" \
 
 **Aspect ratio enum** (`image_size`): `square_hd` | `landscape_16_9` | `portrait_16_9` | `landscape_4_3` | `portrait_4_3`
 
-**Image models:** `fal-ai/flux/dev` (quality) · `fal-ai/flux/schnell` (fast)
+**Image models:** `c-fal-ai/flux/dev` (quality) · `c-fal-ai/flux/schnell` (fast)
 
 ---
 
@@ -106,18 +106,18 @@ VIDEO_URL=$(curl -s "$RESPONSE_URL" -H "Authorization: Key $FAL_KEY" \
 
 | Key | fal endpoint | Use for |
 |-----|-------------|---------|
-| Image | `fal-ai/flux/dev` | Quality image gen |
-| Image | `fal-ai/flux/schnell` | Fast image gen |
-| Video t2v | `fal-ai/kling-video/v3/pro/text-to-video` | Kling 3 |
-| Video i2v | `fal-ai/kling-video/v3/pro/image-to-video` | Kling 3 i2v |
-| Video t2v | `fal-ai/veo3` | Veo 3 |
-| Video t2v | `fal-ai/veo3.1` | Veo 3.1 |
-| Video i2v | `fal-ai/veo3.1/image-to-video` | Veo 3.1 i2v |
+| Image | `c-fal-ai/flux/dev` | Quality image gen |
+| Image | `c-fal-ai/flux/schnell` | Fast image gen |
+| Video t2v | `c-fal-ai/kling-video/v3/pro/text-to-video` | Kling 3 |
+| Video i2v | `c-fal-ai/kling-video/v3/pro/image-to-video` | Kling 3 i2v |
+| Video t2v | `c-fal-ai/veo3` | Veo 3 |
+| Video t2v | `c-fal-ai/veo3.1` | Veo 3.1 |
+| Video i2v | `c-fal-ai/veo3.1/image-to-video` | Veo 3.1 i2v |
 | Video t2v | `bytedance/seedance-2.0/text-to-video` | Seedance 2 |
 | Video i2v | `bytedance/seedance-2.0/image-to-video` | Seedance 2 i2v |
-| Video t2v | `fal-ai/wan/v2.2-a14b/text-to-video` | WAN 2.2 |
-| Video i2v | `fal-ai/wan/v2.2-a14b/image-to-video` | WAN 2.2 i2v |
-| Video t2v | `fal-ai/minimax/video-01-live` | MiniMax (Hailuo) |
+| Video t2v | `c-fal-ai/wan/v2.2-a14b/text-to-video` | WAN 2.2 |
+| Video i2v | `c-fal-ai/wan/v2.2-a14b/image-to-video` | WAN 2.2 i2v |
+| Video t2v | `c-fal-ai/minimax/video-01-live` | MiniMax (Hailuo) |
 
 ## Common Payload Fields (video)
 

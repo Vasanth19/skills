@@ -1,12 +1,12 @@
 ---
-name: pipeline-vsl
+name: p-vsl
 description: Full VSL longform production pipeline. Produces one 16:9 landscape video with avatar PIP, b-roll overlay, SFX, captions, and loudness normalization. Orchestrates script → HeyGen → transcription → b-roll plan → GFX → composite → delivery.
 disable-model-invocation: true
 argument-hint: "[brand] [production-name]"
 allowed-tools: Bash, Read, Write
 ---
 
-# pipeline-vsl — VSL Longform Production
+# p-vsl — VSL Longform Production
 
 Produces a 16:9 landscape VSL with avatar PIP composite, b-roll overlay, SFX, and captions.
 
@@ -30,7 +30,7 @@ Produces a 16:9 landscape VSL with avatar PIP composite, b-roll overlay, SFX, an
 Read brand path from `~/.gsai/ecosystem.yaml`. Create production folder:
 ```
 {brand_path}/creatives/productions/{production_name}/
-  interim/scripts/ audio/ broll/segments/ broll/gfx/ broll-plan/
+  interim/scripts/ audio/ c-broll/segments/ c-broll/gfx/ broll-plan/
   video/base/ video/compositing/
   final/
 ```
@@ -42,7 +42,7 @@ Read brand path from `~/.gsai/ecosystem.yaml`. Create production folder:
 If `script` points to a draft `.md`: present to user for approval before proceeding.
 If `.txt` TTS-clean already: skip approval, confirm word count and estimated duration.
 
-→ Skill: `studio-script` (duration calc, TTS preprocessing if needed)
+→ Skill: `c-studio-script` (duration calc, TTS preprocessing if needed)
 → Save TTS-clean to: `interim/scripts/{name}-tts.txt`
 
 **Gate: User approves script before render.**
@@ -53,7 +53,7 @@ If `.txt` TTS-clean already: skip approval, confirm word count and estimated dur
 
 If `source_video` provided: skip to Step 3.
 
-→ Skill: `heygen` → browser render path
+→ Skill: `c-heygen` → browser render path
 → Script: full TTS-clean script, one render
 → Background: `#00FF00` solid
 
@@ -63,7 +63,7 @@ If `source_video` provided: skip to Step 3.
 
 ## Step 3 — Poll & Download
 
-→ Skill: `heygen` → poll via Floe API (60s interval)
+→ Skill: `c-heygen` → poll via Floe API (60s interval)
 → Download to: `interim/video/base/{name}-green-screen.mp4`
 → Verify green screen quality
 
@@ -73,7 +73,7 @@ If `speed != 1.0`: apply speed adjust → `interim/video/base/{name}-green-scree
 
 ## Step 4 — Transcription
 
-→ Skill: `studio-audio` → MLX Whisper
+→ Skill: `c-studio-audio` → MLX Whisper
 → Input: downloaded avatar audio (or extracted audio from green-screen MP4)
 → Output: `interim/audio/{name}.srt` + `.txt`
 
@@ -83,7 +83,7 @@ If `speed != 1.0`: apply speed adjust → `interim/video/base/{name}-green-scree
 
 ## Step 5 — B-Roll Planning ⛔ CHECKPOINT
 
-→ Skill: `broll` → check library first, match to script
+→ Skill: `c-broll` → check library first, match to script
 → Use SRT timecodes for all segment boundaries
 → Create landscape PIP placement plan
 → Every row has: timecode | Speaker Says | Layout | B-Roll File | Zoom
@@ -100,30 +100,30 @@ Plan quality guard: ≥4 unique assets, ≥80% b-roll coverage.
 Run in parallel where possible:
 
 **6a. AI Images** (if needed):
-→ Skill: `ai-media` → read `brand-ref.md` first → generate `num_images` images
+→ Skill: `c-ai-media` → read `brand-ref.md` first → generate `num_images` images
 → Output: `{brand_path}/creatives/brolls/images/`
 
 **6b. HTML GFX Cards**:
-→ Skill: `html-gfx` → dark studio theme, `num_gfx` cards matching script segments
+→ Skill: `c-html-gfx` → dark studio theme, `num_gfx` cards matching script segments
 → Screenshot to PNG, convert to 5s clips with 1.15x Ken Burns
 → Output: `interim/broll/gfx/`
 
 **6c. Website Scroll** (if in plan):
-→ Skill: `web-capture` → long-form preset (1920x1080, 12s)
+→ Skill: `c-web-capture` → long-form preset (1920x1080, 12s)
 → Output: `interim/broll/segments/`
 
 ---
 
 ## Step 7 — Contextual Background
 
-→ Skill: `ai-media` → generate contextual background matching brand/topic
+→ Skill: `c-ai-media` → generate contextual background matching brand/topic
 → Save to: `interim/video/base/{name}-bg.png`
 
 ---
 
 ## Step 8 — Composite
 
-→ Skill: `ffmpeg` → `references/landscape-pip.md`
+→ Skill: `c-ffmpeg` → `references/landscape-pip.md`
 1. Pre-render: avatar on background → `video/base/avatar-on-bg.mp4` (with `-g 25`)
 2. Build segment list per b-roll plan (AVATAR FULL / PIP / FULLSCREEN)
 3. Each segment carries its own synced audio
@@ -137,7 +137,7 @@ If verify fails: fix and recomposite before proceeding.
 ## Step 9 — Post-Processing
 
 **9a. SFX Mix** (if `sfx: true`):
-→ Skill: `ffmpeg` → `references/audio-processing.md`
+→ Skill: `c-ffmpeg` → `references/audio-processing.md`
 → Check SFX library first → mix at -18 dB moderate
 
 **9b. Loudness Normalize**:
@@ -150,7 +150,7 @@ If verify fails: fix and recomposite before proceeding.
 
 ## Step 10 — Delivery ⛔ CHECKPOINT
 
-→ Skill: `studio-production` → run 12-point delivery checklist
+→ Skill: `c-studio-production` → run 12-point delivery checklist
 → Name final: `ls-{category}01-{description}.mp4` → copy to `final/`
 
 **Gate: All 12 checks pass. User reviews final before marking done.**
@@ -159,6 +159,6 @@ If verify fails: fix and recomposite before proceeding.
 
 ## Step 11 — Archive
 
-→ Skill: `broll` → archive reusable clips from `interim/broll/` to `{brand_path}/creatives/brolls/`
+→ Skill: `c-broll` → archive reusable clips from `interim/broll/` to `{brand_path}/creatives/brolls/`
 → Update relevant library `.md` files
 → Run `/deliver` to mark production complete

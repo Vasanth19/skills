@@ -1,7 +1,7 @@
 ---
-name: studio-production
+name: c-studio-production
 description: Production management for the creative studio. Use for creating production folder structures, running delivery checklists, updating the HTML dashboard, verifying output files, managing snap detection, extracting hook clips, and coordinating multi-step pipeline state.
-when_to_use: Trigger on production folder, create production, delivery checklist, dashboard update, snap detection, hook clip, ffmpeg verify, ffmpeg delivery, production structure, interim folder, finals folder, production state, step checkpoint, output verify.
+when_to_use: Trigger on production folder, create production, delivery checklist, dashboard update, snap detection, hook clip, c-ffmpeg verify, c-ffmpeg delivery, production structure, interim folder, finals folder, production state, step checkpoint, output verify.
 allowed-tools: Bash, Read, Write, Edit
 ---
 
@@ -16,7 +16,7 @@ Create this structure at `{brand_local_path}/creatives/productions/{production-n
   interim/
     scripts/        ← STEP 1: script drafts + final script
     audio/          ← STEP 2: TTS/voiceover renders (NO SFX here)
-    broll/          ← STEP 3: project b-roll clips
+    c-broll/          ← STEP 3: project b-roll clips
       segments/
       gfx/
     broll-plan/     ← STEP 4: timing plans, b-roll placement sheets
@@ -103,7 +103,7 @@ After EVERY recipe step that produces output, update the HTML dashboard immediat
 DASH="$PROD/dashboard.html"
 
 # Update step status in dashboard
-# Step IDs: 1=script, 2=tts, 3=broll, 4=plan, 5=avatar, 6=composite, 7=final
+# Step IDs: 1=script, 2=tts, 3=c-broll, 4=plan, 5=avatar, 6=composite, 7=final
 ```
 
 Dashboard lives at `{production}/dashboard.html`. The root studio dashboard is at `/Users/vasanth/MarketingMr/creative-studio/dashboard.html`.

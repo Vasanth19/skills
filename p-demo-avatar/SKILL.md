@@ -1,5 +1,5 @@
 ---
-name: demo-with-avatar-via-hgapi
+name: p-demo-avatar
 description: "Use when producing a complete demo video for any topic where the pipeline should be automated end-to-end: script, ElevenLabs or provided audio, HeyGen API avatar generation from audio, splitting the combined avatar render back into timed clips, Remotion composition, demo/B-roll sync, captions, final render, and delivery QA."
 metadata:
   short-description: Automate demo videos with HeyGen API avatars
@@ -17,7 +17,7 @@ Create or reuse a production folder with:
 - `audio/`: final narration, avatar audio clips, combined HeyGen audio, generation logs
 - `avatar/`: HeyGen request payloads, poll logs, downloaded combined render, split avatar clips
 - `captions/`: SRT/VTT plus composition-ready caption JSON from final audio
-- `broll/` or `segments/`: source demo clips with timestamp notes
+- `c-broll/` or `segments/`: source demo clips with timestamp notes
 - `renders/`: Remotion project and render artifacts
 - `interim/`: previews, still checks, temporary muxes
 - `final/`: master, requested speed variant, platform export, delivery note
@@ -87,8 +87,8 @@ Create or reuse a production folder with:
 
 ## Related Skills
 
-- Use `demo-to-long-distribution` for long-form story structure and delivery QA.
-- Use `demo-to-short-distribution` for short-form hook/value/proof/CTA variants.
-- Use `heygen` for lower-level HeyGen details when the API path needs troubleshooting.
+- Use `p-demo-long` for long-form story structure and delivery QA.
+- Use `p-demo-short` for short-form hook/value/proof/CTA variants.
+- Use `c-heygen` for lower-level HeyGen details when the API path needs troubleshooting.
 - Use `remotion:remotion-best-practices` when implementing or debugging the Remotion composition.
 

@@ -1,11 +1,11 @@
 ---
-name: outstand
+name: r-social-post-outstand
 description: >
   Post, schedule, fetch analytics, and manage comments across 10 social
   platforms (X, LinkedIn, Instagram, Facebook, Threads, TikTok, YouTube,
   Bluesky, Pinterest, Google Business) via the Outstand.so unified REST API.
-  Usage-based ($0.50/month/account + $0.01/post). Alternative to postforme
-  and upload-post. Requires OUTSTAND_API_KEY.
+  Usage-based ($0.50/month/account + $0.01/post). Alternative to r-social-post-postforme
+  and r-social-post-upload. Requires OUTSTAND_API_KEY.
 ---
 
 # Outstand.so — Unified Social Media API
@@ -16,12 +16,12 @@ Developer-first, usage-based unified REST API to post, schedule, fetch analytics
 Pricing: $0.50/month per connected account + $0.01 per post published. No tiers, no seats.
 
 ## API Reference
-- **Base URL**: `https://api.outstand.so`
+- **Base URL**: `https://api.r-social-post-outstand.so`
 - **API Version**: `/v1`
 - **Auth**: `Authorization: Bearer $OUTSTAND_API_KEY` (key passed by caller)
-- **Dashboard**: https://www.outstand.so
-- **Docs**: https://www.outstand.so/docs/getting-started
-- **MCP Server**: `https://mcp.outstand.so/mcp` (25 tools, same API key)
+- **Dashboard**: https://www.r-social-post-outstand.so
+- **Docs**: https://www.r-social-post-outstand.so/docs/getting-started
+- **MCP Server**: `https://mcp.r-social-post-outstand.so/mcp` (25 tools, same API key)
 
 ## docs/ Folder Contents
 

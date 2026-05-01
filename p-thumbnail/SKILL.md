@@ -1,5 +1,5 @@
 ---
-name: pipeline-thumbnail
+name: p-thumbnail
 description: YouTube thumbnail production pipeline. Generates multiple thumbnail variants from an avatar frame and topic, presents for user selection, and delivers the winner.
 disable-model-invocation: true
 argument-hint: "[brand] [production-name] [topic]"
@@ -35,7 +35,7 @@ Headline copy: write 3 options (shock, curiosity, result-first) for each variant
 
 ### Step 2 — Generate Thumbnails
 
-→ Skill: `html-gfx` → create HTML for each variant (1280x720)
+→ Skill: `c-html-gfx` → create HTML for each variant (1280x720)
 → Avatar frame embedded as positioned image
 → Dark/bold background matching brand palette
 → Headline: 80px+ bold, high contrast
@@ -46,7 +46,7 @@ Unicode check after every screenshot render.
 
 ### Step 3 — Compress
 
-→ Skill: `ffmpeg` → JPEG compression `-q:v 2`
+→ Skill: `c-ffmpeg` → JPEG compression `-q:v 2`
 → Verify: < 2MB (YouTube limit)
 → Output: `interim/broll/gfx/thumb-{A/B/C}-v1.jpg`
 

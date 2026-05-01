@@ -1,5 +1,5 @@
 ---
-name: ai-media
+name: c-ai-media
 description: AI image and video generation for the creative studio. Use for generating AI images (Gemini/Nanobanana), cinematic video scenes (Higgsfield), talking-head animation from image+audio (RunPod InfiniteTalk), and Veo talking-head generation.
 when_to_use: Trigger on AI image, generate image, Gemini image, Nanobanana, whiteboard image, cinematic scene, Higgsfield, RunPod, InfiniteTalk, talking head animation, Veo, character reference, character scene, AI b-roll generation.
 allowed-tools: Bash

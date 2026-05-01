@@ -1,5 +1,5 @@
 ---
-name: kie-ai
+name: c-kie-ai
 description: Kie.ai video and image generation. Use for Hailuo i2v, Sora-2, Kling, WAN, Seedance, Veo-3, GPT Image, Imagen 4, Z-Image, Grok-imagine, and InfiniTalk via kie.ai API. Replaces FloeAPI as primary i2v provider.
 when_to_use: Trigger on kie.ai, KIE_AI_API_KEY, Hailuo video, hailuo i2v, Sora-2 video, Kling avatar, InfiniTalk, WAN video kie, Seedance kie, GPT image kie, Imagen 4 kie, Z-image, grok-imagine, image-to-video production.
 allowed-tools: Bash
@@ -10,14 +10,14 @@ allowed-tools: Bash
 ## Step 0 — Always run first (model cache auto-sync)
 
 ```bash
-bash /Users/vasanth/Code/skills/kie-ai/sync-models.sh
+bash /Users/vasanth/Code/skills/c-kie-ai/sync-models.sh
 ```
 
 Refreshes `models.jsonl` if > 4 days old. Query available models:
 
 ```bash
 # List all active models
-tail -n +2 /Users/vasanth/Code/skills/kie-ai/models.jsonl | python3 -c "
+tail -n +2 /Users/vasanth/Code/skills/c-kie-ai/models.jsonl | python3 -c "
 import sys,json
 for line in sys.stdin:
     m=json.loads(line)
@@ -26,7 +26,7 @@ for line in sys.stdin:
 "
 
 # Filter by operation (e.g. image-to-video)
-tail -n +2 /Users/vasanth/Code/skills/kie-ai/models.jsonl | python3 -c "
+tail -n +2 /Users/vasanth/Code/skills/c-kie-ai/models.jsonl | python3 -c "
 import sys,json
 for line in sys.stdin:
     m=json.loads(line)
@@ -164,5 +164,5 @@ curl -s "https://api.kie.ai/api/v1/veo/record-info?taskId=$TASK_ID" \
 - `sora-2-*` model names use hyphens, NOT slashes (unlike other models)
 - Polling state: `success`/`completed`/`done` → done; `fail`/`failed`/`error` → failed
 - Error code `402` = insufficient credits; `401` = bad API key
-- Full model registry: `/Users/vasanth/Code/video-apps/floe/src/integrations/ai/kie-ai/models/index.ts`
+- Full model registry: `/Users/vasanth/Code/video-apps/floe/src/integrations/ai/c-kie-ai/models/index.ts`
 - DISCONTINUED: `google/nano-banana-pro` returns 422 since 2026-02-20

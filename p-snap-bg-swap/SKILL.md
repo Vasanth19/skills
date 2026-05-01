@@ -1,5 +1,5 @@
 ---
-name: pipeline-snap-bg-swap
+name: p-snap-bg-swap
 description: Finger-snap background swap reel pipeline. Detects snap points in audio, composites the avatar on alternating backgrounds, and assembles a viral snap-transition format short.
 disable-model-invocation: true
 argument-hint: "[brand] [production-name] [source-video]"
@@ -25,7 +25,7 @@ Viral format: avatar snaps fingers → background changes. Each snap = new scene
 
 ### Step 1 — Snap Detection ⛔ CHECKPOINT
 
-→ Skill: `studio-production` → snap point detection
+→ Skill: `c-studio-production` → snap point detection
 → Audio peak analysis (RMS threshold 0.7, min gap 0.5s, 50ms chunks)
 → Returns list of timestamps (seconds)
 → Output: `interim/broll-plan/snap-points.json`
@@ -36,7 +36,7 @@ Viral format: avatar snaps fingers → background changes. Each snap = new scene
 
 If `$bg_images` provided: use them.
 If not:
-→ Skill: `ai-media` → generate `num_snaps + 1` contextual backgrounds
+→ Skill: `c-ai-media` → generate `num_snaps + 1` contextual backgrounds
 → Each bg: different color palette / scene / mood
 → Brand-consistent style from `brand-ref.md`
 → Output: `interim/broll/gfx/bg-{N}.png`
@@ -46,7 +46,7 @@ If not:
 ### Step 3 — Segment Composite
 
 For each snap interval (snap[N] to snap[N+1]):
-→ Skill: `ffmpeg` → colorkey composite
+→ Skill: `c-ffmpeg` → colorkey composite
 → Two-pass: `colorkey=0x00FF00:0.25:0.05,colorkey=0x00FF00:0.40:0.01`
 → Overlay avatar on `bg-{N}.png`
 → Trim to interval duration
@@ -56,7 +56,7 @@ Final segment: snap[last] to end of video → `bg-{N+1}.png`
 
 ### Step 4 — Concat
 
-→ Skill: `ffmpeg` → concat all segments (codec copy if same params)
+→ Skill: `c-ffmpeg` → concat all segments (codec copy if same params)
 → Output: `video/compositing/snap-bg-swap-v1.mp4`
 
 ### Step 5 — Verify

@@ -1,10 +1,10 @@
 ---
-name: upload-post
+name: r-social-post-upload
 description: >
   Schedule and publish social posts across 10+ platforms (TikTok, Instagram,
   YouTube, LinkedIn, Facebook, X, Threads, Pinterest, Bluesky, Reddit,
   Google Business) via the Upload-Post multi-brand API. Alternative to
-  postforme with multi-brand/profile support. Requires UPLOAD_POST_API_KEY.
+  r-social-post-postforme with multi-brand/profile support. Requires UPLOAD_POST_API_KEY.
 ---
 
 # Upload Post — Social Media Scheduling API
@@ -13,10 +13,10 @@ description: >
 Multi-brand, multi-platform social media scheduling and publishing service. Supports 10+ networks: TikTok, Instagram, YouTube, LinkedIn, Facebook, X, Threads, Pinterest, Bluesky, Reddit, Google Business.
 
 ## API Reference
-- Base URL: `https://api.upload-post.com/api`
+- Base URL: `https://api.r-social-post-upload.com/api`
 - Auth: `Authorization: Apikey $UPLOAD_POST_API_KEY` (key passed by caller)
-- Dashboard: https://upload-post.com
-- Docs: https://docs.upload-post.com
+- Dashboard: https://r-social-post-upload.com
+- Docs: https://docs.r-social-post-upload.com
 
 ## docs/ Folder Contents
 

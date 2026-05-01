@@ -1,5 +1,5 @@
 ---
-name: pipeline-banner
+name: p-banner
 description: Social media banner creation pipeline. Creates pixel-perfect banners for YouTube, LinkedIn, or Facebook by rendering HTML files through headless Chrome and compressing to platform specs.
 disable-model-invocation: true
 argument-hint: "[brand] [platform]"
@@ -40,14 +40,14 @@ Design layout:
 
 ### Step 2 — Create HTML
 
-→ Skill: `html-gfx` → HTML banner
+→ Skill: `c-html-gfx` → HTML banner
 → Font: system stack or Google Fonts CDN
 → `<meta charset="UTF-8">` required
 → Target dimensions match platform full size
 
 ### Step 3 — Screenshot
 
-→ Skill: `html-gfx` → headless Chrome
+→ Skill: `c-html-gfx` → headless Chrome
 → Window size: `{width}x{height+140}` → crop to exact target
 → Unicode check post-render
 
@@ -57,7 +57,7 @@ Design layout:
 
 ### Step 5 — Compress
 
-→ Skill: `ffmpeg` → JPEG `-q:v 2`
+→ Skill: `c-ffmpeg` → JPEG `-q:v 2`
 → Verify size under platform limit
 
 ### Step 6 — Deliver

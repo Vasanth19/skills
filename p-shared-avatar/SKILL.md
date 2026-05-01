@@ -1,5 +1,5 @@
 ---
-name: pipeline-shared-avatar
+name: p-shared-avatar
 description: Shared avatar render pipeline. Renders ONE HeyGen green-screen video from combined TTS scripts (longform + multiple shorts), then maps SRT timecodes back to each script. Reduces HeyGen credit usage by batching all renders into one video.
 disable-model-invocation: true
 argument-hint: "[brand] [scripts...]"
@@ -34,12 +34,12 @@ Verify total word count and estimated duration:
 
 ### Step 2 — Preprocess
 
-→ Skill: `studio-script` → TTS preprocessing pass on combined script
+→ Skill: `c-studio-script` → TTS preprocessing pass on combined script
 → Verify: no markdown, no stage directions, no abbreviations, clean sentences
 
 ### Step 3 — HeyGen Render ⛔ CHECKPOINT
 
-→ Skill: `heygen` → browser render path
+→ Skill: `c-heygen` → browser render path
 → Background: `#00FF00` solid
 → Submit combined-tts.txt as ONE render
 
@@ -47,24 +47,24 @@ Verify total word count and estimated duration:
 
 ### Step 4 — Poll & Download
 
-→ Skill: `heygen` → Floe API poll (60s, up to 30 attempts — long renders take 15-20 min)
+→ Skill: `c-heygen` → Floe API poll (60s, up to 30 attempts — long renders take 15-20 min)
 → Download → `interim/video/base/shared-render-green-screen.mp4`
 → Verify output (dimensions, codec, duration)
 
 ### Step 5 — Green Screen Verify
 
-→ Skill: `heygen` → verify green screen quality
+→ Skill: `c-heygen` → verify green screen quality
 → Confirm `#00FF00` background throughout
 → Generate contextual background for avatar segments
 
 ### Step 6 — Speed Adjust (if `speed != 1.0`)
 
-→ Skill: `ffmpeg` → apply speed: `setpts + atempo`
+→ Skill: `c-ffmpeg` → apply speed: `setpts + atempo`
 → Output: `interim/video/base/shared-render-{speed}x.mp4`
 
 ### Step 7 — Transcription + Segment Mapping
 
-→ Skill: `studio-audio` → MLX Whisper on the avatar's audio
+→ Skill: `c-studio-audio` → MLX Whisper on the avatar's audio
 → Output: `interim/audio/shared-render.srt`
 
 Parse SRT to find timecode boundaries for each `[SEGMENT: ...]` marker.
@@ -77,6 +77,6 @@ Build segment map:
 
 Save to: `interim/broll-plan/segment-map.md`
 
-Each downstream production (pipeline-vsl, pipeline-avatar-short) can now reference:
+Each downstream production (p-vsl, p-avatar-short) can now reference:
 - `source_video`: path to shared render
 - SRT window: the mapped timecode range for their segment

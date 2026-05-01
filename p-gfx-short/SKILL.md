@@ -1,5 +1,5 @@
 ---
-name: pipeline-gfx-short
+name: p-gfx-short
 description: Faceless GFX short production pipeline. Produces a 9:16 short with ElevenLabs voiceover narration, HTML infographic GFX cards, Ken Burns zoom, captions, and brand outro. No avatar required.
 disable-model-invocation: true
 argument-hint: "[brand] [production-name] [topic]"
@@ -28,18 +28,18 @@ Produces a faceless portrait short: voiceover + HTML GFX cards + Ken Burns motio
 ## Steps
 
 ### Step 1 — Script ⛔ CHECKPOINT
-→ Skill: `studio-script` → short-form (75–150 words)
+→ Skill: `c-studio-script` → short-form (75–150 words)
 → Hook styles: pattern-interrupt, math-hook, result-first
 → TTS preprocess → `interim/scripts/{name}-tts.txt`
 **Gate: User approves script.**
 
 ### Step 2 — Voiceover
-→ Skill: `studio-audio` → ElevenLabs via Floe API
+→ Skill: `c-studio-audio` → ElevenLabs via Floe API
 → Voice: `$voice_id` (from brand-ref.md if not specified)
 → Output: `interim/audio/{name}-vo.mp3`
 
 ### Step 3 — Transcription
-→ Skill: `studio-audio` → MLX Whisper on voiceover
+→ Skill: `c-studio-audio` → MLX Whisper on voiceover
 → Output: `interim/audio/{name}.srt`
 
 ### Step 4 — Scene Planning ⛔ CHECKPOINT
@@ -50,19 +50,19 @@ GFX types (dark studio theme): `hero-stat`, `callout-card`, `pipeline-diagram`, 
 **Gate: User approves scene plan.**
 
 ### Step 5 — GFX Creation
-→ Skill: `html-gfx` → create HTML for each scene
+→ Skill: `c-html-gfx` → create HTML for each scene
 → Screenshot via headless Chrome (1080x1920 window → 1080x1920 viewport)
 → Unicode check after every render
 → Output: `interim/broll/gfx/{N}-{desc}.png`
 
 ### Step 6 — Image-to-Clip ⛔ CHECKPOINT
-→ Skill: `ffmpeg` → `zoompan` 1.15x Ken Burns per clip
+→ Skill: `c-ffmpeg` → `zoompan` 1.15x Ken Burns per clip
 → Duration: match SRT window for each scene
 → Output: `interim/broll/gfx/{N}-{desc}.mp4`
 **Gate: User reviews clips before concat.**
 
 ### Step 7 — Concat with Voiceover
-→ Skill: `ffmpeg` → concat all GFX clips → mux with voiceover
+→ Skill: `c-ffmpeg` → concat all GFX clips → mux with voiceover
 → Output: `video/compositing/composite-v1.mp4`
 
 ### Step 8 — Post-Processing
@@ -72,7 +72,7 @@ GFX types (dark studio theme): `hero-stat`, `callout-card`, `pipeline-diagram`, 
 → Loudness: -14 LUFS two-pass
 
 ### Step 9 — Outro
-→ `studio-production` → append brand outro
+→ `c-studio-production` → append brand outro
 
 ### Step 10 — Delivery ⛔ CHECKPOINT
 → 12-point checklist → `final/pr-gfx01-{desc}.mp4`

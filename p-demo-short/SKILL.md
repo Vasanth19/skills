@@ -1,5 +1,5 @@
 ---
-name: demo-to-short-distribution
+name: p-demo-short
 description: "Use when turning raw demo clips, existing long-form explainer assets, OBS screen recordings, or product walkthrough footage into high-retention short-form videos with a clear hook, value delivery, proof/demo, interactive Remotion B-roll, reused demo clips, captions, optional HyperFrames composition, and explicit CTA."
 metadata:
   short-description: Turn demo assets into valuable shorts

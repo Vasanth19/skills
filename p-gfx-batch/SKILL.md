@@ -1,5 +1,5 @@
 ---
-name: pipeline-gfx-batch
+name: p-gfx-batch
 description: Batch GFX creation pipeline. Creates multiple HTML infographic overlay graphics from a script, screenshots them pixel-perfectly, and optionally converts to video clips with Ken Burns zoom.
 disable-model-invocation: true
 argument-hint: "[brand] [production-name] [script-path]"
@@ -39,13 +39,13 @@ Output plan: `{gfx_dir}/gfx-plan.md` (index, type, content per GFX)
 
 ### Step 2 — Create HTML
 
-→ Skill: `html-gfx` → create HTML file for each GFX
+→ Skill: `c-html-gfx` → create HTML file for each GFX
 → Dark studio theme, brand color palette
 → `<meta charset="UTF-8">` in every file
 
 ### Step 3 — Screenshot (Batch)
 
-→ Skill: `html-gfx` → headless Chrome per file
+→ Skill: `c-html-gfx` → headless Chrome per file
 → Window: `{width}x{height+140}` → crop to `{width}x{height}`
 → Unicode check after every render
 
@@ -64,7 +64,7 @@ Iterate on rejected GFX before converting to clips.
 
 ### Step 6 — Convert to Clips (if `make_clips: true`)
 
-→ Skill: `ffmpeg` → image-to-clip per PNG
+→ Skill: `c-ffmpeg` → image-to-clip per PNG
 → Ken Burns: `zoompan=z='min(zoom+0.001,{zoom_val})':d={frames}:s={size}`
 → Duration: `$clip_duration`
 → Output: `{gfx_dir}/{N:02d}-{desc}.mp4`

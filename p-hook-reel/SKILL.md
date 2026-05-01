@@ -1,5 +1,5 @@
 ---
-name: pipeline-hook-reel
+name: p-hook-reel
 description: Hook-jacked reel production pipeline. Takes a 4-7s hook clip from a famous creator, adds brand continuation (avatar or GFX), and stitches into a 9:16 short. The creator's hook audio is NEVER speed-adjusted.
 disable-model-invocation: true
 argument-hint: "[brand] [production-name] [hook-source-url]"
@@ -25,7 +25,7 @@ Viral hook + brand continuation format. Creator's hook clip is the scroll-stop; 
 ## Steps
 
 ### Step 1 — Hook Extraction ⛔ CHECKPOINT
-→ Skill: `studio-production` → hook extract
+→ Skill: `c-studio-production` → hook extract
 → Download with yt-dlp (windowed: `hook_start` to `hook_end`)
 → Extract punch-point clip (4–7s only)
 → NEVER speed-adjust hook — creator's voice stays natural
@@ -34,7 +34,7 @@ Viral hook + brand continuation format. Creator's hook clip is the scroll-stop; 
 **Gate: User verifies clean audio cut and visual quality.**
 
 ### Step 2 — Continuation Script ⛔ CHECKPOINT
-→ Skill: `studio-script` → short-form continuation (picks up from hook's implied promise)
+→ Skill: `c-studio-script` → short-form continuation (picks up from hook's implied promise)
 → Duration: 30–45s (to keep total < 60s)
 → Hook's final line becomes the bridge into continuation
 **Gate: User approves script.**
@@ -48,7 +48,7 @@ Delegate to sub-pipeline based on `$continuation_style`:
 Output: `video/compositing/continuation-v1.mp4`
 
 ### Step 4 — Stitch Assembly
-→ Skill: `ffmpeg` → `studio-production` separate-tracks-mux
+→ Skill: `c-ffmpeg` → `c-studio-production` separate-tracks-mux
 1. Extract audio tracks separately (hook + continuation)
 2. Concat audio independently
 3. Concat video independently
@@ -57,11 +57,11 @@ Output: `video/compositing/continuation-v1.mp4`
 → Output: `video/compositing/stitched-v1.mp4`
 
 ### Step 5 — Outro
-→ `studio-production` → append brand outro
+→ `c-studio-production` → append brand outro
 
 ### Step 6 — Delivery ⛔ CHECKPOINT
 → 12-point checklist → `final/pr-hook01-{desc}.mp4`
 **Gate: All checks pass.**
 
 ### Step 7 — Archive
-→ `broll` skill → archive reusable continuation assets
+→ `c-broll` skill → archive reusable continuation assets

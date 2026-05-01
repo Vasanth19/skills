@@ -1,5 +1,5 @@
 ---
-name: pipeline-longform-visual
+name: p-longform-visual
 description: Longform visual composite pipeline. Produces a tutorial/walkthrough video with layered visuals: Remotion GFX, HTML explainer slides, demo screen recordings, and optional avatar PIP. Designed for YouTube-format educational content.
 disable-model-invocation: true
 argument-hint: "[brand] [production-name] [main-video]"
@@ -25,7 +25,7 @@ Educational/tutorial video: main recording + Remotion GFX + HTML slides + demo f
 
 ### Step 1 — Transcribe + Section Map ⛔ CHECKPOINT
 
-→ Skill: `studio-audio` → MLX Whisper on `$main_video`
+→ Skill: `c-studio-audio` → MLX Whisper on `$main_video`
 → Output: `interim/audio/main.srt`
 
 Analyze SRT → build section map:
@@ -39,14 +39,14 @@ Analyze SRT → build section map:
 
 ### Step 2 — Process Videos
 
-→ Skill: `ffmpeg` → scale main video to square (1:1) if needed
+→ Skill: `c-ffmpeg` → scale main video to square (1:1) if needed
 → If `$demo_video`: trim to `$demo_trim`, normalize codec
 → Output: `interim/video/base/main-scaled.mp4`, `interim/video/base/demo-trimmed.mp4`
 
 ### Step 3 — Design Remotion Compositions ⛔ CHECKPOINT
 
 For each section marked `Remotion diagram`:
-→ Skill: `html-gfx` → Remotion component design (TSX + Tailwind)
+→ Skill: `c-html-gfx` → Remotion component design (TSX + Tailwind)
 → Composition type: animated diagram, stat reveal, step progression
 
 **Gate: User approves Remotion composition designs.**
@@ -54,12 +54,12 @@ For each section marked `Remotion diagram`:
 ### Step 4 — Build HTML Slides
 
 For conceptual sections:
-→ Skill: `html-gfx` → animated explainer slides
+→ Skill: `c-html-gfx` → animated explainer slides
 → Progressive reveal, Poppins font, one idea per slide
 
 ### Step 5 — Render Remotion
 
-→ Skill: `html-gfx` → Remotion render
+→ Skill: `c-html-gfx` → Remotion render
 → Shared Chromium: `$REMOTION_BROWSER_EXECUTABLE`
 → `npm ci --omit=optional` first
 → Output: `interim/broll/gfx/{composition}.mp4`
@@ -75,7 +75,7 @@ ffmpeg -i remotion-clip.mp4 -vf "tpad=stop_mode=clone:stop_duration={extra}s" \
 
 ### Step 7 — Stitch Composite ⛔ CHECKPOINT
 
-→ Skill: `ffmpeg` → assemble per section map:
+→ Skill: `c-ffmpeg` → assemble per section map:
 - Talking-head sections: main video as-is
 - Demo sections: side-by-side (`vstack` or `hstack`)
 - GFX sections: overlay or replace video track

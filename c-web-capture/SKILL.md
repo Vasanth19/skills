@@ -1,5 +1,5 @@
 ---
-name: web-capture
+name: c-web-capture
 description: Playwright-based website scroll capture for b-roll video clips. Use for recording smooth-scrolling website pages, discovering URLs for capture targets, and generating square or landscape b-roll from web pages.
 when_to_use: Trigger on web capture, website scroll, Playwright capture, website b-roll, scroll recording, URL discovery, page scroll, website clip, web scroll b-roll, capture website, website screenshot video.
 allowed-tools: Bash

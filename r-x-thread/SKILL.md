@@ -1,5 +1,5 @@
 ---
-name: x-thread
+name: r-x-thread
 description: >
   Post a multi-tweet thread to X (Twitter) via X API v2, chaining each tweet
   as a reply to the previous one — exactly as n8n does via inReplyToStatusId.
@@ -78,7 +78,7 @@ When publishing an X thread for MGG:
 1. **Prepare tweet array** — read from the ord's `final/publishes/x.md`. Extract tweets in order (tweet 1 through N).
 2. **Run the script**:
    ```bash
-   SKILL_DIR="/Users/vasanth/MarketingMr/posting-tools/skills/x-thread/docs/scripts"
+   SKILL_DIR="/Users/vasanth/MarketingMr/posting-tools/skills/r-x-thread/docs/scripts"
    "$SKILL_DIR/post-thread.sh" "Tweet 1" "Tweet 2" "Tweet 3"
    ```
 3. **Capture the root tweet id** — `results[0].data.id` — and record it in the ord's `final/publishes/x.md` as `thread_root_id`.
@@ -92,5 +92,5 @@ When publishing an X thread for MGG:
 
 ## Brand Config
 
-Declared in: `mr-growth-guide/.config/x-thread.yaml`
+Declared in: `mr-growth-guide/.config/r-x-thread.yaml`
 X account: `@MrGrowthGuide` (platformUserId: `850396380787093505`)

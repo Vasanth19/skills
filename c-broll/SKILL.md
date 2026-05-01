@@ -1,7 +1,7 @@
 ---
-name: broll
-description: B-roll library management, script matching, placement planning, and alignment verification for the creative studio. Use for reading/updating broll libraries, matching clips to script scenes, generating portrait/landscape placement plans, verifying SRT alignment, archiving clips from production, and previewing clip selections.
-when_to_use: Trigger on b-roll, broll, b-roll library, clip match, placement plan, broll plan, SRT alignment, broll archive, broll preview, broll log, broll timecards, script to clips, b-roll coverage, broll library update, broll image rationale.
+name: c-broll
+description: B-roll library management, script matching, placement planning, and alignment verification for the creative studio. Use for reading/updating c-broll libraries, matching clips to script scenes, generating portrait/landscape placement plans, verifying SRT alignment, archiving clips from production, and previewing clip selections.
+when_to_use: Trigger on b-roll, c-broll, b-roll library, clip match, placement plan, c-broll plan, SRT alignment, c-broll archive, c-broll preview, c-broll log, c-broll timecards, script to clips, b-roll coverage, c-broll library update, c-broll image rationale.
 allowed-tools: Bash, Read, Write, Edit
 ---
 

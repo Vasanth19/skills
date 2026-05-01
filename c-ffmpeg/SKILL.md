@@ -1,7 +1,7 @@
 ---
-name: ffmpeg
+name: c-ffmpeg
 description: All FFmpeg video/audio operations for the creative studio. Use when compositing video, applying chroma key (green screen), building portrait/landscape layouts, trimming clips, concatenating segments, adjusting speed, adding zoompan/Ken Burns effects, normalizing audio loudness, detecting snap points, or running delivery quality checks.
-when_to_use: Trigger on any mention of ffmpeg, video composite, green screen, PIP, chroma key, concat, trim, speed adjust, loudnorm, zoompan, portrait layout, landscape layout, audio mixing, SFX mix, delivery checklist, or ffprobe verify.
+when_to_use: Trigger on any mention of c-ffmpeg, video composite, green screen, PIP, chroma key, concat, trim, speed adjust, loudnorm, zoompan, portrait layout, landscape layout, audio mixing, SFX mix, delivery checklist, or ffprobe verify.
 allowed-tools: Bash
 ---
 

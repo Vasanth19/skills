@@ -1,7 +1,7 @@
 ---
-name: cloud-media
+name: c-cloud-media
 description: Cloudflare R2 upload, CDN management, and CFW Social API operations. Use for uploading b-roll clips to R2, getting CDN URLs, registering assets in CFW, fetching content/variants, updating variant scripts with b-roll tags, and finding stuck CFW workflow executions.
-when_to_use: Trigger on R2 upload, CDN upload, Cloudflare R2, cloud upload, CFW Social, register asset, fetch content, variant update, b-roll embed, CFW variant, CFW content, stuck execution, workflow execution, broll upload CDN, cloud media.
+when_to_use: Trigger on R2 upload, CDN upload, Cloudflare R2, cloud upload, CFW Social, register asset, fetch content, variant update, b-roll embed, CFW variant, CFW content, stuck execution, workflow execution, c-broll upload CDN, cloud media.
 allowed-tools: Bash
 ---
 
@@ -57,7 +57,7 @@ curl -s -X POST "https://api.cfw.social/api/brand-assets" \
   }"
 ```
 
-Returns `asset_id`. Update broll library with `Cloud: $CDN_URL` and `Status: Uploaded`.
+Returns `asset_id`. Update c-broll library with `Cloud: $CDN_URL` and `Status: Uploaded`.
 
 ## CFW Social Content API
 
@@ -120,7 +120,7 @@ curl -s -X POST "https://floe-production.up.railway.app/api/v1/executions/$EXECU
 
 ## Bulk Upload Workflow (Pending B-Roll)
 
-1. Read broll library — find all rows with `Status: Pending`
+1. Read c-broll library — find all rows with `Status: Pending`
 2. For each: upload to R2, get CDN URL
 3. Register in CFW Social — get asset_id
 4. Update library row: `Status: Uploaded`, `Cloud: $CDN_URL`

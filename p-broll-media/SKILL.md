@@ -1,5 +1,5 @@
 ---
-name: pipeline-broll-media
+name: p-broll-media
 description: Embed b-roll into a CFW content variant. Fetches the content variant, rewrites the script to target duration, matches b-roll clips from the library, logs missing assets, and updates the variant in CFW.
 disable-model-invocation: true
 argument-hint: "[content-id-or-variant-id]"
@@ -37,14 +37,14 @@ Show script + current estimated duration.
 ### Step 3 — Script Rewrite (if needed)
 
 If script duration ≠ target:
-→ Skill: `studio-script` → rewrite to duration (target: 40–60s)
+→ Skill: `c-studio-script` → rewrite to duration (target: 40–60s)
 → Preserve hook, CTA, core message
 
 **Gate: User approves rewritten script.**
 
 ### Step 4 — Match B-Roll
 
-→ Skill: `broll` → read brand library (all 4 libraries)
+→ Skill: `c-broll` → read brand library (all 4 libraries)
 → Match clips to script segments using "Use When..." keywords
 → Format matches: `[[{duration},s,{cdn_url}]]` inline in script
 
@@ -56,7 +56,7 @@ B-roll embed format:
 ### Step 5 — Log Missing
 
 For script segments with no matching library clip:
-→ `broll` skill → log missing: segment text + suggested clip type
+→ `c-broll` skill → log missing: segment text + suggested clip type
 → Output: `missing-broll.md` (for future capture/generation)
 
 ### Step 6 — Present Plan ⛔ CHECKPOINT

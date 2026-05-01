@@ -1,12 +1,12 @@
 ---
-name: postforme
+name: r-social-post-postforme
 description: >
   Publish, schedule, and fetch results for social posts across 9 platforms
   (TikTok, Instagram, Facebook, X, LinkedIn, YouTube, Pinterest, Bluesky,
   Threads) via the PostForMe unified REST API. Use for organic distribution
   of finished creative assets and for pulling per-account publish results
   and analytics. Scripts expect POSTFORME_API_KEY; brand-specific social
-  account IDs live in each brand repo at `.config/postforme.yaml`.
+  account IDs live in each brand repo at `.config/r-social-post-postforme.yaml`.
 ---
 
 # Post For Me — Unified Social Media Posting API
@@ -17,11 +17,11 @@ Developer-first unified REST API to publish posts, schedule, fetch analytics, an
 Built by Day Moon Development. Open source. Pay-per-post pricing (from $10/mo for 1,000 posts).
 
 ## API Reference
-- **Base URL**: `https://api.postforme.dev`
+- **Base URL**: `https://api.r-social-post-postforme.dev`
 - **API Version**: `/v1`
 - **Auth**: `Authorization: Bearer $POSTFORME_API_KEY` (key passed by caller)
-- **Dashboard**: https://www.postforme.dev
-- **Docs**: https://docs.postforme.dev (Scalar) — spec mirrored at `docs/openapi.json`
+- **Dashboard**: https://www.r-social-post-postforme.dev
+- **Docs**: https://docs.r-social-post-postforme.dev (Scalar) — spec mirrored at `docs/openapi.json`
 
 ## docs/ Folder Contents
 
@@ -73,7 +73,7 @@ Equivalent env vars: `THUMBNAIL_PATH`, `THUMBNAIL_URL`, `THUMBNAIL_TIMESTAMP_MS`
 
 **YouTube long-form:** custom thumbnails are blocked at the YouTube platform layer for non-verified channels regardless of API support. YT Studio manual upload remains required for that platform — wrapper change does NOT remove that step. CMO's "YouTube Studio post-publish checklist" gotcha still applies.
 
-**Ledger:** thumbnail URL is recorded as the 7th column of `~/.posting-tools-ledger/postforme.tsv` for analytics.
+**Ledger:** thumbnail URL is recorded as the 7th column of `~/.posting-tools-ledger/r-social-post-postforme.tsv` for analytics.
 
 ## Core Concepts
 
@@ -141,7 +141,7 @@ TIMESTAMPS:
 **How to pass description via PostForMe API:**
 ```bash
 # Use platform_configurations to set YouTube-specific description
-curl -s -X POST "https://api.postforme.dev/v1/social-posts" \
+curl -s -X POST "https://api.r-social-post-postforme.dev/v1/social-posts" \
   -H "Authorization: Bearer $POSTFORME_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{

@@ -1,6 +1,6 @@
 ---
-name: pipeline-broll
-description: B-roll library management pipeline. Three actions in one — capture website scroll clips (Playwright), extract clips from existing video (ffmpeg trim), or upload pending library clips to Cloudflare R2. All actions register results in the brand's b-roll library.
+name: p-broll
+description: B-roll library management pipeline. Three actions in one — capture website scroll clips (Playwright), extract clips from existing video (c-ffmpeg trim), or upload pending library clips to Cloudflare R2. All actions register results in the brand's b-roll library.
 disable-model-invocation: true
 argument-hint: "[brand] capture [topic|urls...] | extract [source-video] [start] [end] [name] | upload [library?]"
 allowed-tools: Bash, Read, Write
@@ -37,7 +37,7 @@ Three actions: `capture` (website scroll) | `extract` (trim from video) | `uploa
 ### Steps
 
 **1 — URL Discovery** (skip if `$urls` provided)
-→ Skill: `web-capture` → discover 2–4 canonical URLs for `$topic`:
+→ Skill: `c-web-capture` → discover 2–4 canonical URLs for `$topic`:
   - Announcement / blog post
   - Product page
   - Pricing or features page
@@ -46,7 +46,7 @@ Filter: publicly accessible, no login walls, visually interesting above fold.
 → Output: `interim/broll-plan/pages.json`
 
 **2 — Capture**
-→ Skill: `web-capture` → Playwright scroll capture
+→ Skill: `c-web-capture` → Playwright scroll capture
 → Mode: `$mode` preset (1.2x speed, 2s trim-start)
 → Output: `interim/broll/segments/{prefix}{NN}-{label}.mp4`
 
@@ -59,11 +59,11 @@ For each clip:
 If quality fails: recapture with longer `--wait` or trim-start.
 
 **4 — Verify**
-→ Skill: `ffmpeg` → ffprobe: dimensions, duration, codec
+→ Skill: `c-ffmpeg` → ffprobe: dimensions, duration, codec
 
 **5 — Library Update**
 → Copy clips to: `{brand_path}/creatives/brolls/recordings/`
-→ Skill: `broll` → add each to `recordings-broll-library.md`:
+→ Skill: `c-broll` → add each to `recordings-broll-library.md`:
   - ID: `{prefix}{NN}` (next available)
   - Zoom: `none`
   - Status: `Created`
@@ -89,7 +89,7 @@ If quality fails: recapture with longer `--wait` or trim-start.
 ### Steps
 
 **1 — Extract**
-→ Skill: `ffmpeg` → frame-accurate trim:
+→ Skill: `c-ffmpeg` → frame-accurate trim:
 ```bash
 ffmpeg -i "$SOURCE" -ss $START -to $END \
   -c:v libx264 -c:a aac -y "$BRAND_BROLLS/{category}/{name}.mp4"
@@ -99,7 +99,7 @@ ffmpeg -i "$SOURCE" -ss $START -to $END \
 → ffprobe → confirm duration = (end − start) ± 0.1s, codec, dimensions
 
 **3 — Update Library**
-→ Skill: `broll` → add row to `{category}-broll-library.md`:
+→ Skill: `c-broll` → add row to `{category}-c-broll-library.md`:
   - Status: `Created`
   - File: `{category}/{name}.mp4`
 
@@ -121,12 +121,12 @@ Print: clip path, duration, library row added.
 ### Steps
 
 **1 — Find Pending**
-→ Skill: `broll` → read library, filter `Status == Created`
+→ Skill: `c-broll` → read library, filter `Status == Created`
 → If `dry_run: true`: print list and stop
 → If zero pending: report "Nothing to upload." and stop
 
 **2 — Upload**
-→ Skill: `cloud-media` → R2 upload for each clip
+→ Skill: `c-cloud-media` → R2 upload for each clip
 Upload priority: `ai/` → `gfx/` → `recordings/` → `app/`
 → Log: ✓ uploaded | ✗ failed (with filename)
 
@@ -136,7 +136,7 @@ Upload priority: `ai/` → `gfx/` → `recordings/` → `app/`
   - `Status`: `Created` → `Uploaded`
 
 **4 — CFW Registration** (optional — if CFW MCP available)
-→ Skill: `cloud-media` → register each CDN URL as brand asset in CFW
+→ Skill: `c-cloud-media` → register each CDN URL as brand asset in CFW
 
 **5 — Report**
 - Total attempted / succeeded / failed

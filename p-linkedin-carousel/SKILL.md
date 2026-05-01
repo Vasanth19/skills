@@ -1,5 +1,5 @@
 ---
-name: pipeline-linkedin-carousel
+name: p-linkedin-carousel
 description: LinkedIn carousel PDF pipeline. Writes slide content, generates AI images per slide, assembles into a PDF carousel, and drafts the LinkedIn caption copy.
 disable-model-invocation: true
 argument-hint: "[brand] [production-name] [topic]"
@@ -42,7 +42,7 @@ Write full copy for each slide:
 
 ### Step 3 — AI Image Generation ⛔ CHECKPOINT
 
-→ Skill: `ai-media` → read `brand-ref.md` first
+→ Skill: `c-ai-media` → read `brand-ref.md` first
 → Generate one image per slide based on visual cue
 → Style: `$style` (whiteboard/corporate)
 → Aspect: `$aspect_ratio`
@@ -72,7 +72,7 @@ convert slide-*.png carousel.pdf
 
 ### Step 5 — LinkedIn Caption
 
-→ Skill: `studio-script` → write LinkedIn post copy:
+→ Skill: `c-studio-script` → write LinkedIn post copy:
 - Hook line (matches cover slide)
 - Tease slides 2–3 (don't give it all away)
 - CTA: "Save this + follow for more"

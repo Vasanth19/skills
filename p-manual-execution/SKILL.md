@@ -1,5 +1,5 @@
 ---
-name: pipeline-manual-execution
+name: p-manual-execution
 description: Manual CFW execution recovery pipeline. Finds stuck CFW executions, creates the missing HeyGen video, optionally adds b-roll, then submits the video ID to resume the pipeline.
 disable-model-invocation: true
 argument-hint: "[execution-id?] [content-id?]"
@@ -33,11 +33,11 @@ If no `execution_id`:
 → Extract TTS-clean script from variant
 
 Verify script is TTS-clean (no markdown, stage directions, abbreviations).
-If not clean: run `studio-script` TTS preprocess first.
+If not clean: run `c-studio-script` TTS preprocess first.
 
 ### Step 3 — Create HeyGen Video ⛔ CHECKPOINT
 
-→ Skill: `heygen` → browser render (or MCP if available)
+→ Skill: `c-heygen` → browser render (or MCP if available)
 → Background: `#00FF00`
 → Full script as one render
 
