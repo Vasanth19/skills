@@ -1,6 +1,6 @@
 # Creative Studio Skills
 
-Claude Code skills library for video production workflows. 10 domain skills + 21 production pipelines.
+Claude Code skills library for video production workflows. 10 domain skills + 3 social posting skills + 16 production pipelines.
 
 ## Install
 
@@ -43,24 +43,31 @@ npx skills add vasanth/skills@cloud-media
 | `/pipeline-vsl` | 16:9 longform VSL with avatar PIP + b-roll |
 | `/pipeline-avatar-short` | 9:16 avatar short with portrait composite |
 | `/pipeline-gfx-short` | 9:16 faceless GFX short with voiceover |
-| `/pipeline-ai-character` | 9:16 AI character animated short (Gemini + Hailuo) |
+| `/pipeline-ai-character` | 9:16 AI character short — human, plush (Labubu/Tiny Tales), mascot, or fantasy ⚠️ backend stale — needs multi-motion model update |
 | `/pipeline-hook-reel` | 9:16 hook-jacked reel with brand continuation |
 | `/pipeline-shared-avatar` | One HeyGen render shared across multiple productions |
 | `/pipeline-snap-bg-swap` | Finger-snap background swap reel |
-| `/pipeline-viral-reel` | Viral reel recreation with avatar PIP |
-| `/pipeline-viral-reel-ai` | AI tool viral reel (Higgsfield + Veo) |
+| `/pipeline-viral-reel` | Viral reel recreation — `--style avatar` (current) or `--style ai-generated` ⚠️ stale backend |
 | `/pipeline-longform-visual` | Tutorial video with Remotion GFX + slides |
-| `/pipeline-infinite-talk` | Animated talking head via RunPod InfiniteTalk |
-| `/pipeline-labubu` | Plush character animated short (Tiny Tales style) |
-| `/pipeline-broll-capture` | Website scroll b-roll capture |
-| `/pipeline-broll-extract` | Extract clips from source video |
-| `/pipeline-broll-upload` | Upload pending b-roll to Cloudflare R2 |
+| `/pipeline-broll` | B-roll library — `capture` website scrolls, `extract` clips from video, or `upload` pending clips to R2 |
 | `/pipeline-broll-media` | Embed b-roll into CFW content variant |
 | `/pipeline-gfx-batch` | Batch HTML GFX card production |
 | `/pipeline-thumbnail` | YouTube thumbnail variants |
 | `/pipeline-linkedin-carousel` | LinkedIn PDF carousel |
 | `/pipeline-banner` | Platform social media banners |
 | `/pipeline-manual-execution` | Recover stuck CFW executions |
+
+## Social Posting Skills
+
+Three interchangeable skills for publishing to social platforms — use whichever service a brand is connected to.
+
+| Skill | Service | Platforms | Pricing |
+|-------|---------|-----------|---------|
+| `outstand` | Outstand.so | X, LinkedIn, Instagram, Facebook, Threads, TikTok, YouTube, Bluesky, Pinterest, Google Business | $0.50/mo per account + $0.01/post |
+| `postforme` | PostForMe | TikTok, Instagram, Facebook, X, LinkedIn, YouTube, Pinterest, Bluesky, Threads | From $10/mo (1,000 posts) |
+| `upload-post` | Upload-Post | TikTok, Instagram, YouTube, LinkedIn, Facebook, X, Threads, Pinterest, Bluesky, Reddit, Google Business | Multi-brand/profile support |
+
+Each requires its own API key (`OUTSTAND_API_KEY`, `POSTFORME_API_KEY`, `UPLOAD_POST_API_KEY`). Brand-to-service mapping lives in the brand config.
 
 ## Usage
 

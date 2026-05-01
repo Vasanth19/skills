@@ -35,6 +35,9 @@ check "get-auth-url"       "POST https://api.postforme.dev/v1/social-accounts/au
 check "create-post"        "POST https://api.postforme.dev/v1/social-posts"                          ./create-post.sh "hi" "spc_a,spc_b" --dry-run
 check "create-post+media"  "POST https://api.postforme.dev/v1/social-posts"                          ./create-post.sh "hi" "spc_a" "https://x/y.jpg" --dry-run
 check "create-post+sched"  "POST https://api.postforme.dev/v1/social-posts"                          ./create-post.sh "hi" "spc_a" "" "2026-12-31T10:00:00Z" --dry-run
+check "create-post+thumb-url"   "thumbnail_url"                                                       ./create-post.sh "hi" "spc_a" "https://cdn/v.mp4" "" --thumbnail-url "https://cdn/t.jpg" --dry-run
+check "create-post+thumb-ts"    "thumbnail_timestamp_ms"                                              ./create-post.sh "hi" "spc_a" "https://cdn/v.mp4" "" --thumbnail-timestamp-ms 5000 --dry-run
+check "create-post+thumb-env"   "thumbnail_url"                                                       env THUMBNAIL_URL=https://cdn/env.jpg ./create-post.sh "hi" "spc_a" "https://cdn/v.mp4" --dry-run
 check "list-posts"         "GET https://api.postforme.dev/v1/social-posts?limit=25"                  ./list-posts.sh --dry-run
 check "get-post"           "GET https://api.postforme.dev/v1/social-posts/post_abc"                  ./get-post.sh post_abc --dry-run
 check "delete-post"        "DELETE https://api.postforme.dev/v1/social-posts/post_abc"               ./delete-post.sh post_abc --dry-run

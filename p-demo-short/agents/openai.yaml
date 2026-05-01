@@ -1,0 +1,8 @@
+interface:
+  display_name: "Demo to Short Distribution"
+  short_description: "Demo clips into captioned valuable shorts"
+  brand_color: "#06B6D4"
+  default_prompt: "Use $demo-to-short-distribution to turn these demo clips into three vertical shorts with Remotion-created B-roll, captions, value, proof, and CTA."
+
+policy:
+  allow_implicit_invocation: true

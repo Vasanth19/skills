@@ -8,6 +8,8 @@ allowed-tools: Bash, Read, Write
 
 # pipeline-ai-character — AI Character Short (9:16)
 
+> **BACKEND STALE** — Gemini image → Hailuo i2v scene-by-scene flow is superseded by multi-motion video models (e.g. Sea Dance / Wan 2.1 / Kling 2.0) that generate character-consistent multi-scene video from a single prompt. The 6-attribute character lock audit and story arc structure remain valid. Rewrite Steps 3–5 around the new model before using.
+
 Visual storytelling: character lock → Gemini scene images → Hailuo animation → music assembly.
 
 ## Arguments

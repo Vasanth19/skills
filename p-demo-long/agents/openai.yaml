@@ -1,0 +1,8 @@
+interface:
+  display_name: "Demo to Long Distribution"
+  short_description: "Raw demos into polished long-form explainers"
+  brand_color: "#F97316"
+  default_prompt: "Use $demo-to-long-distribution to turn this raw demo recording into a finished YouTube explainer with voiceover, captions, B-roll, and final QA."
+
+policy:
+  allow_implicit_invocation: true

@@ -41,11 +41,32 @@
 #                            to be meaningful; otherwise falls back to input-hash).
 #   PUBLISH_INTENT_TTL_SEC   How long an intent row blocks others (default 3600s).
 #   IDEMPOTENCY=off          Disables ALL dedup layers (emergency override only).
+#   THUMBNAIL_PATH           Optional local file path for a custom thumbnail.
+#                            If set, uploaded via upload-media.sh and the resulting
+#                            URL is passed as media[].thumbnail_url. (Equivalent to
+#                            --thumbnail <path>.)
+#   THUMBNAIL_URL            Optional pre-hosted thumbnail URL — passed straight
+#                            through as media[].thumbnail_url. Wins over THUMBNAIL_PATH.
+#                            (Equivalent to --thumbnail-url <url>.)
+#   THUMBNAIL_TIMESTAMP_MS   Optional millisecond offset into the video to use as
+#                            the thumbnail (alternative to URL). (Equivalent to
+#                            --thumbnail-timestamp-ms <ms>.)
+#
+# Custom-thumbnail support (VAS-80, 2026-04-28):
+#   PostForMe API accepts thumbnail_url + thumbnail_timestamp_ms on each media
+#   entry. The wrapper passes them when set. Verified to forward to IG / FB /
+#   LinkedIn. NOTE: YouTube long-form custom thumbnails are blocked at the YT
+#   platform level for non-verified channels regardless of API support — YT
+#   Studio manual upload remains required for that platform.
 #
 # Examples:
 #   ./create-post.sh "Hello world" "spc_abc,spc_def"
 #   ./create-post.sh "Launch!" "spc_abc" "https://cdn/img.jpg"
 #   ./create-post.sh "Tomorrow" "spc_abc" "" "2026-12-31T10:00:00Z"
+#   ./create-post.sh "New reel!" "spc_ig,spc_fb" "https://cdn/clip.mp4" "" \
+#     --thumbnail ./final/thumbnail-yt.jpg
+#   ./create-post.sh "Reel" "spc_ig" "https://cdn/clip.mp4" "" \
+#     --thumbnail-timestamp-ms 5000
 set -euo pipefail
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
@@ -56,6 +77,25 @@ LEDGER_LIB="$DIR/../../../../shared/ledger.sh"
 # shellcheck disable=SC1090
 [ -f "$LEDGER_LIB" ] && source "$LEDGER_LIB"
 require_key
+
+# --- Pre-parse thumbnail flags out of $@ before positional parsing (VAS-80) ---
+# Strips --thumbnail / --thumbnail-url / --thumbnail-timestamp-ms (with values)
+# from $@ and exports their values to the corresponding env vars. Env vars set
+# by the caller still win if a flag isn't passed. After this block, $@ contains
+# only positional args + any other flags (like --dry-run) for filter_args.
+THUMBNAIL_PATH="${THUMBNAIL_PATH:-}"
+THUMBNAIL_URL="${THUMBNAIL_URL:-}"
+THUMBNAIL_TIMESTAMP_MS="${THUMBNAIL_TIMESTAMP_MS:-}"
+_FILTERED_ARGS=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --thumbnail)              THUMBNAIL_PATH="${2:-}";         shift 2 ;;
+    --thumbnail-url)          THUMBNAIL_URL="${2:-}";          shift 2 ;;
+    --thumbnail-timestamp-ms) THUMBNAIL_TIMESTAMP_MS="${2:-}"; shift 2 ;;
+    *)                        _FILTERED_ARGS+=("$1");          shift   ;;
+  esac
+done
+set -- "${_FILTERED_ARGS[@]+"${_FILTERED_ARGS[@]}"}"
 
 filter_args "$@"; ARGS=("${CLEAN_ARGS[@]+"${CLEAN_ARGS[@]}"}")
 CAPTION="${ARGS[0]:?Usage: create-post.sh <caption> <social_account_ids_csv> [media_url] [scheduled_at]}"
@@ -272,9 +312,40 @@ ACCOUNTS_JSON=$(printf '%s' "$ACCOUNTS_CSV" | awk -F, '{
   printf "]"
 }')
 
+# --- Resolve THUMBNAIL_PATH → THUMBNAIL_URL via upload-media.sh (VAS-80) ---
+# THUMBNAIL_URL wins if both are set (caller passed a pre-hosted URL).
+if [ -n "$THUMBNAIL_PATH" ] && [ -z "$THUMBNAIL_URL" ]; then
+  if [ "${DRY_RUN}" = "1" ]; then
+    THUMBNAIL_URL="https://cdn.dry-run/thumbnail-placeholder"
+  else
+    if [ ! -f "$THUMBNAIL_PATH" ]; then
+      echo "{\"error\": \"thumbnail_not_found\", \"path\": \"${THUMBNAIL_PATH}\"}" >&2
+      exit 1
+    fi
+    THUMB_RESP=$("$DIR/upload-media.sh" "$THUMBNAIL_PATH" 2>/dev/null) || {
+      echo "{\"error\": \"thumbnail_upload_failed\", \"path\": \"${THUMBNAIL_PATH}\"}" >&2
+      exit 1
+    }
+    THUMBNAIL_URL=$(printf '%s' "$THUMB_RESP" \
+      | (command -v jq >/dev/null && jq -r '.media_url // empty' || echo ""))
+    if [ -z "$THUMBNAIL_URL" ]; then
+      echo "{\"error\": \"thumbnail_url_not_returned\", \"path\": \"${THUMBNAIL_PATH}\", \"upstream\": $(printf '%s' "$THUMB_RESP" | python3 -c "import sys,json;print(json.dumps(sys.stdin.read()))")}" >&2
+      exit 1
+    fi
+  fi
+fi
+
 MEDIA_JSON="null"
 if [ -n "$MEDIA_URL" ]; then
-  MEDIA_JSON="[{\"url\":\"${MEDIA_URL}\"}]"
+  MEDIA_OBJ="{\"url\":\"${MEDIA_URL}\""
+  if [ -n "$THUMBNAIL_URL" ]; then
+    MEDIA_OBJ="${MEDIA_OBJ},\"thumbnail_url\":\"${THUMBNAIL_URL}\""
+  fi
+  if [ -n "$THUMBNAIL_TIMESTAMP_MS" ]; then
+    MEDIA_OBJ="${MEDIA_OBJ},\"thumbnail_timestamp_ms\":${THUMBNAIL_TIMESTAMP_MS}"
+  fi
+  MEDIA_OBJ="${MEDIA_OBJ}}"
+  MEDIA_JSON="[${MEDIA_OBJ}]"
 fi
 
 SCHED_JSON="null"
@@ -305,9 +376,10 @@ fi
 
 # --- LAYER 4 WRITE: input-hash local ledger (authoritative record of success) ---
 if [ "${DRY_RUN}" != "1" ] && [ -n "$CREATED_POST_ID" ]; then
-  # Append content_hash as a 6th column — backward-compatible (old readers stop at 5 fields).
-  printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
-    "$(date +%s)" "$IDEMPOTENCY_KEY" "$CREATED_POST_ID" "$SORTED_ACCOUNTS" "${CAPTION:0:80}" "$CONTENT_HASH" \
+  # Append content_hash + thumbnail_url as columns 6/7 — backward-compatible
+  # (old readers using -F'\t' stop at the columns they need; trailing fields ignored).
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    "$(date +%s)" "$IDEMPOTENCY_KEY" "$CREATED_POST_ID" "$SORTED_ACCOUNTS" "${CAPTION:0:80}" "$CONTENT_HASH" "$THUMBNAIL_URL" \
     >> "$LEDGER_FILE"
 fi
 

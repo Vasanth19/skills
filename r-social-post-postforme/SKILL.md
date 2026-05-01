@@ -47,7 +47,7 @@ Run any script with `--dry-run` to print the curl command without executing.
 |---|---|
 | `list-accounts.sh` | `./list-accounts.sh` — list all connected social accounts |
 | `get-auth-url.sh` | `./get-auth-url.sh <platform> [external_id] [redirect_url]` — get OAuth URL to connect an account |
-| `create-post.sh` | `./create-post.sh <caption> <social_account_ids> [media_url] [scheduled_at]` — publish or schedule a post |
+| `create-post.sh` | `./create-post.sh <caption> <social_account_ids> [media_url] [scheduled_at] [--thumbnail <path>\|--thumbnail-url <url>\|--thumbnail-timestamp-ms <ms>]` — publish or schedule a post; optional custom thumbnail (VAS-80) |
 | `list-posts.sh` | `./list-posts.sh [limit]` — list posts |
 | `get-post.sh` | `./get-post.sh <post_id>` — fetch a single post |
 | `delete-post.sh` | `./delete-post.sh <post_id>` — delete/cancel a post |
@@ -56,6 +56,24 @@ Run any script with `--dry-run` to print the curl command without executing.
 | `upload-media.sh` | `./upload-media.sh <file>` — full upload flow (get URL + PUT file) |
 | `create-webhook.sh` | `./create-webhook.sh <url> <event_types>` — register a webhook |
 | `test.sh` | `./test.sh` — validates all scripts shape-check without network calls |
+
+## Custom thumbnails (VAS-80)
+
+`create-post.sh` supports three ways to attach a custom thumbnail to a video post:
+
+| Form | Behavior |
+|---|---|
+| `--thumbnail <local_path>` | Uploads the file via `upload-media.sh` (PostForMe signed URL), then sets `media[].thumbnail_url`. |
+| `--thumbnail-url <url>` | Pre-hosted URL — passed straight through. Wins over `--thumbnail` if both set. |
+| `--thumbnail-timestamp-ms <ms>` | Tells the platform to use a frame at this offset as the thumbnail. Alternative to URL. |
+
+Equivalent env vars: `THUMBNAIL_PATH`, `THUMBNAIL_URL`, `THUMBNAIL_TIMESTAMP_MS`.
+
+**Platform support (verified):** IG, Facebook, LinkedIn, TikTok honor `thumbnail_url`. Pinterest accepts but applies platform processing.
+
+**YouTube long-form:** custom thumbnails are blocked at the YouTube platform layer for non-verified channels regardless of API support. YT Studio manual upload remains required for that platform — wrapper change does NOT remove that step. CMO's "YouTube Studio post-publish checklist" gotcha still applies.
+
+**Ledger:** thumbnail URL is recorded as the 7th column of `~/.posting-tools-ledger/postforme.tsv` for analytics.
 
 ## Core Concepts
 

@@ -8,6 +8,8 @@ allowed-tools: Bash, Read, Write
 
 # pipeline-viral-reel — Viral Reel Recreation
 
+> **`--style ai-generated` BACKEND STALE** — Higgsfield and Veo references in Steps 3 and 5 need updating to current model APIs before use. `--style avatar` (HeyGen green-screen path) is fully current.
+
 Take a viral format → adapt to brand → deliver 9:16 short.
 
 ## Arguments
