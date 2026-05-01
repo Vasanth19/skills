@@ -50,7 +50,6 @@ Composable tools used by any agent. Claude auto-invokes when the task matches.
 | `c-html-gfx` | Any agent | HTML graphics, banners, explainer slides, headless Chrome screenshots, Remotion |
 | `c-web-capture` | Any agent | Playwright website scroll capture, URL discovery |
 | `c-cloud-media` | Any agent | Cloudflare R2 upload, CDN management, video library lookup |
-| `c-fal-ai` | Any agent | Fal.ai image/video generation API |
 | `c-kie-ai` | Any agent | KIE AI platform integration |
 | `c-replicate` | Any agent | Replicate model running and API operations |
 
@@ -76,7 +75,6 @@ Complete production pipelines. Invoked by Creative Director or Video Producer ag
 | `/p-gfx-short` | 9:16 faceless GFX short with voiceover |
 | `/p-ai-character` | 9:16 AI character short — human, plush, mascot, or fantasy |
 | `/p-hook-reel` | 9:16 hook-jacked reel with brand continuation |
-| `/p-shared-avatar` | One HeyGen render shared across multiple productions |
 | `/p-snap-bg-swap` | Finger-snap background swap reel |
 | `/p-viral-reel` | Viral reel recreation — `--style avatar` or `--style ai-generated` |
 | `/p-longform-visual` | Tutorial video with Remotion GFX + slides |
@@ -87,9 +85,7 @@ Complete production pipelines. Invoked by Creative Director or Video Producer ag
 | `/p-linkedin-carousel` | LinkedIn PDF carousel |
 | `/p-banner` | Platform social media banners |
 | `/p-manual-execution` | Recover stuck CFW executions |
-| `/p-demo-short` | Short-form demo distribution from raw assets |
-| `/p-demo-long` | Long-form demo distribution from raw assets |
-| `/p-demo-avatar` | Demo video with HeyGen API avatar automation |
+| `/p-demo` | Short, long, or avatar demo video from raw assets |
 
 ## Usage
 

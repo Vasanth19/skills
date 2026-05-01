@@ -1,11 +1,13 @@
 ---
 name: c-kie-ai
-description: Kie.ai video and image generation. Use for Hailuo i2v, Sora-2, Kling, WAN, Seedance, Veo-3, GPT Image, Imagen 4, Z-Image, Grok-imagine, and InfiniTalk via kie.ai API. Replaces FloeAPI as primary i2v provider.
-when_to_use: Trigger on kie.ai, KIE_AI_API_KEY, Hailuo video, hailuo i2v, Sora-2 video, Kling avatar, InfiniTalk, WAN video kie, Seedance kie, GPT image kie, Imagen 4 kie, Z-image, grok-imagine, image-to-video production.
+description: AI image and video generation via kie.ai and fal.ai. Use for FLUX image gen, Hailuo i2v, Sora-2, Kling, WAN, Seedance, Veo-3, GPT Image, Imagen 4, Z-Image, Grok-imagine, InfiniTalk, MiniMax video. Direct API calls — replaces FloeAPI as primary i2v provider.
+when_to_use: Trigger on kie.ai, KIE_AI_API_KEY, Hailuo video, hailuo i2v, Sora-2 video, Kling avatar, InfiniTalk, WAN video kie, Seedance kie, GPT image kie, Imagen 4 kie, Z-image, grok-imagine, image-to-video production, fal.ai, FAL_KEY, FLUX image, fal queue.
 allowed-tools: Bash
 ---
 
-# Kie.ai — Direct API
+# AI Media Generation — kie.ai + fal.ai
+
+Two providers, one skill. Use kie.ai as primary (largest model catalog). Use fal.ai for FLUX image gen and queue-based video when needed.
 
 ## Step 0 — Always run first (model cache auto-sync)
 
@@ -37,6 +39,8 @@ for line in sys.stdin:
 
 ---
 
+## Provider A: kie.ai (Primary)
+
 **Base:** `https://api.kie.ai/api/v1`
 **Auth:** `Authorization: Bearer $KIE_AI_API_KEY`
 **Key source:** `~/.gsai/secrets.env` → `KIE_AI_API_KEY`
@@ -45,14 +49,12 @@ for line in sys.stdin:
 source ~/.gsai/secrets.env
 ```
 
-⚠️ **Kie.ai cannot fetch external URLs.** All `image_url` fields must be base64 data URIs:
+⚠️ **kie.ai cannot fetch external URLs.** All `image_url` fields must be base64 data URIs:
 ```bash
 IMAGE_B64=$(python3 -c "import base64; print('data:image/png;base64,' + base64.b64encode(open('$IMG','rb').read()).decode())")
 ```
 
----
-
-## Create Task (standard endpoint)
+### Create Task (standard endpoint)
 
 ```bash
 RESULT=$(curl -s -X POST "https://api.kie.ai/api/v1/jobs/createTask" \
@@ -62,7 +64,7 @@ RESULT=$(curl -s -X POST "https://api.kie.ai/api/v1/jobs/createTask" \
 TASK_ID=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['taskId'])")
 ```
 
-## Poll Status
+### Poll Status
 
 ```bash
 while true; do
@@ -83,14 +85,12 @@ print(j2.loads(d['resultJson'])['resultUrls'][0])
 ")
 ```
 
----
-
-## Model Reference
+### Model Reference (kie.ai)
 
 | Key | `model` value | Use for | Required input fields |
 |-----|--------------|---------|----------------------|
 | Hailuo t2v | `hailuo/02-text-to-video-pro` | MiniMax text→video | `prompt` |
-| Hailuo i2v | `hailuo/02-image-to-video-pro` | MiniMax image→video (labubu-shorts) | `prompt`, `image_url` (base64) |
+| Hailuo i2v | `hailuo/02-image-to-video-pro` | MiniMax image→video | `prompt`, `image_url` (base64) |
 | Sora-2 t2v | `sora-2-text-to-video` | Sora 2 text→video | `prompt`, `aspect_ratio`, `n_frames` |
 | Sora-2 i2v | `sora-2-image-to-video` | Sora 2 image→video | `prompt`, `image_urls` (array, base64), `aspect_ratio` |
 | Kling i2v | `kling/v2-5-turbo-image-to-video-pro` | Kling 2.5 i2v | `prompt`, `image_url`, `duration`, `aspect_ratio` |
@@ -138,7 +138,103 @@ echo "Task: $TASK_ID"
 
 ---
 
-## Veo 3 (different endpoint)
+## Provider B: fal.ai (FLUX + Async Queue)
+
+**Use when:** you need FLUX image gen, or prefer queue-based async for video.
+**Base:** `https://fal.run` (sync image) / `https://queue.fal.run` (async video)
+**Auth:** `Authorization: Key $FAL_KEY`
+**Key source:** `~/.gsai/secrets.env` → `FAL_KEY`
+
+```bash
+source ~/.gsai/secrets.env
+```
+
+### Image Generation (synchronous)
+
+```bash
+curl -s -X POST "https://fal.run/c-fal-ai/flux/dev" \
+  -H "Authorization: Key $FAL_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "your prompt here",
+    "image_size": "landscape_16_9",
+    "num_images": 1,
+    "output_format": "png"
+  }' | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['images'][0]['url'])"
+```
+
+**Aspect ratio enum** (`image_size`): `square_hd` | `landscape_16_9` | `portrait_16_9` | `landscape_4_3` | `portrait_4_3`
+
+**Image models:** `c-fal-ai/flux/dev` (quality) · `c-fal-ai/flux/schnell` (fast)
+
+### Video Generation (async queue)
+
+**Pattern: submit → poll status_url → fetch response_url**
+
+#### Step 1 — Submit
+
+```bash
+RESULT=$(curl -s -X POST "https://queue.fal.run/$MODEL" \
+  -H "Authorization: Key $FAL_KEY" \
+  -H "Content-Type: application/json" \
+  -d "$PAYLOAD")
+STATUS_URL=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['status_url'])")
+RESPONSE_URL=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['response_url'])")
+```
+
+#### Step 2 — Poll (every 5s until COMPLETED)
+
+```bash
+while true; do
+  STATUS=$(curl -s "$STATUS_URL" -H "Authorization: Key $FAL_KEY" \
+    | python3 -c "import sys,json; print(json.load(sys.stdin).get('status',''))")
+  [ "$STATUS" = "COMPLETED" ] && break
+  [ "$STATUS" = "FAILED" ] && echo "FAILED" && exit 1
+  sleep 5
+done
+```
+
+#### Step 3 — Get output URL
+
+```bash
+VIDEO_URL=$(curl -s "$RESPONSE_URL" -H "Authorization: Key $FAL_KEY" \
+  | python3 -c "import sys,json; d=json.load(sys.stdin); print((d.get('video') or d.get('videos',[{}])[0]).get('url',''))")
+```
+
+### fal.ai Model Reference
+
+| Key | fal endpoint | Use for |
+|-----|-------------|---------|
+| Image | `c-fal-ai/flux/dev` | Quality image gen |
+| Image | `c-fal-ai/flux/schnell` | Fast image gen |
+| Video t2v | `c-fal-ai/kling-video/v3/pro/text-to-video` | Kling 3 |
+| Video i2v | `c-fal-ai/kling-video/v3/pro/image-to-video` | Kling 3 i2v |
+| Video t2v | `c-fal-ai/veo3` | Veo 3 |
+| Video t2v | `c-fal-ai/veo3.1` | Veo 3.1 |
+| Video i2v | `c-fal-ai/veo3.1/image-to-video` | Veo 3.1 i2v |
+| Video t2v | `bytedance/seedance-2.0/text-to-video` | Seedance 2 |
+| Video i2v | `bytedance/seedance-2.0/image-to-video` | Seedance 2 i2v |
+| Video t2v | `c-fal-ai/wan/v2.2-a14b/text-to-video` | WAN 2.2 |
+| Video i2v | `c-fal-ai/wan/v2.2-a14b/image-to-video` | WAN 2.2 i2v |
+| Video t2v | `c-fal-ai/minimax/video-01-live` | MiniMax (Hailuo) |
+
+### Common Payload Fields (video)
+
+```json
+{
+  "prompt": "...",
+  "image_url": "https://... or data:image/png;base64,...",
+  "aspect_ratio": "16:9",
+  "duration": 5,
+  "resolution": "720p"
+}
+```
+
+Seedance duration range: 4–15s. Veo/Kling duration: 5 or 10s.
+
+---
+
+## Veo 3 (kie.ai — different endpoint)
 
 Veo 3 uses `/veo/generate` and `/veo/record-info`:
 
@@ -160,9 +256,33 @@ curl -s "https://api.kie.ai/api/v1/veo/record-info?taskId=$TASK_ID" \
 
 ## Gotchas
 
+**kie.ai:**
 - `image_url` must be base64 data URI — kie.ai **cannot** fetch external URLs
 - `sora-2-*` model names use hyphens, NOT slashes (unlike other models)
 - Polling state: `success`/`completed`/`done` → done; `fail`/`failed`/`error` → failed
 - Error code `402` = insufficient credits; `401` = bad API key
 - Full model registry: `/Users/vasanth/Code/video-apps/floe/src/integrations/ai/c-kie-ai/models/index.ts`
 - DISCONTINUED: `google/nano-banana-pro` returns 422 since 2026-02-20
+
+**fal.ai:**
+- `status_url` and `response_url` use `queue.fal.run` domain — same `Authorization: Key` header required
+- Seedance 2.0 duration must be passed as a **string** (`"5"` not `5`)
+- MiniMax Live model only accepts `prompt` + optional `image_url` — no `aspect_ratio`/`duration` overrides
+- Full model registry in Floe: `/Users/vasanth/Code/video-apps/floe/src/integrations/ai/fal/media-gen/models.ts`
+
+---
+
+## Zoom Presets
+
+| Asset type | Zoom |
+|-----------|------|
+| AI whiteboard | `1.1x` |
+| AI cinematic/photo | `1.15x` |
+| App/screen/mobile | `none` |
+| Static graphics | `1.15x` |
+| Motion graphics | `none` |
+
+## Output Paths
+
+- AI images: `{brand_path}/creatives/brolls/images/{id}-{desc}.png`
+- AI clips: `{brand_path}/creatives/brolls/ai/{id}-{desc}.mp4`

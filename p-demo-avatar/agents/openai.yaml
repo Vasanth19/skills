@@ -1,9 +1,0 @@
-interface:
-  display_name: "Demo With Avatar Via HGAPI"
-  short_description: "Automated demo videos with HeyGen API avatars"
-  brand_color: "#22C55E"
-  default_prompt: "Use $demo-with-avatar-via-hgapi to create a complete demo video with script, audio, HeyGen API avatar clips, Remotion composition, captions, and final QA."
-
-policy:
-  allow_implicit_invocation: true
-
