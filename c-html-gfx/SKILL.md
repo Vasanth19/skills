@@ -65,7 +65,7 @@ ffmpeg -loop 1 -i "$PNG" \
 
 **MANDATORY:** Use shared Chromium — NEVER download per-production (175MB):
 ```bash
-export REMOTION_BROWSER_EXECUTABLE="/Users/vasanth/Library/Caches/remotion-shared/chrome-headless-shell/mac-arm64/chrome-headless-shell-mac-arm64/chrome-headless-shell"
+export REMOTION_BROWSER_EXECUTABLE="${REMOTION_BROWSER_EXECUTABLE:-$(which chromium-browser 2>/dev/null || which chromium 2>/dev/null || which google-chrome 2>/dev/null)}"
 npm ci --omit=optional
 npx remotion render "$COMP_ID" "$OUT.mp4" --props='$JSON'
 ```

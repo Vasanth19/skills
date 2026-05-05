@@ -37,7 +37,7 @@ curl -s -o "$OUTPUT_PATH" "$AUDIO_URL"
 |-------|----|-------|
 | Crystal | `pq3wL6Xv3fuEM14W6ZCg` | Clear, professional female |
 | Layla | `ujoCPuNXFKVxZSRRrMHv` | Warm, conversational female |
-| Vasanth | `iXo9OlmDD0eO2j9eo7sM` | Owner's voice clone |
+| Vasanth | `$ELEVENLABS_DEFAULT_VOICE_ID` | Owner's voice clone |
 
 ## TTS — Direct ElevenLabs (Fallback)
 
@@ -57,7 +57,7 @@ curl -s -X POST "https://api.elevenlabs.io/v1/text-to-speech/$VOICE_ID" \
 ## MLX Whisper Transcription
 
 ```bash
-/Users/vasanth/Library/Python/3.10/bin/mlx_whisper \
+mlx_whisper \
   --model mlx-community/whisper-large-v3-turbo \
   --output-format all \
   --output-dir "$OUTPUT_DIR" \

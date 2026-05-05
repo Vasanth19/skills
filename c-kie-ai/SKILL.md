@@ -12,14 +12,14 @@ Two providers, one skill. Use kie.ai as primary (largest model catalog). Use fal
 ## Step 0 — Always run first (model cache auto-sync)
 
 ```bash
-bash /Users/vasanth/Code/skills/c-kie-ai/sync-models.sh
+bash ${SKILLS_DIR:-$HOME/.claude/skills}/c-kie-ai/sync-models.sh
 ```
 
 Refreshes `models.jsonl` if > 4 days old. Query available models:
 
 ```bash
 # List all active models
-tail -n +2 /Users/vasanth/Code/skills/c-kie-ai/models.jsonl | python3 -c "
+tail -n +2 ${SKILLS_DIR:-$HOME/.claude/skills}/c-kie-ai/models.jsonl | python3 -c "
 import sys,json
 for line in sys.stdin:
     m=json.loads(line)
@@ -28,7 +28,7 @@ for line in sys.stdin:
 "
 
 # Filter by operation (e.g. image-to-video)
-tail -n +2 /Users/vasanth/Code/skills/c-kie-ai/models.jsonl | python3 -c "
+tail -n +2 ${SKILLS_DIR:-$HOME/.claude/skills}/c-kie-ai/models.jsonl | python3 -c "
 import sys,json
 for line in sys.stdin:
     m=json.loads(line)
@@ -261,14 +261,14 @@ curl -s "https://api.kie.ai/api/v1/veo/record-info?taskId=$TASK_ID" \
 - `sora-2-*` model names use hyphens, NOT slashes (unlike other models)
 - Polling state: `success`/`completed`/`done` → done; `fail`/`failed`/`error` → failed
 - Error code `402` = insufficient credits; `401` = bad API key
-- Full model registry: `/Users/vasanth/Code/video-apps/floe/src/integrations/ai/c-kie-ai/models/index.ts`
+- Full model registry: see `models.jsonl` in this skill directory
 - DISCONTINUED: `google/nano-banana-pro` returns 422 since 2026-02-20
 
 **fal.ai:**
 - `status_url` and `response_url` use `queue.fal.run` domain — same `Authorization: Key` header required
 - Seedance 2.0 duration must be passed as a **string** (`"5"` not `5`)
 - MiniMax Live model only accepts `prompt` + optional `image_url` — no `aspect_ratio`/`duration` overrides
-- Full model registry in Floe: `/Users/vasanth/Code/video-apps/floe/src/integrations/ai/fal/media-gen/models.ts`
+- Full model registry: see `models.jsonl` in this skill directory
 
 ---
 

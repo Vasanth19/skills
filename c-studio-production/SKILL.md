@@ -106,11 +106,11 @@ DASH="$PROD/dashboard.html"
 # Step IDs: 1=script, 2=tts, 3=c-broll, 4=plan, 5=avatar, 6=composite, 7=final
 ```
 
-Dashboard lives at `{production}/dashboard.html`. The root studio dashboard is at `/Users/vasanth/MarketingMr/creative-studio/dashboard.html`.
+Dashboard lives at `{production}/dashboard.html`. The root studio dashboard is at `${STUDIO_ROOT}/dashboard.html`.
 
 Start dashboard server from project root:
 ```bash
-cd /Users/vasanth/MarketingMr/creative-studio && nohup python3 -m http.server 8889 > /tmp/dashboard-server.log 2>&1 & disown
+cd "${STUDIO_ROOT}" && nohup python3 -m http.server 8889 > /tmp/dashboard-server.log 2>&1 & disown
 ```
 
 ## Snap Detection (for bg-swap reel)

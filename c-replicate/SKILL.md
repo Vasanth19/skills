@@ -10,14 +10,14 @@ allowed-tools: Bash
 ## Step 0 — Always run first (model cache auto-sync)
 
 ```bash
-bash /Users/vasanth/Code/skills/c-replicate/sync-models.sh
+bash ${SKILLS_DIR:-$HOME/.claude/skills}/c-replicate/sync-models.sh
 ```
 
 Queries live Replicate API (first 3 pages ≈ 300 models). Refreshes if > 4 days old. Skips silently if no API token yet.
 
 ```bash
 # Search models by keyword
-tail -n +2 /Users/vasanth/Code/skills/c-replicate/models.jsonl | python3 -c "
+tail -n +2 ${SKILLS_DIR:-$HOME/.claude/skills}/c-replicate/models.jsonl | python3 -c "
 import sys,json
 kw = 'flux'  # change this
 for line in sys.stdin:
@@ -27,7 +27,7 @@ for line in sys.stdin:
 "
 
 # Get latest version SHA for a specific model
-tail -n +2 /Users/vasanth/Code/skills/c-replicate/models.jsonl | python3 -c "
+tail -n +2 ${SKILLS_DIR:-$HOME/.claude/skills}/c-replicate/models.jsonl | python3 -c "
 import sys,json
 for line in sys.stdin:
     m=json.loads(line)

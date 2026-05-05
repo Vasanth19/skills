@@ -284,11 +284,14 @@ fi
 
 # --- Pre-check LAYER 5 (DEGRADED — server external_id not persisted by PostForMe as of 2026-04-20):
 # Keep this check in case PostForMe fixes external_id persistence — belt and suspenders.
+# Pagination fix (VAS-403, 2026-05-04): use external_id query filter instead of full-scan
+# at limit=50. The filter returns only matching posts regardless of total count, so no
+# pagination needed here. Previous limit=50 scan silently missed matches when >50 posts existed.
 if [ "$IDEMPOTENCY" = "on" ] && [ "${DRY_RUN}" != "1" ]; then
   EXISTING=$(curl -sS -H "Authorization: Bearer ${POSTFORME_API_KEY}" \
-    "${POSTFORME_BASE_URL}/${POSTFORME_API_VERSION}/social-posts?limit=50" \
+    "${POSTFORME_BASE_URL}/${POSTFORME_API_VERSION}/social-posts?external_id=mggpub-${IDEMPOTENCY_KEY}&limit=5" \
     | (command -v jq >/dev/null \
-         && jq -r ".data[]? | select(.external_id==\"mggpub-${IDEMPOTENCY_KEY}\") | .id" \
+         && jq -r ".data[0]?.id // empty" \
          || echo "") )
   if [ -n "$EXISTING" ]; then
     echo "{\"deduped\": true, \"existing_post_id\": \"${EXISTING}\", \"source\": \"server_external_id\", \"idempotency_key\": \"mggpub-${IDEMPOTENCY_KEY}\"}" >&2
@@ -412,12 +415,15 @@ if [ "${DRY_RUN}" != "1" ] && [ -n "${BRAND:-}" ] && declare -f ledger_record_po
 fi
 
 # --- Post-create verification: count posts matching our external_id ---
+# Pagination fix (VAS-403, 2026-05-04): use external_id filter so this check works
+# correctly regardless of total post count. Previous limit=10 scan only checked the
+# 10 most-recent posts — any duplicate outside that window was invisible.
 if [ "${DRY_RUN}" != "1" ]; then
   sleep 1
   COUNT=$(curl -sS -H "Authorization: Bearer ${POSTFORME_API_KEY}" \
-    "${POSTFORME_BASE_URL}/${POSTFORME_API_VERSION}/social-posts?limit=10" \
+    "${POSTFORME_BASE_URL}/${POSTFORME_API_VERSION}/social-posts?external_id=mggpub-${IDEMPOTENCY_KEY}&limit=5" \
     | (command -v jq >/dev/null \
-         && jq "[.data[]? | select(.external_id==\"mggpub-${IDEMPOTENCY_KEY}\")] | length" \
+         && jq ".meta.total // (.data | length)" \
          || echo "1") )
   if [ "${COUNT:-1}" -gt 1 ]; then
     echo "" >&2

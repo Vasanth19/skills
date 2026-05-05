@@ -1,0 +1,10 @@
+# Agent-specific symlink dirs (created by npx skills add)
+.agents/
+.claude/
+.pi/
+.windsurf/
+skills/
+node_modules/
+
+# skills CLI artifacts
+skills-lock.json
