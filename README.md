@@ -34,58 +34,68 @@ Instead, register skills in **Paperclip** and assign them to specific agents via
 
 **Rule:** Register skills in Paperclip. Assign only the skills an agent role actually needs.
 
+## 📚 **FIND THE RIGHT SKILL — START HERE**
+
+**→ [`SKILLS-CATALOG.md`](SKILLS-CATALOG.md)** — Your decision tree by output type + AI method
+
+**Quick filters:**
+- **Short-form reels (9:16)?** → See "Short-Form Reels" section
+- **Long-form video (16:9)?** → See "Long-Form Videos" section
+- **Images/graphics (HTML, AI)?** → See "Images & Graphics" section
+- **Social publishing?** → See "Publishing & Social Workflows" section
+- **A specific AI method (HeyGen, Higgsfield, Gemini)?** → See "Decision Tree" → search by AI
+
+**Agent integrations:**
+- **skills.json** — Machine-readable metadata for agent queries (search by output type, AI method, platforms)
+- **LEARNINGS-INDEX.md** — Aggregated feedback from all skills (what works, what's stable, what needs attention)
+
+---
+
 ## Custom Tools (c-) — Auto-invoked Building Blocks
 
 Composable tools used by any agent. Claude auto-invokes when the task matches.
 
-| Skill | Used By | Description |
-|-------|---------|-------------|
-| `c-ffmpeg` | Any agent | Video/audio operations: composite, colorkey, PIP, portrait/landscape layouts, loudnorm, delivery |
-| `c-heygen` | Any agent | HeyGen avatar rendering via API, MCP, browser, or human delegation |
-| `c-broll` | Any agent | B-roll library management, script matching, placement planning, alignment verification |
-| `c-studio-audio` | Any agent | TTS (ElevenLabs via Floe), SFX, MLX Whisper transcription, loudnorm |
-| `c-studio-script` | Any agent | Script writing (VSL/short), TTS preprocessing, voice adaptation, duration analysis |
-| `c-studio-production` | Any agent | Production folder structure, delivery checklist, hook extraction, snap detection |
-| `c-ai-media` | Any agent | AI image/video generation: Gemini, Higgsfield Cinema, RunPod InfiniteTalk, Veo |
-| `c-html-gfx` | Any agent | HTML graphics, banners, explainer slides, headless Chrome screenshots, Remotion |
-| `c-web-capture` | Any agent | Playwright website scroll capture, URL discovery |
-| `c-cloud-media` | Any agent | Cloudflare R2 upload, CDN management, video library lookup |
-| `c-kie-ai` | Any agent | KIE AI platform integration |
-| `c-replicate` | Any agent | Replicate model running and API operations |
+**[See SKILLS-CATALOG.md → Supporting Tools for full table]**
+
+Core tools:
+- `c-ffmpeg` — All video compositing (PIP, chroma key, concat, loudnorm, etc.)
+- `c-heygen` — HeyGen avatar green-screen rendering
+- `c-broll` — B-roll library management & planning
+- `c-studio-audio` — TTS voiceover + transcription + loudnorm
+- `c-studio-script` — Script preparation & voice adaptation
+- `c-studio-production` — Folder structure + 12-point delivery checklist
+- `c-ai-media` — AI image/video (Gemini, Higgsfield, Veo, RunPod)
+- `c-html-gfx` — HTML graphics & banners (headless Chrome)
+- `c-web-capture` — Website scroll capture (Playwright)
+- `c-cloud-media` — Cloudflare R2 upload & CDN
+- `c-kie-ai`, `c-replicate`, `c-learnloop` — Platform integrations
 
 ## Role Workflows (r-) — Intentional Human Actions
 
 Workflows a specific role performs. Kept auto-invokable so Paperclip agents can trigger them.
 
-| Skill | Typical Role | Description |
-|-------|--------------|-------------|
-| `r-social-post-outstand` | Social Manager / Marketer | Post via Outstand.so (10 platforms, usage-based) |
-| `r-social-post-postforme` | Social Manager / Marketer | Post via PostForMe (9 platforms, pay-per-post) |
-| `r-social-post-upload` | Social Manager / Marketer | Post via Upload-Post (multi-brand support) |
-| `r-x-thread` | Social Manager / Marketer | Post multi-tweet threads via X API v2 |
+**[See SKILLS-CATALOG.md → Publishing & Social Workflows for full table]**
+
+- `r-social-post-outstand` — 10 platforms via Outstand.so
+- `r-social-post-postforme` — 9 platforms via PostForMe
+- `r-social-post-upload` — Multi-brand via Upload-Post
+- `r-x-thread` — Native Twitter thread chaining (X API v2)
+- `r-youtube-data-api` — YouTube metadata & analytics
 
 ## Project Pipelines (p-) — End-to-End Deliverables
 
 Complete production pipelines. Invoked by Creative Director or Video Producer agents.
 
-| Pipeline | Produces |
-|----------|---------|
-| `/p-vsl` | 16:9 longform VSL with avatar PIP + b-roll |
-| `/p-avatar-short` | 9:16 avatar short with portrait composite |
-| `/p-gfx-short` | 9:16 faceless GFX short with voiceover |
-| `/p-ai-character` | 9:16 AI character short — human, plush, mascot, or fantasy |
-| `/p-hook-reel` | 9:16 hook-jacked reel with brand continuation |
-| `/p-snap-bg-swap` | Finger-snap background swap reel |
-| `/p-viral-reel` | Viral reel recreation — `--style avatar` or `--style ai-generated` |
-| `/p-longform-visual` | Tutorial video with Remotion GFX + slides |
-| `/p-broll` | B-roll library — `capture`, `extract`, or `upload` |
-| `/p-broll-media` | Embed b-roll into CFW content variant |
-| `/p-gfx-batch` | Batch HTML GFX card production |
-| `/p-thumbnail` | YouTube thumbnail variants |
-| `/p-linkedin-carousel` | LinkedIn PDF carousel |
-| `/p-banner` | Platform social media banners |
-| `/p-manual-execution` | Recover stuck CFW executions |
-| `/p-demo` | Short, long, or avatar demo video from raw assets |
+**[See SKILLS-CATALOG.md for full breakdown by output type]**
+
+**Short-form (9:16):**
+`p-avatar-short`, `p-gfx-short`, `p-gfx-batch`, `p-ai-character`, `p-hook-reel`, `p-viral-reel`, `p-snap-bg-swap`
+
+**Long-form (16:9):**
+`p-vsl`, `p-longform-visual`, `p-demo`
+
+**Graphics/Publishing:**
+`p-thumbnail`, `p-linkedin-carousel`, `p-banner`, `p-broll`, `p-broll-media`, `p-manual-execution`
 
 ## Usage
 

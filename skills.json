@@ -1,0 +1,630 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "lastUpdated": "2026-05-09",
+    "totalSkills": 35,
+    "catalog": "SKILLS-CATALOG.md",
+    "learnings": "LEARNINGS-INDEX.md"
+  },
+  "skills": {
+    "p-avatar-short": {
+      "type": "pipeline",
+      "category": "short-form",
+      "format": "9:16 vertical",
+      "description": "Avatar PIP short with portrait composite",
+      "aiMethod": "HeyGen green-screen",
+      "inputs": ["brand", "script"],
+      "outputs": ["9:16 avatar PIP video"],
+      "duration": "30s-60s",
+      "dependencies": ["c-heygen", "c-studio-script", "c-ffmpeg", "c-studio-production"],
+      "checkpoints": ["script approval", "HeyGen job ID confirmation"],
+      "learningsFile": "p-avatar-short/LEARNINGS.md",
+      "activeFeedback": ["HeyGen render is user-triggered", "Green-screen quality verification required"]
+    },
+    "p-avatar-screenshot-broll": {
+      "type": "pipeline",
+      "category": "short-form",
+      "format": "9:16 vertical",
+      "description": "Avatar PIP short with website screenshots",
+      "aiMethod": "HeyGen + Playwright screenshot",
+      "inputs": ["brand", "script", "website URL"],
+      "outputs": ["9:16 avatar PIP with screenshot b-roll"],
+      "duration": "30s-60s",
+      "dependencies": ["c-heygen", "c-web-capture", "c-ffmpeg"],
+      "checkpoints": ["screenshot plan review"],
+      "learningsFile": "p-avatar-screenshot-broll/LEARNINGS.md"
+    },
+    "p-gfx-short": {
+      "type": "pipeline",
+      "category": "short-form",
+      "format": "9:16 vertical",
+      "description": "Faceless GFX short with voiceover",
+      "aiMethod": "HTML graphics + ElevenLabs TTS",
+      "inputs": ["brand", "script"],
+      "outputs": ["9:16 GFX short with animated overlays"],
+      "duration": "15s-60s",
+      "dependencies": ["c-html-gfx", "c-studio-audio", "c-ffmpeg"],
+      "checkpoints": ["GFX preview"],
+      "learningsFile": "p-gfx-short/LEARNINGS.md"
+    },
+    "p-gfx-batch": {
+      "type": "pipeline",
+      "category": "short-form",
+      "format": "9:16 vertical",
+      "description": "Batch GFX short production (10+)",
+      "aiMethod": "HTML graphics (batch mode) + Ken Burns zoom",
+      "inputs": ["brand", "10+ script variants"],
+      "outputs": ["10+ GFX shorts (parallel)"],
+      "duration": "15s-60s per short",
+      "dependencies": ["c-html-gfx", "c-studio-audio", "c-ffmpeg"],
+      "checkpoints": ["batch preview"],
+      "learningsFile": "p-gfx-batch/LEARNINGS.md",
+      "parallelizable": true
+    },
+    "p-ai-character": {
+      "type": "pipeline",
+      "category": "short-form",
+      "format": "9:16 vertical",
+      "description": "AI character short (human/plush/mascot/fantasy)",
+      "aiMethod": "Higgsfield Cinema + Veo talking head",
+      "inputs": ["brand", "script", "style (human/plush/mascot/fantasy)"],
+      "outputs": ["9:16 AI character video"],
+      "duration": "15s-60s",
+      "dependencies": ["c-ai-media", "c-studio-script", "c-ffmpeg"],
+      "checkpoints": ["character reference approval"],
+      "learningsFile": "p-ai-character/LEARNINGS.md"
+    },
+    "p-hook-reel": {
+      "type": "pipeline",
+      "category": "short-form",
+      "format": "9:16 vertical",
+      "description": "Hook-jacked reel with brand continuation",
+      "aiMethod": "B-roll compositing",
+      "inputs": ["viral hook", "brand content"],
+      "outputs": ["9:16 hook + brand CTA reel"],
+      "duration": "15s-60s",
+      "dependencies": ["c-broll", "c-ffmpeg", "c-studio-production"],
+      "checkpoints": ["hook authenticity check"],
+      "learningsFile": "p-hook-reel/LEARNINGS.md"
+    },
+    "p-viral-reel": {
+      "type": "pipeline",
+      "category": "short-form",
+      "format": "9:16 vertical",
+      "description": "Viral reel recreation (avatar or AI-generated)",
+      "aiMethod": "HeyGen green-screen OR Higgsfield+Veo",
+      "inputs": ["source URL", "brand", "style (avatar or ai-generated)"],
+      "outputs": ["9:16 viral recreation"],
+      "duration": "15s-60s",
+      "dependencies": ["c-heygen", "c-ai-media", "c-studio-script", "c-ffmpeg"],
+      "checkpoints": ["script adaptation approval"],
+      "learningsFile": "p-viral-reel/LEARNINGS.md",
+      "activeFeedback": [
+        "avatar style is production-ready",
+        "ai-generated style needs Higgsfield/Veo API update"
+      ]
+    },
+    "p-snap-bg-swap": {
+      "type": "pipeline",
+      "category": "short-form",
+      "format": "9:16 vertical",
+      "description": "Finger-snap background swap reel",
+      "aiMethod": "B-roll background replacement",
+      "inputs": ["original video", "new background b-roll"],
+      "outputs": ["9:16 snap BG swap effect"],
+      "duration": "15s-60s",
+      "dependencies": ["c-broll", "c-ffmpeg"],
+      "checkpoints": ["snap timing verification"],
+      "learningsFile": "p-snap-bg-swap/LEARNINGS.md"
+    },
+    "p-vsl": {
+      "type": "pipeline",
+      "category": "long-form",
+      "format": "16:9 landscape",
+      "description": "Full VSL longform with avatar PIP + b-roll + captions",
+      "aiMethod": "HeyGen avatar PIP + b-roll compositing",
+      "inputs": ["brand", "script (5-15 min)"],
+      "outputs": ["16:9 VSL: avatar + b-roll + SFX + captions + loudnorm"],
+      "duration": "5-15 min",
+      "dependencies": [
+        "c-heygen",
+        "c-studio-script",
+        "c-studio-audio",
+        "c-broll",
+        "c-ai-media",
+        "c-html-gfx",
+        "c-web-capture",
+        "c-ffmpeg",
+        "c-studio-production"
+      ],
+      "checkpoints": [
+        "script approval (MANDATORY)",
+        "b-roll plan review (MANDATORY)",
+        "delivery checklist (12-point)"
+      ],
+      "learningsFile": "p-vsl/LEARNINGS.md",
+      "activeFeedback": [
+        "Script approval is mandatory checkpoint",
+        "B-roll plan review required before asset generation",
+        "Delivery checklist all 12 points required"
+      ]
+    },
+    "p-longform-visual": {
+      "type": "pipeline",
+      "category": "long-form",
+      "format": "16:9 landscape",
+      "description": "Tutorial video with Remotion GFX + slides + voiceover",
+      "aiMethod": "Remotion (React animation) + ElevenLabs TTS",
+      "inputs": ["brand", "tutorial script"],
+      "outputs": ["16:9 tutorial with animated slides + voiceover"],
+      "duration": "5-20 min",
+      "dependencies": ["c-html-gfx", "c-studio-audio", "c-ffmpeg"],
+      "checkpoints": ["slide preview"],
+      "learningsFile": "p-longform-visual/LEARNINGS.md"
+    },
+    "p-demo": {
+      "type": "pipeline",
+      "category": "long-form",
+      "format": "16:9 landscape or 9:16",
+      "description": "Short/long/avatar demo from raw assets",
+      "aiMethod": "Asset reuse (no new AI generation)",
+      "inputs": ["raw footage or script", "brand"],
+      "outputs": ["16:9 or 9:16 demo video"],
+      "duration": "varies",
+      "dependencies": ["c-ffmpeg", "c-studio-production"],
+      "learningsFile": "p-demo/LEARNINGS.md"
+    },
+    "c-html-gfx": {
+      "type": "tool",
+      "category": "graphics",
+      "description": "HTML graphics, banners, explainer slides, headless Chrome screenshots",
+      "outputs": ["PNG/JPG graphics (1920x1080, 1080x1080, or custom)"],
+      "gfxTypes": [
+        "pipeline-diagram",
+        "cost-table",
+        "prompt-template",
+        "scene-progression",
+        "comparison-table",
+        "linking-diagram",
+        "callout-card",
+        "hero-stat",
+        "terminal-sim",
+        "category-grid",
+        "custom"
+      ],
+      "colorPalette": {
+        "purple": "#a78bfa",
+        "green": "#22c55e",
+        "yellow": "#fcd34d",
+        "red": "#f87171",
+        "blue": "#60a5fa",
+        "orange": "#f59e0b",
+        "bg": "#0f172a",
+        "surface": "#1e293b"
+      },
+      "learningsFile": "c-html-gfx/LEARNINGS.md",
+      "activeFeedback": [
+        "Mandatory post-render Unicode check",
+        "Window size accounting: Chrome reserves ~140px on macOS"
+      ]
+    },
+    "c-ai-media": {
+      "type": "tool",
+      "category": "ai-generation",
+      "description": "AI image/video generation (multiple models)",
+      "aiMethods": {
+        "Gemini": "Fast text-to-image, in-context learning",
+        "Higgsfield Cinema": "Cinematic video generation",
+        "RunPod InfiniteTalk": "Talking head from image + audio",
+        "Veo": "High-quality video generation",
+        "Replicate": "Custom model hub access"
+      },
+      "outputs": ["AI images/videos"],
+      "learningsFile": "c-ai-media/LEARNINGS.md"
+    },
+    "c-ffmpeg": {
+      "type": "tool",
+      "category": "video-compositing",
+      "description": "All FFmpeg operations: composite, chroma key, PIP, portrait/landscape, concat, trim, speed, Ken Burns, loudnorm, snap detection",
+      "capabilities": [
+        "chroma key (0x00FF00 two-pass)",
+        "portrait/landscape layout",
+        "PIP compositing",
+        "audio-per-segment sync",
+        "video trimming & concatenation",
+        "speed adjustment",
+        "Ken Burns zoom",
+        "loudness normalization (-14 LUFS)",
+        "snap point detection",
+        "ffprobe verification"
+      ],
+      "learningsFile": "c-ffmpeg/LEARNINGS.md",
+      "activeFeedback": [
+        "Chroma key always 0x00FF00 (two-pass)",
+        "Never crop-and-stretch avatar",
+        "Audio-per-segment architecture mandatory",
+        "No # comments inside filter_complex strings",
+        "Gap-free b-roll windows"
+      ]
+    },
+    "c-heygen": {
+      "type": "tool",
+      "category": "avatar-rendering",
+      "description": "HeyGen avatar green-screen rendering, status polling, download",
+      "inputs": ["script", "voice ID", "background color"],
+      "outputs": ["green-screen MP4 avatar video"],
+      "checkpoints": ["user-triggered job submission", "polling for completion"],
+      "learningsFile": "c-heygen/LEARNINGS.md"
+    },
+    "c-studio-audio": {
+      "type": "tool",
+      "category": "audio-processing",
+      "description": "TTS voiceover (ElevenLabs Floe API), SFX, MLX Whisper transcription, loudnorm",
+      "capabilities": {
+        "TTS": "ElevenLabs Floe API (16+ voices, natural prosody)",
+        "Transcription": "MLX Whisper (SRT output)",
+        "SFX": "Sound effects library mixing",
+        "Loudnorm": "Audio loudness normalization"
+      },
+      "outputs": [".mp3 voiceover", ".srt transcription", "normalized audio"],
+      "learningsFile": "c-studio-audio/LEARNINGS.md",
+      "activeFeedback": [
+        "ElevenLabs Floe API wrapper is stable",
+        "MLX Whisper: segment audio if >30 min for better accuracy"
+      ]
+    },
+    "c-studio-script": {
+      "type": "tool",
+      "category": "script-preparation",
+      "description": "Voice adaptation, TTS preprocessing, duration analysis, phonetic readiness",
+      "inputs": ["draft markdown or plain text script"],
+      "outputs": ["TTS-clean script + duration estimate"],
+      "baseline": "150 wpm",
+      "learningsFile": "c-studio-script/LEARNINGS.md"
+    },
+    "c-broll": {
+      "type": "tool",
+      "category": "asset-library",
+      "description": "B-roll library management, script matching, placement planning, alignment verification",
+      "capabilities": [
+        "library search (check before generating)",
+        "script-to-timeline matching",
+        "landscape PIP placement planning",
+        "segment-level asset assignment",
+        "timecode alignment (via SRT)",
+        "quality guard (≥4 unique, ≥80% coverage)"
+      ],
+      "outputs": ["b-roll segment plan (.md)", "reusable asset archive"],
+      "learningsFile": "c-broll/LEARNINGS.md",
+      "activeFeedback": [
+        "Check library first",
+        "B-roll plan quality guard: ≥4 unique assets, ≥80% coverage"
+      ]
+    },
+    "c-web-capture": {
+      "type": "tool",
+      "category": "asset-capture",
+      "description": "Playwright website scroll capture, URL discovery",
+      "inputs": ["URL", "scroll settings (optional)"],
+      "outputs": ["MP4 video of webpage scroll (1920x1080, 12s default)"],
+      "learningsFile": "c-web-capture/LEARNINGS.md"
+    },
+    "c-studio-production": {
+      "type": "tool",
+      "category": "production-workflow",
+      "description": "Production folder structure, delivery checklist (12-point), hook extraction, snap detection",
+      "capabilities": [
+        "standardized folder structure",
+        "12-point delivery checklist",
+        "hook extraction/analysis",
+        "snap-point detection",
+        "final naming convention (ls-{category}01-{description}.mp4)"
+      ],
+      "outputs": ["final/ls-{category}01-{description}.mp4"],
+      "learningsFile": "c-studio-production/LEARNINGS.md"
+    },
+    "c-cloud-media": {
+      "type": "tool",
+      "category": "storage-cdn",
+      "description": "Cloudflare R2 upload, CDN management, video library lookup",
+      "capabilities": [
+        "R2 bucket upload",
+        "CDN distribution",
+        "video library search",
+        "public URL generation"
+      ],
+      "learningsFile": "c-cloud-media/LEARNINGS.md"
+    },
+    "c-replicate": {
+      "type": "tool",
+      "category": "ai-generation",
+      "description": "Replicate model hub access, custom AI model running",
+      "learningsFile": "c-replicate/LEARNINGS.md"
+    },
+    "c-kie-ai": {
+      "type": "tool",
+      "category": "integration",
+      "description": "KIE AI platform integration",
+      "learningsFile": "c-kie-ai/LEARNINGS.md"
+    },
+    "c-learnloop": {
+      "type": "tool",
+      "category": "integration",
+      "description": "LearnLoop API (courses, lessons, bots, library, newsletter, members, events, products, admin)",
+      "learningsFile": "c-learnloop/LEARNINGS.md"
+    },
+    "p-gfx-short": {
+      "type": "pipeline",
+      "category": "short-form",
+      "format": "9:16 vertical",
+      "description": "Faceless GFX short with voiceover",
+      "aiMethod": "HTML graphics + TTS",
+      "inputs": ["brand", "script"],
+      "outputs": ["9:16 GFX short"],
+      "learningsFile": "p-gfx-short/LEARNINGS.md"
+    },
+    "p-linkedin-carousel": {
+      "type": "pipeline",
+      "category": "graphics",
+      "format": "PDF carousel",
+      "description": "Multi-page PDF carousel optimized for LinkedIn",
+      "aiMethod": "PDF generation (no AI)",
+      "inputs": ["5-10 slide content"],
+      "outputs": ["PDF carousel"],
+      "learningsFile": "p-linkedin-carousel/LEARNINGS.md"
+    },
+    "p-banner": {
+      "type": "pipeline",
+      "category": "graphics",
+      "format": "Platform-specific dimensions",
+      "description": "Platform social media banners (Instagram, TikTok, YouTube, etc.)",
+      "aiMethod": "HTML graphics (no AI)",
+      "inputs": ["brand assets"],
+      "outputs": ["platform banners"],
+      "learningsFile": "p-banner/LEARNINGS.md"
+    },
+    "p-thumbnail": {
+      "type": "pipeline",
+      "category": "graphics",
+      "format": "1280x720 (YouTube)",
+      "description": "YouTube thumbnail variants for CTR testing",
+      "aiMethod": "Static image (no AI)",
+      "inputs": ["video or script"],
+      "outputs": ["thumbnail variants (1280x720)"],
+      "learningsFile": "p-thumbnail/LEARNINGS.md"
+    },
+    "p-broll": {
+      "type": "pipeline",
+      "category": "asset-library",
+      "description": "B-roll library operations (capture, extract, upload)",
+      "operations": ["capture", "extract", "upload"],
+      "learningsFile": "p-broll/LEARNINGS.md"
+    },
+    "p-broll-media": {
+      "type": "pipeline",
+      "category": "asset-library",
+      "description": "Embed b-roll into CFW content variant",
+      "learningsFile": "p-broll-media/LEARNINGS.md"
+    },
+    "p-manual-execution": {
+      "type": "pipeline",
+      "category": "utilities",
+      "description": "Recover stuck CFW executions",
+      "learningsFile": "p-manual-execution/LEARNINGS.md"
+    },
+    "r-social-post-outstand": {
+      "type": "workflow",
+      "category": "social-publishing",
+      "description": "Post, schedule, fetch analytics, manage comments across 10 platforms",
+      "platforms": [
+        "X",
+        "LinkedIn",
+        "Instagram",
+        "Facebook",
+        "Threads",
+        "TikTok",
+        "YouTube",
+        "Bluesky",
+        "Pinterest",
+        "Google Business"
+      ],
+      "pricing": "$0.50/month per account + $0.01/post",
+      "api": "Outstand.so REST API",
+      "auth": "OUTSTAND_API_KEY (env var or .gsai/secret)",
+      "learningsFile": "r-social-post-outstand/LEARNINGS.md",
+      "activeFeedback": [
+        "Auth order: environment variable → fallback .gsai/secret",
+        "Always list accounts first before creating posts"
+      ]
+    },
+    "r-social-post-postforme": {
+      "type": "workflow",
+      "category": "social-publishing",
+      "description": "Post across 9 platforms via PostForMe",
+      "platforms": [
+        "X",
+        "LinkedIn",
+        "Instagram",
+        "Facebook",
+        "Threads",
+        "TikTok",
+        "YouTube",
+        "Pinterest",
+        "Google Business"
+      ],
+      "api": "PostForMe REST API",
+      "learningsFile": "r-social-post-postforme/LEARNINGS.md",
+      "limitation": "Cannot chain threads (no in_reply_to_tweet_id field)"
+    },
+    "r-social-post-upload": {
+      "type": "workflow",
+      "category": "social-publishing",
+      "description": "Post via Upload-Post with multi-brand support",
+      "api": "Upload-Post API",
+      "learningsFile": "r-social-post-upload/LEARNINGS.md"
+    },
+    "r-x-thread": {
+      "type": "workflow",
+      "category": "social-publishing",
+      "description": "Native X API v2 thread posting with chaining",
+      "platform": "X (Twitter only)",
+      "method": "inReplyToStatusId chaining",
+      "auth": [
+        "X_API_KEY",
+        "X_API_SECRET",
+        "X_ACCESS_TOKEN",
+        "X_ACCESS_TOKEN_SECRET"
+      ],
+      "learningsFile": "r-x-thread/LEARNINGS.md",
+      "activeFeedback": [
+        "OAuth credentials are separate from PostForMe",
+        "Chaining via inReplyToStatusId"
+      ]
+    },
+    "r-youtube-data-api": {
+      "type": "workflow",
+      "category": "social-publishing",
+      "description": "YouTube video metadata & detail updates",
+      "capabilities": [
+        "fetch video metadata",
+        "update video titles/descriptions",
+        "update thumbnails"
+      ],
+      "limitation": "Metadata updates only (no revenue or audience demographics)",
+      "api": "YouTube Data API v3",
+      "learningsFile": "r-youtube-data-api/LEARNINGS.md"
+    },
+    "r-cfw-publisher": {
+      "type": "workflow",
+      "category": "publishing",
+      "description": "CFW content sync and recovery",
+      "learningsFile": "r-cfw-publisher/LEARNINGS.md"
+    }
+  },
+  "searchIndexes": {
+    "by_output_type": {
+      "short-form-9-16": [
+        "p-avatar-short",
+        "p-avatar-screenshot-broll",
+        "p-gfx-short",
+        "p-gfx-batch",
+        "p-ai-character",
+        "p-hook-reel",
+        "p-viral-reel",
+        "p-snap-bg-swap"
+      ],
+      "long-form-16-9": [
+        "p-vsl",
+        "p-longform-visual",
+        "p-demo"
+      ],
+      "images-graphics": [
+        "c-html-gfx",
+        "c-ai-media",
+        "p-gfx-batch",
+        "p-thumbnail",
+        "p-banner",
+        "p-linkedin-carousel"
+      ],
+      "audio": [
+        "c-studio-audio",
+        "c-studio-script"
+      ],
+      "publishing": [
+        "r-social-post-outstand",
+        "r-social-post-postforme",
+        "r-social-post-upload",
+        "r-x-thread",
+        "r-youtube-data-api"
+      ]
+    },
+    "by_ai_method": {
+      "heygen-green-screen": [
+        "p-avatar-short",
+        "p-avatar-screenshot-broll",
+        "p-viral-reel (--style avatar)"
+      ],
+      "higgsfield-cinema": [
+        "p-ai-character",
+        "p-viral-reel (--style ai-generated)"
+      ],
+      "veo-talking-head": [
+        "p-ai-character",
+        "p-viral-reel (--style ai-generated)"
+      ],
+      "html-graphics": [
+        "c-html-gfx",
+        "p-gfx-short",
+        "p-gfx-batch",
+        "p-banner",
+        "p-linkedin-carousel"
+      ],
+      "gemini-ai": [
+        "c-ai-media"
+      ],
+      "elevenlabs-tts": [
+        "c-studio-audio",
+        "p-gfx-short",
+        "p-longform-visual"
+      ],
+      "mlx-whisper-transcription": [
+        "c-studio-audio",
+        "p-vsl",
+        "p-viral-reel"
+      ],
+      "b-roll-compositing": [
+        "c-broll",
+        "p-vsl",
+        "p-hook-reel",
+        "p-snap-bg-swap"
+      ],
+      "ffmpeg-compositing": [
+        "c-ffmpeg",
+        "p-avatar-short",
+        "p-vsl",
+        "all video pipelines"
+      ]
+    },
+    "by_platforms": {
+      "x": [
+        "r-social-post-outstand",
+        "r-social-post-postforme",
+        "r-x-thread"
+      ],
+      "linkedin": [
+        "r-social-post-outstand",
+        "r-social-post-postforme",
+        "p-linkedin-carousel"
+      ],
+      "instagram": [
+        "r-social-post-outstand",
+        "r-social-post-postforme"
+      ],
+      "tiktok": [
+        "r-social-post-outstand",
+        "r-social-post-postforme"
+      ],
+      "youtube": [
+        "r-social-post-outstand",
+        "r-social-post-postforme",
+        "r-youtube-data-api",
+        "p-thumbnail"
+      ]
+    },
+    "by_checkpoints": {
+      "user-triggered-render": [
+        "p-avatar-short (HeyGen job ID)",
+        "p-viral-reel (source download confirmation)"
+      ],
+      "approval-gates": [
+        "p-vsl (script approval, b-roll plan review)",
+        "p-gfx-short (GFX preview)"
+      ],
+      "quality-checks": [
+        "c-ffmpeg (ffprobe verify)",
+        "c-html-gfx (Unicode/charset check)",
+        "p-vsl (12-point delivery checklist)"
+      ]
+    }
+  }
+}
