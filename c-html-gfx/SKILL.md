@@ -7,6 +7,25 @@ allowed-tools: Bash
 
 # HTML GFX — Graphics for Video
 
+
+> **SELF-IMPROVEMENT RULE — READ FIRST:**
+> 1. Before executing ANY step in this skill, read `LEARNINGS.md` in this same folder.
+> 2. Apply every item under **Active Feedback** as if it were a non-negotiable rule.
+> 3. Only then proceed with the skill's normal instructions.
+> 4. After completing the task, ask the user: "How did this go? Any corrections or improvements for next time?"
+> 5. Summarize the feedback into 1–3 bullet points and append to `LEARNINGS.md` with today's date.
+> 6. If feedback is critical (affects correctness or quality), add it to the **Active Feedback** section so it applies on every future run.
+
+## Caller Variables
+
+| Variable | Required | Source | Description |
+|----------|----------|--------|-------------|
+| `{production}` | Conditional | Caller | Production folder — for GFX cards going into b-roll |
+| `{brand_path}` | Conditional | Caller / ecosystem.yaml | Brand folder — for standalone banners |
+| `$GFX_TYPE` | Yes | Caller | One of the GFX type slugs below |
+| `$GFX_DATA` | Yes | Caller | JSON or inline data for the GFX |
+| `$OUTPUT_FILE` | Yes | Caller | Target PNG/MP4 path |
+
 ## GFX Types (1920x1080 Dark Studio Theme)
 
 `pipeline-diagram` | `cost-table` | `prompt-template` | `scene-progression` | `comparison-table` | `linking-diagram` | `callout-card` | `hero-stat` | `terminal-sim` | `category-grid` | `custom`
@@ -75,3 +94,13 @@ npx remotion render "$COMP_ID" "$OUT.mp4" --props='$JSON'
 - GFX PNGs: `{production}/interim/broll/gfx/{id}-{desc}.png`
 - GFX clips: `{production}/interim/broll/gfx/{id}-{desc}.mp4`
 - Banners: `{brand_path}/creatives/brolls/gfx/{id}-{desc}.png`
+
+## Self-Improvement Feedback Loop
+
+After completing this skill's task:
+1. Ask the user: "How did this go? Any corrections or improvements for next time?"
+2. Summarize feedback into 1–3 concise bullet points.
+3. Append to `LEARNINGS.md` in this folder with the date.
+4. If feedback is critical (affects correctness or quality), add it to the **Active Feedback** section at the top of `LEARNINGS.md`.
+5. Mark critical feedback with `[ACTIVE]` prefix so it is visually distinct.
+

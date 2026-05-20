@@ -1,0 +1,119 @@
+{
+  "_comment": "Manifest of every src/app/api/**/route.ts handler in cfw-social. The `auth` tag is the GATEWAY-level auth (what src/proxy.ts allows), NOT just what the handler imports. Many handlers call requireApiBrand but the middleware blocks unauthenticated traffic upstream, so the effective auth is `session`. Placeholders inside {...} must match a key in PLACEHOLDER inside smoke.mjs. Regenerate by hand; bump _version.",
+  "_version": "2026-05-15.3",
+  "routes": [
+    { "path": "/api/health", "methods": ["GET"], "auth": "public" },
+
+    { "path": "/api/v1/agents", "methods": ["POST"], "auth": "session", "body": { "workspaceId": "$WORKSPACE_ID", "archetype": "free-form" } },
+    { "path": "/api/v1/agents/{agentId}/discovery", "methods": ["PUT"], "auth": "session", "body": { "allowDiscovery": true } },
+    { "path": "/api/v1/agents/{agentId}/skills", "methods": ["POST", "DELETE"], "auth": "session", "body": { "skillName": "c-broll" } },
+
+    { "path": "/api/v1/api-keys", "methods": ["GET", "POST"], "auth": "session", "body": { "name": "smoke-test" } },
+    { "path": "/api/v1/api-keys/{apiKeyId}", "methods": ["DELETE"], "auth": "session" },
+
+    { "path": "/api/v1/approval/{token}/chat", "methods": ["GET", "POST"], "auth": "signed-token" },
+    { "path": "/api/v1/approval/{token}/runs", "methods": ["POST"], "auth": "signed-token" },
+
+    { "path": "/api/v1/audit-log", "methods": ["POST"], "auth": "api-or-session", "body": {} },
+
+    { "path": "/api/v1/billing/checkout", "methods": ["POST"], "auth": "session", "body": { "plan": "creator", "brandId": "$BRAND_ID" } },
+    { "path": "/api/v1/billing/portal", "methods": ["POST"], "auth": "session", "body": { "brandId": "$BRAND_ID" } },
+
+    { "path": "/api/v1/brand/{brandId}/captures", "methods": ["GET"], "auth": "signed-token" },
+    { "path": "/api/v1/brand/{brandId}/context", "methods": ["GET"], "auth": "api-or-session" },
+    { "path": "/api/v1/brand/dna", "methods": ["GET"], "auth": "api-or-session" },
+    { "path": "/api/v1/brand/setup", "methods": ["POST"], "auth": "session", "body": {} },
+
+    { "path": "/api/v1/brands/{brandId}/insights", "methods": ["GET"], "auth": "api-or-session" },
+    { "path": "/api/v1/brands/{brandId}/insights/{insightId}", "methods": ["PATCH", "DELETE"], "auth": "api-or-session", "body": { "alwaysOn": true } },
+    { "path": "/api/v1/brands/channel-connections", "methods": ["GET", "POST"], "auth": "session", "body": {} },
+    { "path": "/api/v1/brands/channel-connections/{channelConnectionId}", "methods": ["DELETE"], "auth": "session" },
+    { "path": "/api/v1/brands/mine", "methods": ["GET"], "auth": "session" },
+
+    { "path": "/api/v1/captures", "methods": ["POST"], "auth": "signed-token" },
+    { "path": "/api/v1/captures/pending", "methods": ["GET"], "auth": "public" },
+    { "path": "/api/v1/captures/presign-upload", "methods": ["GET"], "auth": "signed-token" },
+    { "path": "/api/v1/captures/{captureId}/events", "methods": ["GET", "POST"], "auth": "public" },
+    { "path": "/api/v1/captures/{captureId}/link", "methods": ["POST"], "auth": "public", "body": { "workspaceId": "$WORKSPACE_ID" } },
+    { "path": "/api/v1/captures/{captureId}/status", "methods": ["GET"], "auth": "signed-token" },
+
+    { "path": "/api/v1/channels/telegram/connect", "methods": ["POST"], "auth": "webhook", "body": {} },
+    { "path": "/api/v1/channels/telegram/{telegramChannelId}", "methods": ["DELETE"], "auth": "session" },
+
+    { "path": "/api/v1/character-refs", "methods": ["GET"], "auth": "session" },
+
+    { "path": "/api/v1/chat/web", "methods": ["POST"], "auth": "session", "body": { "message": "smoke ping", "brandId": "$BRAND_ID" } },
+    { "path": "/api/v1/chat/web/{conversationId}", "methods": ["GET"], "auth": "session" },
+
+    { "path": "/api/v1/compositions/{compositionId}/send-for-approval", "methods": ["POST"], "auth": "session", "body": {} },
+
+    { "path": "/api/v1/dev/brands", "methods": ["GET", "POST", "PATCH"], "auth": "public", "body": {} },
+    { "path": "/api/v1/dev/media/{mediaPath}", "methods": ["GET"], "auth": "public" },
+    { "path": "/api/v1/dev/telegram-bot", "methods": ["POST"], "auth": "public", "body": {} },
+    { "path": "/api/v1/dev/telegram-rewire", "methods": ["POST"], "auth": "webhook", "body": {} },
+    { "path": "/api/v1/dev/upload", "methods": ["PUT"], "auth": "public" },
+    { "path": "/api/v1/dev/upload-fail", "methods": ["PUT"], "auth": "public" },
+
+    { "path": "/api/v1/discord/interactions", "methods": ["POST"], "auth": "webhook" },
+
+    { "path": "/api/v1/image-templates", "methods": ["GET"], "auth": "session" },
+
+    { "path": "/api/v1/inbox/approve", "methods": ["POST"], "auth": "signed-token" },
+    { "path": "/api/v1/inbox/reject", "methods": ["POST"], "auth": "signed-token" },
+    { "path": "/api/v1/inbox/revoke", "methods": ["POST"], "auth": "session", "body": {} },
+
+    { "path": "/api/v1/mcp", "methods": ["POST"], "auth": "api-or-session", "headers": { "Accept": "application/json, text/event-stream" }, "body": { "jsonrpc": "2.0", "id": 1, "method": "initialize", "params": { "protocolVersion": "2024-11-05", "capabilities": {}, "clientInfo": { "name": "smoke", "version": "1" } } } },
+
+    { "path": "/api/v1/me/delete-account", "methods": ["POST"], "auth": "session", "body": {} },
+
+    { "path": "/api/v1/music-tracks", "methods": ["GET"], "auth": "session" },
+
+    { "path": "/api/v1/openclaw/webhook", "methods": ["POST"], "auth": "session", "body": {} },
+
+    { "path": "/api/v1/posts/calendar", "methods": ["GET"], "auth": "session" },
+    { "path": "/api/v1/posts/count", "methods": ["GET"], "auth": "session" },
+    { "path": "/api/v1/posts/list", "methods": ["GET"], "auth": "session" },
+    { "path": "/api/v1/posts/{postId}", "methods": ["DELETE"], "auth": "api-or-session" },
+
+    { "path": "/api/v1/recipes/run", "methods": ["POST"], "auth": "session", "body": {} },
+
+    { "path": "/api/v1/repurpose/ai", "methods": ["POST"], "auth": "session", "body": {} },
+    { "path": "/api/v1/repurpose/compose", "methods": ["POST"], "auth": "session", "body": {} },
+    { "path": "/api/v1/repurpose/save", "methods": ["POST"], "auth": "session", "body": {} },
+    { "path": "/api/v1/repurpose/saved", "methods": ["GET"], "auth": "session" },
+    { "path": "/api/v1/repurpose/search", "methods": ["POST"], "auth": "session", "body": {} },
+    { "path": "/api/v1/repurpose/stream", "methods": ["POST"], "auth": "session", "body": {} },
+    { "path": "/api/v1/repurpose/transcript", "methods": ["POST"], "auth": "session", "body": {} },
+
+    { "path": "/api/v1/research/run", "methods": ["POST"], "auth": "session", "body": {} },
+
+    { "path": "/api/v1/runs", "methods": ["POST"], "auth": "session", "body": {} },
+    { "path": "/api/v1/runs/{runId}/events", "methods": ["GET"], "auth": "session" },
+
+    { "path": "/api/v1/skills", "methods": ["GET", "POST"], "auth": "session", "body": {} },
+
+    { "path": "/api/v1/slack/events", "methods": ["POST"], "auth": "webhook" },
+
+    { "path": "/api/v1/social/accounts", "methods": ["GET"], "auth": "session" },
+    { "path": "/api/v1/social/accounts/import", "methods": ["POST"], "auth": "session", "body": {} },
+    { "path": "/api/v1/social/accounts/{socialAccountId}", "methods": ["DELETE"], "auth": "session" },
+    { "path": "/api/v1/social/callback/postforme", "methods": ["GET"], "auth": "public" },
+    { "path": "/api/v1/social/connect", "methods": ["POST"], "auth": "session", "body": { "platform": "linkedin" } },
+
+    { "path": "/api/v1/team", "methods": ["GET"], "auth": "session" },
+
+    { "path": "/api/v1/telegram/webhook/{botToken}", "methods": ["POST"], "auth": "webhook" },
+
+    { "path": "/api/v1/webhooks/postforme/events", "methods": ["POST"], "auth": "webhook" },
+
+    { "path": "/api/v1/workspaces/list", "methods": ["GET"], "auth": "session" },
+    { "path": "/api/v1/workspaces/{workspaceId}", "methods": ["PATCH"], "auth": "session", "body": { "name": "smoke-rename" } },
+    { "path": "/api/v1/workspaces/{workspaceId}/assets", "methods": ["GET", "POST"], "auth": "session", "body": {} },
+    { "path": "/api/v1/workspaces/{workspaceId}/outputs", "methods": ["GET"], "auth": "session" },
+    { "path": "/api/v1/workspaces/{workspaceId}/posts", "methods": ["GET"], "auth": "session" },
+    { "path": "/api/v1/workspaces/{workspaceId}/runs", "methods": ["GET"], "auth": "session" },
+    { "path": "/api/v1/workspaces/{workspaceId}/sources", "methods": ["GET", "POST", "DELETE"], "auth": "session", "body": { "kind": "url", "url": "https://example.com", "name": "smoke" } },
+
+    { "path": "/api/webhooks/stripe", "methods": ["POST"], "auth": "webhook" }
+  ]
+}

@@ -1,0 +1,68 @@
+# Example brand posting pipeline config
+# Copy this to your brand repo at:
+#   <brand_repo>/.config/posting-pipeline.yaml
+#
+# Two configs live side by side in .config/:
+#   posting-pipeline.yaml          ← THIS FILE (pipeline-level settings)
+#   r-social-post-postforme.yaml    ← existing (per-brand social account IDs)
+#
+# DO NOT merge into the PostForMe config; r-social-post-postforme owns that one.
+
+brand_id: mgg
+display_name: Mr. Growth Guide
+
+# Platforms this brand publishes to (must match r-social-post-postforme.yaml)
+platforms:
+  - facebook
+  - instagram
+
+# Posting cadence (informational; for use by schedulers / suggesters)
+cadence: 3x/week
+typical_publish_time: "18:00 America/Chicago"
+
+# CTA provider — where the call-to-action URL comes from
+# Supported: learnloop | ghl | cal_com | none
+cta:
+  provider: learnloop
+  # LearnLoop-specific
+  api_base: https://learnloop.cc/api/v1
+  community_id: mgg-community           # the LearnLoop community slug
+  default_slug_pattern: "{brand}-{topic}-{yyyy}"
+  default_resource_kind: free_library    # gated_library | free_library | course
+  attach_to_existing: false              # if true, --cta-resource-id is required
+
+# Voice source — markdown file with brand voice / tone / hook formulas
+# Path is relative to the brain-personal GBrain root.
+voice_source: projects/mgg/brand.md
+
+# Asset storage — where binaries get uploaded before posting
+# Format: r2://<bucket>/  | s3://<bucket>/  | local
+asset_storage: r2://mgg-assets/
+asset_signed_url_ttl: 7d                 # how long the signed URL stays valid
+
+# Where to file the post page in the brain
+brain_destination: projects/mgg/posts/
+
+# Approval gate
+# draft_only — write page with status:draft, do NOT schedule. Vasanth re-runs
+#              with --approval-gate none after review.
+# none       — auto-schedule immediately.
+approval_gate: draft_only
+
+# Hashtag strategy (informational; copy-drafting consults this)
+hashtag_strategy: "3–5 from concepts/hashtag-bank-mgg.md"
+
+# Tags applied to every post page in this brand (for query filtering)
+default_tags:
+  - mgg
+  - mr-growth-guide
+
+# Per-platform overrides (optional)
+overrides:
+  facebook:
+    char_limit: 63206
+    hook_max_chars: 80
+  instagram:
+    caption_max_chars: 2200
+    reel_max_seconds: 90
+    use_first_hashtag_block: true

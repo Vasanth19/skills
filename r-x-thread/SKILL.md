@@ -9,6 +9,15 @@ description: >
 
 # X Thread — Native X API v2 Thread Poster
 
+
+> **SELF-IMPROVEMENT RULE — READ FIRST:**
+> 1. Before executing ANY step in this skill, read `LEARNINGS.md` in this same folder.
+> 2. Apply every item under **Active Feedback** as if it were a non-negotiable rule.
+> 3. Only then proceed with the skill's normal instructions.
+> 4. After completing the task, ask the user: "How did this go? Any corrections or improvements for next time?"
+> 5. Summarize the feedback into 1–3 bullet points and append to `LEARNINGS.md` with today's date.
+> 6. If feedback is critical (affects correctness or quality), add it to the **Active Feedback** section so it applies on every future run.
+
 ## What This Is
 
 Posts a series of tweets as a proper connected thread by:
@@ -22,7 +31,7 @@ n8n, making it directly callable by CMO agents.
 
 ## Auth
 
-Requires four X Developer credentials stored in `posting-tools/.gsai/secret`:
+Requires four X Developer credentials stored in `~/.gsai/secrets.env`:
 
 ```bash
 export X_API_KEY="..."            # API Key (consumer key)
@@ -78,7 +87,7 @@ When publishing an X thread for MGG:
 1. **Prepare tweet array** — read from the ord's `final/publishes/x.md`. Extract tweets in order (tweet 1 through N).
 2. **Run the script**:
    ```bash
-   SKILL_DIR="/Users/vasanth/MarketingMr/posting-tools/skills/r-x-thread/docs/scripts"
+   SKILL_DIR="/Users/vasanth/Code/skills/r-x-thread/docs/scripts"
    "$SKILL_DIR/post-thread.sh" "Tweet 1" "Tweet 2" "Tweet 3"
    ```
 3. **Capture the root tweet id** — `results[0].data.id` — and record it in the ord's `final/publishes/x.md` as `thread_root_id`.
@@ -94,3 +103,13 @@ When publishing an X thread for MGG:
 
 Declared in: `mr-growth-guide/.config/r-x-thread.yaml`
 X account: `@MrGrowthGuide` (platformUserId: `850396380787093505`)
+
+## Self-Improvement Feedback Loop
+
+After completing this skill's task:
+1. Ask the user: "How did this go? Any corrections or improvements for next time?"
+2. Summarize feedback into 1–3 concise bullet points.
+3. Append to `LEARNINGS.md` in this folder with the date.
+4. If feedback is critical (affects correctness or quality), add it to the **Active Feedback** section at the top of `LEARNINGS.md`.
+5. Mark critical feedback with `[ACTIVE]` prefix so it is visually distinct.
+

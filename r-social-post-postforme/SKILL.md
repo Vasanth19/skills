@@ -11,6 +11,15 @@ description: >
 
 # Post For Me — Unified Social Media Posting API
 
+
+> **SELF-IMPROVEMENT RULE — READ FIRST:**
+> 1. Before executing ANY step in this skill, read `LEARNINGS.md` in this same folder.
+> 2. Apply every item under **Active Feedback** as if it were a non-negotiable rule.
+> 3. Only then proceed with the skill's normal instructions.
+> 4. After completing the task, ask the user: "How did this go? Any corrections or improvements for next time?"
+> 5. Summarize the feedback into 1–3 bullet points and append to `LEARNINGS.md` with today's date.
+> 6. If feedback is critical (affects correctness or quality), add it to the **Active Feedback** section so it applies on every future run.
+
 ## What This Is
 Developer-first unified REST API to publish posts, schedule, fetch analytics, and pull feeds across 9 social platforms: TikTok, Instagram, Facebook, X (Twitter), LinkedIn, YouTube, Pinterest, Bluesky, Threads.
 
@@ -35,7 +44,7 @@ Built by Day Moon Development. Open source. Pay-per-post pricing (from $10/mo fo
 Scripts read `POSTFORME_API_KEY` in this order:
 
 1. Environment variable (if already exported by the caller).
-2. Fallback: `<posting-tools>/.gsai/secret` — a gitignored file containing `export POSTFORME_API_KEY=...`. Scripts walk up from their own directory to find it, so they work no matter where they're invoked from.
+2. Fallback: `~/.gsai/secrets.env` — a gitignored file containing `export POSTFORME_API_KEY=...`. Scripts walk up from their own directory to find it, so they work no matter where they're invoked from.
 
 Agents (OpenClaw etc.) can either export the key in their shell or drop it into `.gsai/secret` once and forget.
 
@@ -73,7 +82,7 @@ Equivalent env vars: `THUMBNAIL_PATH`, `THUMBNAIL_URL`, `THUMBNAIL_TIMESTAMP_MS`
 
 **YouTube long-form:** custom thumbnails are blocked at the YouTube platform layer for non-verified channels regardless of API support. YT Studio manual upload remains required for that platform — wrapper change does NOT remove that step. CMO's "YouTube Studio post-publish checklist" gotcha still applies.
 
-**Ledger:** thumbnail URL is recorded as the 7th column of `~/.posting-tools-ledger/r-social-post-postforme.tsv` for analytics.
+**Ledger:** thumbnail URL is recorded as the 7th column of `~/.posting-tools-ledger/postforme.tsv` for analytics.
 
 ## Core Concepts
 
@@ -167,3 +176,13 @@ This rule applies to every YouTube upload — no exceptions.
 - `social.post.result.created`
 - `social.account.created`
 - `social.account.updated`
+
+## Self-Improvement Feedback Loop
+
+After completing this skill's task:
+1. Ask the user: "How did this go? Any corrections or improvements for next time?"
+2. Summarize feedback into 1–3 concise bullet points.
+3. Append to `LEARNINGS.md` in this folder with the date.
+4. If feedback is critical (affects correctness or quality), add it to the **Active Feedback** section at the top of `LEARNINGS.md`.
+5. Mark critical feedback with `[ACTIVE]` prefix so it is visually distinct.
+

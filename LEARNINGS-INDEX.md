@@ -57,7 +57,7 @@ Agent workflow:
 
 ### r-social-post-outstand
 
-- **OUTSTAND_API_KEY auth order:** Environment variable → fallback `<posting-tools>/.gsai/secret`
+- **OUTSTAND_API_KEY auth order:** Environment variable → fallback `~/.gsai/secrets.env`
 - **Pricing model:** $0.50/month per account + $0.01 per post
 - **Always list accounts first** — Call `list-accounts.sh` before creating posts to verify target accounts exist
 

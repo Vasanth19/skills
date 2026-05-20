@@ -203,6 +203,47 @@ Every skill is **self-sufficient** (reads LEARNINGS.md before executing) and **s
 
 ---
 
+## 🏢 CFW SOCIAL APP MANAGEMENT
+
+### The CFW Social Platform
+| Skill | What it covers | Read it for |
+|-------|---------------|-------------|
+| **c-cfw-social** | Prisma data model, entity relationships, run/output/composition lifecycle, approval workflows, publishing system, brand/workspace ops, auth cascade, admin runbook | Managing or debugging the CFW Social app itself |
+
+**Files:** `data-model.md` · `lifecycle.md` · `brand-management.md` · `workspace-operations.md` · `approval-workflow.md` · `publishing.md` · `media-capture.md` · `auth.md` · `integrations.md` · `admin-runbook.md` · `routes.json`
+
+**When to use:** Any question about how CFW Social works internally — brands, workspaces, runs, outputs, posts, scheduling, approvals, billing, team access, webhooks.
+
+---
+
+## 🤖 CFW AGENT INTEGRATION
+
+### The CFW Agent Orchestrator
+| Skill | What it covers | Read it for |
+|-------|---------------|-------------|
+| **c-cfw-agent** | How to call cfw-agent via its MCP (`cfw_run` tool), register in Claude Code, auth flow, 28 MCP tools at `/api/v1/mcp`, orchestrator contract v1 | Talking to the cfw-agent from outside (Claude Code, curl, CI) |
+
+**Files:** `mcp.md` · `mcp-example.sh` · `cfw-run.md` · `orchestration-contract.md`
+
+**When to use:** Setting up cfw-agent MCP, calling `cfw_run`, understanding the SSE contract, troubleshooting agent errors.
+
+---
+
+## 🧪 QA & TESTING
+
+### Smoke Testing
+| Skill | What it covers | Read it for |
+|-------|---------------|-------------|
+| **c-cfw-social-smoke-test** | Smoke-test runner for cfw-social HTTP API — hits every route with master-key auth, classifies by auth mode, reports pass/fail | Confirming no 5xx's after deploy or route changes |
+
+**Files:** `smoke.mjs` · `routes.json` · `SKILL.md`
+
+**When to use:** After touching `src/app/api/**`, before shipping to prod, in CI.
+
+---
+
+---
+
 ## 🔧 SUPPORTING TOOLS (Auto-Invoked)
 
 ### Video Compositing & Effects
@@ -281,6 +322,15 @@ Every skill is **self-sufficient** (reads LEARNINGS.md before executing) and **s
 - **Website screenshot for b-roll?** → `c-web-capture`
 - **Voiceover from script?** → `c-studio-audio` + `c-studio-script`
 
+**"I need to manage / debug / understand..."**
+
+- **CFW Social app internals** → `c-cfw-social` (data model, lifecycle, auth, admin)
+- **Smoke test after deploy** → `c-cfw-social-smoke-test`
+- **Call cfw-agent from Claude Code** → `c-cfw-agent` (MCP registration, `cfw_run`)
+- **Recover a stuck run** → `c-cfw-social/admin-runbook.md`
+- **Set up social platform OAuth** → `c-cfw-social/integrations.md`
+- **Understand the approval flow** → `c-cfw-social/approval-workflow.md`
+
 ---
 
 ## 📋 Self-Learning Rules (Every Skill)
@@ -306,5 +356,5 @@ After completing the task:
 
 ---
 
-**Last updated:** 2026-05-09  
+**Last updated:** 2026-05-17  
 **Maintained by:** Skills team + self-improvement loop

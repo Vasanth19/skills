@@ -1,0 +1,5 @@
+file '/Users/vasanth/MarketingMr/creative-studio/productions/wip/research--tiny-tales-analysis/temp/v3-s01.mp4'
+file '/Users/vasanth/MarketingMr/creative-studio/productions/wip/research--tiny-tales-analysis/temp/v3-s02.mp4'
+file '/Users/vasanth/MarketingMr/creative-studio/productions/wip/research--tiny-tales-analysis/temp/v3-s03.mp4'
+file '/Users/vasanth/MarketingMr/creative-studio/productions/wip/research--tiny-tales-analysis/temp/v3-s04.mp4'
+file '/Users/vasanth/MarketingMr/creative-studio/productions/wip/research--tiny-tales-analysis/temp/v3-s05.mp4'

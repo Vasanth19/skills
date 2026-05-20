@@ -7,8 +7,28 @@ allowed-tools: Bash
 
 # Studio Audio — TTS, SFX, Transcription
 
+
+> **SELF-IMPROVEMENT RULE — READ FIRST:**
+> 1. Before executing ANY step in this skill, read `LEARNINGS.md` in this same folder.
+> 2. Apply every item under **Active Feedback** as if it were a non-negotiable rule.
+> 3. Only then proceed with the skill's normal instructions.
+> 4. After completing the task, ask the user: "How did this go? Any corrections or improvements for next time?"
+> 5. Summarize the feedback into 1–3 bullet points and append to `LEARNINGS.md` with today's date.
+> 6. If feedback is critical (affects correctness or quality), add it to the **Active Feedback** section so it applies on every future run.
+
+## Caller Variables
+
+| Variable | Required | Source | Description |
+|----------|----------|--------|-------------|
+| `$SCRIPT_TEXT` | Yes | Caller | TTS-clean script text |
+| `$VOICE_ID` | Yes | Caller / brand config | ElevenLabs voice ID |
+| `$OUTPUT_PATH` | Yes | Caller | Target `.mp3` path |
+| `{production}` | Yes | Caller | Absolute path to production folder |
+| `$FLOE_API_KEY` | Yes | `~/.gsai/secrets.env` | Floe API key for TTS |
+| `$ELEVENLABS_API_KEY` | Fallback | `~/.gsai/secrets.env` | Direct ElevenLabs (backup only) |
+
 ## Priority Order
-1. **Check SFX library first** — `sfx/sfx-library.md` at `creative-studio/sfx/`. Preview: `afplay sfx/{category}/{file}.mp3`.
+1. **Check SFX library first** — `sfx/sfx-library.md` at `/Users/vasanth/Code/skills/sfx/`. Preview: `afplay /Users/vasanth/Code/skills/sfx/{category}/{file}.mp3`.
 2. **TTS via Floe API** (primary). Direct ElevenLabs API as fallback only.
 3. **MLX Whisper** for transcription — local, Apple Silicon, no API cost.
 
@@ -75,12 +95,22 @@ atempo: 0.5–2.0 only. Chain for values outside: 2.5x = `atempo=2.0,atempo=1.25
 ## SFX Library
 
 ```
-creative-studio/sfx/: whoosh/ ding/ transition/ tension/ swell/ ambient/
+/Users/vasanth/Code/skills/sfx/: whoosh/ ding/ transition/ tension/ swell/ ambient/
 ```
-Check `sfx-library.md` before generating. New SFX → `sfx/{category}/` (NEVER in production `audio/`).
+Check `sfx-library.md` before generating. New SFX → `/Users/vasanth/Code/skills/sfx/{category}/` (NEVER in production `audio/`).
 
 ## Output Paths
 
 - Voiceover: `{production}/interim/audio/{name}.mp3`
-- SFX: `creative-studio/sfx/{category}/{name}.mp3`
+- SFX: `/Users/vasanth/Code/skills/sfx/{category}/{name}.mp3`
 - Transcription: `{production}/interim/audio/{name}.srt`
+
+## Self-Improvement Feedback Loop
+
+After completing this skill's task:
+1. Ask the user: "How did this go? Any corrections or improvements for next time?"
+2. Summarize feedback into 1–3 concise bullet points.
+3. Append to `LEARNINGS.md` in this folder with the date.
+4. If feedback is critical (affects correctness or quality), add it to the **Active Feedback** section at the top of `LEARNINGS.md`.
+5. Mark critical feedback with `[ACTIVE]` prefix so it is visually distinct.
+

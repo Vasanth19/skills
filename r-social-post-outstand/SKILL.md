@@ -10,6 +10,15 @@ description: >
 
 # Outstand.so — Unified Social Media API
 
+
+> **SELF-IMPROVEMENT RULE — READ FIRST:**
+> 1. Before executing ANY step in this skill, read `LEARNINGS.md` in this same folder.
+> 2. Apply every item under **Active Feedback** as if it were a non-negotiable rule.
+> 3. Only then proceed with the skill's normal instructions.
+> 4. After completing the task, ask the user: "How did this go? Any corrections or improvements for next time?"
+> 5. Summarize the feedback into 1–3 bullet points and append to `LEARNINGS.md` with today's date.
+> 6. If feedback is critical (affects correctness or quality), add it to the **Active Feedback** section so it applies on every future run.
+
 ## What This Is
 Developer-first, usage-based unified REST API to post, schedule, fetch analytics, and manage comments across 10 social platforms: X (Twitter), LinkedIn, Instagram, Facebook, Threads, TikTok, YouTube, Bluesky, Pinterest, Google Business.
 
@@ -35,7 +44,7 @@ Pricing: $0.50/month per connected account + $0.01 per post published. No tiers,
 Scripts read `OUTSTAND_API_KEY` in this order:
 
 1. Environment variable (if already exported by the caller).
-2. Fallback: `<posting-tools>/.gsai/secret` — a gitignored file containing `export OUTSTAND_API_KEY=...`. Scripts walk up from their own directory to find it, so they work no matter where they're invoked from.
+2. Fallback: `~/.gsai/secrets.env` — a gitignored file containing `export OUTSTAND_API_KEY=...`. Scripts walk up from their own directory to find it, so they work no matter where they're invoked from.
 
 Agents (OpenClaw etc.) can either export the key in their shell or drop it into `.gsai/secret` once and forget.
 
@@ -99,3 +108,13 @@ Outstand wraps responses as `{ success: boolean, data: ..., error?: string }`. E
 ```json
 { "success": false, "error": "Invalid or missing API key" }
 ```
+
+## Self-Improvement Feedback Loop
+
+After completing this skill's task:
+1. Ask the user: "How did this go? Any corrections or improvements for next time?"
+2. Summarize feedback into 1–3 concise bullet points.
+3. Append to `LEARNINGS.md` in this folder with the date.
+4. If feedback is critical (affects correctness or quality), add it to the **Active Feedback** section at the top of `LEARNINGS.md`.
+5. Mark critical feedback with `[ACTIVE]` prefix so it is visually distinct.
+

@@ -7,6 +7,26 @@ allowed-tools: Bash
 
 # HeyGen — Avatar Render System
 
+
+> **SELF-IMPROVEMENT RULE — READ FIRST:**
+> 1. Before executing ANY step in this skill, read `LEARNINGS.md` in this same folder.
+> 2. Apply every item under **Active Feedback** as if it were a non-negotiable rule.
+> 3. Only then proceed with the skill's normal instructions.
+> 4. After completing the task, ask the user: "How did this go? Any corrections or improvements for next time?"
+> 5. Summarize the feedback into 1–3 bullet points and append to `LEARNINGS.md` with today's date.
+> 6. If feedback is critical (affects correctness or quality), add it to the **Active Feedback** section so it applies on every future run.
+
+## Caller Variables
+
+| Variable | Required | Source | Description |
+|----------|----------|--------|-------------|
+| `$AVATAR_ID` | Yes | Caller / brand config | HeyGen avatar ID |
+| `$VOICE_ID` | Yes | Caller / brand config | HeyGen voice ID |
+| `$SCRIPT` | Yes | Caller | TTS-clean script text |
+| `{production}` | Yes | Caller | Absolute path to production folder |
+| `$HEYGEN_API_KEY` | Yes | `~/.gsai/secrets.env` | HeyGen API key |
+| `$FLOE_API_KEY` | Conditional | `~/.gsai/secrets.env` | Required for Floe poll/download path |
+
 ## Render Path Priority
 
 | Path | When | Cost |
@@ -77,3 +97,13 @@ Check `status: "success"` at top level (NOT `"completed"`). Unique `execution_id
 ## References
 
 - **[references/browser-render.md](references/browser-render.md)** — Chrome automation, script paste method, gotchas.
+
+## Self-Improvement Feedback Loop
+
+After completing this skill's task:
+1. Ask the user: "How did this go? Any corrections or improvements for next time?"
+2. Summarize feedback into 1–3 concise bullet points.
+3. Append to `LEARNINGS.md` in this folder with the date.
+4. If feedback is critical (affects correctness or quality), add it to the **Active Feedback** section at the top of `LEARNINGS.md`.
+5. Mark critical feedback with `[ACTIVE]` prefix so it is visually distinct.
+

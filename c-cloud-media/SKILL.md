@@ -7,6 +7,25 @@ allowed-tools: Bash
 
 # Cloud Media — R2 Upload & CFW Social API
 
+
+> **SELF-IMPROVEMENT RULE — READ FIRST:**
+> 1. Before executing ANY step in this skill, read `LEARNINGS.md` in this same folder.
+> 2. Apply every item under **Active Feedback** as if it were a non-negotiable rule.
+> 3. Only then proceed with the skill's normal instructions.
+> 4. After completing the task, ask the user: "How did this go? Any corrections or improvements for next time?"
+> 5. Summarize the feedback into 1–3 bullet points and append to `LEARNINGS.md` with today's date.
+> 6. If feedback is critical (affects correctness or quality), add it to the **Active Feedback** section so it applies on every future run.
+
+## Caller Variables
+
+| Variable | Required | Source | Description |
+|----------|----------|--------|-------------|
+| `$LOCAL_FILE` | Yes | Caller | Absolute path to file to upload |
+| `$BRAND_ACCOUNT_ID` | Yes | Caller / brand config | CFW Social brand account ID (default: `cmitgsnrm0001l204zmi8ulo3` for CFW Social) |
+| `$FOLDER_ID` | Yes | Caller / brand config | CFW Social folder ID (default: `cmkothjl20001lb04x0rpqzxh` for Recordings) |
+| `$CFW_API_KEY` | Yes | `~/.gsai/secrets.env` | CFW Social API key |
+| `$R2_*` | Yes | `~/.gsai/secrets.env` | Cloudflare R2 credentials |
+
 ## R2 Upload
 
 ### Method A: Upload Script (Recommended)
@@ -142,3 +161,13 @@ done
 - After upload: update library `Cloud` column with CDN URL, `Status` → `Uploaded`
 - CDN URL format: `https://media.cfw.social/brand-assets/{brandId}/{folderId}/{timestamp}-{uuid}.{ext}`
 - Never hardcode brand/folder IDs — read from environment or ecosystem.yaml
+
+## Self-Improvement Feedback Loop
+
+After completing this skill's task:
+1. Ask the user: "How did this go? Any corrections or improvements for next time?"
+2. Summarize feedback into 1–3 concise bullet points.
+3. Append to `LEARNINGS.md` in this folder with the date.
+4. If feedback is critical (affects correctness or quality), add it to the **Active Feedback** section at the top of `LEARNINGS.md`.
+5. Mark critical feedback with `[ACTIVE]` prefix so it is visually distinct.
+

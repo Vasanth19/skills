@@ -1,0 +1,4 @@
+interface:
+  display_name: "Avatar Screenshot B-Roll"
+  short_description: "Real screenshot b-roll for avatar videos."
+  default_prompt: "Create a polished avatar-led longform video with realistic screenshot b-roll, tight pacing, hook text, and verified export quality."

@@ -7,6 +7,15 @@ allowed-tools: Bash
 
 # AI Media Generation — kie.ai + fal.ai
 
+
+> **SELF-IMPROVEMENT RULE — READ FIRST:**
+> 1. Before executing ANY step in this skill, read `LEARNINGS.md` in this same folder.
+> 2. Apply every item under **Active Feedback** as if it were a non-negotiable rule.
+> 3. Only then proceed with the skill's normal instructions.
+> 4. After completing the task, ask the user: "How did this go? Any corrections or improvements for next time?"
+> 5. Summarize the feedback into 1–3 bullet points and append to `LEARNINGS.md` with today's date.
+> 6. If feedback is critical (affects correctness or quality), add it to the **Active Feedback** section so it applies on every future run.
+
 Two providers, one skill. Use kie.ai as primary (largest model catalog). Use fal.ai for FLUX image gen and queue-based video when needed.
 
 ## Step 0 — Always run first (model cache auto-sync)
@@ -286,3 +295,13 @@ curl -s "https://api.kie.ai/api/v1/veo/record-info?taskId=$TASK_ID" \
 
 - AI images: `{brand_path}/creatives/brolls/images/{id}-{desc}.png`
 - AI clips: `{brand_path}/creatives/brolls/ai/{id}-{desc}.mp4`
+
+## Self-Improvement Feedback Loop
+
+After completing this skill's task:
+1. Ask the user: "How did this go? Any corrections or improvements for next time?"
+2. Summarize feedback into 1–3 concise bullet points.
+3. Append to `LEARNINGS.md` in this folder with the date.
+4. If feedback is critical (affects correctness or quality), add it to the **Active Feedback** section at the top of `LEARNINGS.md`.
+5. Mark critical feedback with `[ACTIVE]` prefix so it is visually distinct.
+
