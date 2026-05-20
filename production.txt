@@ -28,6 +28,10 @@ p-snap-bg-swap
 p-thumbnail
 p-viral-reel
 p-vsl
+r-bottom-avatar-pip
+r-alternating-visual
+r-screen-rec-vo
+compose-avatar-broll-short
 r-cfw-publisher
 r-social-post-outstand
 r-social-post-postforme
