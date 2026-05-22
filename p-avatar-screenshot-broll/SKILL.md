@@ -184,7 +184,7 @@ Sample coverage report:
 ## Coordination With Other Skills
 
 Use these skills when available:
-- `c-heygen`: poll/download HeyGen video and handle avatar footage.
+- `t-heygen`: poll/download HeyGen video and handle avatar footage.
 - `c-web-capture`: capture website screenshots or scroll b-roll.
 - `c-html-gfx`: create graphics, browser frames, and Remotion compositions.
 - `c-ffmpeg`: crop, probe, sample frames, contact sheets, and final verification.

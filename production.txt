@@ -3,11 +3,11 @@ c-broll
 c-cloud-media
 c-ffmpeg
 c-photo-enhance
-c-heygen
+t-heygen
 c-html-gfx
-c-kie-ai
+t-kie-ai
 c-learnloop
-c-replicate
+t-replicate
 c-studio-audio
 c-studio-production
 c-studio-script
@@ -31,7 +31,7 @@ p-vsl
 r-bottom-avatar-pip
 r-alternating-visual
 r-screen-rec-vo
-compose-avatar-broll-short
+b-growthguide-avatar-broll
 r-cfw-publisher
 r-social-post-outstand
 r-social-post-postforme

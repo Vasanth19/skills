@@ -16,7 +16,7 @@
       "inputs": ["brand", "script"],
       "outputs": ["9:16 avatar PIP video"],
       "duration": "30s-60s",
-      "dependencies": ["c-heygen", "c-studio-script", "c-ffmpeg", "c-studio-production"],
+      "dependencies": ["t-heygen", "c-studio-script", "c-ffmpeg", "c-studio-production"],
       "checkpoints": ["script approval", "HeyGen job ID confirmation"],
       "learningsFile": "p-avatar-short/LEARNINGS.md",
       "activeFeedback": ["HeyGen render is user-triggered", "Green-screen quality verification required"]
@@ -30,7 +30,7 @@
       "inputs": ["brand", "script", "website URL"],
       "outputs": ["9:16 avatar PIP with screenshot b-roll"],
       "duration": "30s-60s",
-      "dependencies": ["c-heygen", "c-web-capture", "c-ffmpeg"],
+      "dependencies": ["t-heygen", "c-web-capture", "c-ffmpeg"],
       "checkpoints": ["screenshot plan review"],
       "learningsFile": "p-avatar-screenshot-broll/LEARNINGS.md"
     },
@@ -96,7 +96,7 @@
       "inputs": ["source URL", "brand", "style (avatar or ai-generated)"],
       "outputs": ["9:16 viral recreation"],
       "duration": "15s-60s",
-      "dependencies": ["c-heygen", "c-ai-media", "c-studio-script", "c-ffmpeg"],
+      "dependencies": ["t-heygen", "c-ai-media", "c-studio-script", "c-ffmpeg"],
       "checkpoints": ["script adaptation approval"],
       "learningsFile": "p-viral-reel/LEARNINGS.md",
       "activeFeedback": [
@@ -127,7 +127,7 @@
       "outputs": ["16:9 VSL: avatar + b-roll + SFX + captions + loudnorm"],
       "duration": "5-15 min",
       "dependencies": [
-        "c-heygen",
+        "t-heygen",
         "c-studio-script",
         "c-studio-audio",
         "c-broll",
@@ -247,14 +247,14 @@
         "Gap-free b-roll windows"
       ]
     },
-    "c-heygen": {
+    "t-heygen": {
       "type": "tool",
       "category": "avatar-rendering",
       "description": "HeyGen avatar green-screen rendering, status polling, download",
       "inputs": ["script", "voice ID", "background color"],
       "outputs": ["green-screen MP4 avatar video"],
       "checkpoints": ["user-triggered job submission", "polling for completion"],
-      "learningsFile": "c-heygen/LEARNINGS.md"
+      "learningsFile": "t-heygen/LEARNINGS.md"
     },
     "c-studio-audio": {
       "type": "tool",
@@ -335,17 +335,17 @@
       ],
       "learningsFile": "c-cloud-media/LEARNINGS.md"
     },
-    "c-replicate": {
+    "t-replicate": {
       "type": "tool",
       "category": "ai-generation",
       "description": "Replicate model hub access, custom AI model running",
-      "learningsFile": "c-replicate/LEARNINGS.md"
+      "learningsFile": "t-replicate/LEARNINGS.md"
     },
-    "c-kie-ai": {
+    "t-kie-ai": {
       "type": "tool",
       "category": "integration",
-      "description": "KIE AI platform integration",
-      "learningsFile": "c-kie-ai/LEARNINGS.md"
+      "description": "AI image/video generation via kie.ai and fal.ai",
+      "learningsFile": "t-kie-ai/LEARNINGS.md"
     },
     "c-learnloop": {
       "type": "tool",
@@ -564,7 +564,8 @@
       "heygen-green-screen": [
         "p-avatar-short",
         "p-avatar-screenshot-broll",
-        "p-viral-reel (--style avatar)"
+        "p-viral-reel (--style avatar)",
+        "t-heygen"
       ],
       "higgsfield-cinema": [
         "p-ai-character",

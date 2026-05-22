@@ -86,7 +86,7 @@ Agent workflow:
 **2026-05-08** — Initial template
 - Populated with non-negotiable rules (see ACTIVE FEEDBACK above)
 
-### c-heygen
+### t-heygen
 **2026-05-08** — Initial template
 - No feedback yet
 
@@ -95,7 +95,7 @@ Agent workflow:
 - Unicode/charset rules (see ACTIVE FEEDBACK above)
 - Window size gotcha on macOS (see ACTIVE FEEDBACK above)
 
-### c-kie-ai
+### t-kie-ai
 **2026-05-08** — Initial template
 - No feedback yet
 
@@ -103,7 +103,7 @@ Agent workflow:
 **2026-05-08** — Initial template
 - No feedback yet
 
-### c-replicate
+### t-replicate
 **2026-05-08** — Initial template
 - No feedback yet
 
@@ -227,7 +227,7 @@ Agent workflow:
 - c-ffmpeg (ACTIVE FEEDBACK: chroma key, audio sync, no crop-stretch)
 
 ### HeyGen/Avatar Rendering
-- c-heygen, p-avatar-short, p-viral-reel (--style avatar)
+- t-heygen, p-avatar-short, p-viral-reel (--style avatar)
 - ACTIVE FEEDBACK: green-screen verification, user-triggered checkpoint
 
 ### Social Publishing
@@ -263,7 +263,7 @@ Agent workflow:
 - r-x-thread (2 rules)
 
 **Skills with no ACTIVE FEEDBACK yet** (watch for issues):
-- c-ai-media, c-cloud-media, c-heygen, c-kie-ai, c-learnloop, c-replicate, c-studio-production, c-studio-script, c-web-capture
+- c-ai-media, c-cloud-media, t-heygen, t-kie-ai, c-learnloop, t-replicate, c-studio-production, c-studio-script, c-web-capture
 - p-ai-character, p-avatar-screenshot-broll, p-banner, p-broll, p-broll-media, p-demo, p-gfx-batch, p-gfx-short, p-hook-reel, p-linkedin-carousel, p-longform-visual, p-manual-execution, p-snap-bg-swap, p-thumbnail
 - r-cfw-publisher, r-social-post-postforme, r-social-post-upload, r-youtube-data-api
 

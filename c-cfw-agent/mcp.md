@@ -15,7 +15,7 @@ A single tool, `cfw_run`, that takes a `brandId` plus a natural-language `prompt
 - a list of generated `outputs` (R2 URLs with mime type + asset kind),
 - the LLM tool calls it made, the stages it went through, and token + cost numbers.
 
-The inner agent (Kimi K2.6 by default, configurable per call) has access to ~35 file-system skills like `c-ffmpeg`, `c-heygen`, `p-vsl`, `p-gfx-short`, `r-cfw-publisher`. **You do not pick a skill yourself.** You describe what you want. The agent picks the right skill, executes it via `claude --print` subprocesses, and streams progress notifications back over Server-Sent Events while the run is in flight.
+The inner agent (Kimi K2.6 by default, configurable per call) has access to ~35 file-system skills like `c-ffmpeg`, `t-heygen`, `p-vsl`, `p-gfx-short`, `r-cfw-publisher`. **You do not pick a skill yourself.** You describe what you want. The agent picks the right skill, executes it via `claude --print` subprocesses, and streams progress notifications back over Server-Sent Events while the run is in flight.
 
 Three companion MCP **resources** give the calling agent a menu *before* it formulates a prompt:
 

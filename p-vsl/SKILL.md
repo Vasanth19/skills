@@ -62,7 +62,7 @@ If `.txt` TTS-clean already: skip approval, confirm word count and estimated dur
 
 If `source_video` provided: skip to Step 3.
 
-→ Skill: `c-heygen` → browser render path
+→ Skill: `t-heygen` → browser render path
 → Script: full TTS-clean script, one render
 → Background: `#00FF00` solid
 
@@ -72,7 +72,7 @@ If `source_video` provided: skip to Step 3.
 
 ## Step 3 — Poll & Download
 
-→ Skill: `c-heygen` → poll via Floe API (60s interval)
+→ Skill: `t-heygen` → poll via Floe API (60s interval)
 → Download to: `interim/video/base/{name}-green-screen.mp4`
 → Verify green screen quality
 

@@ -1,5 +1,5 @@
 ---
-name: c-heygen
+name: t-heygen
 description: HeyGen avatar video rendering for the creative studio. Use for avatar green-screen renders, submitting via MCP or API, browser-based UI rendering, delegating to human via Discord, polling render status, downloading completed MP4s, and verifying green-screen quality.
 when_to_use: Trigger on HeyGen, avatar render, green screen render, talking head, avatar video, HeyGen API, HeyGen MCP, poll render, download avatar, verify green screen, avatar MP4.
 allowed-tools: Bash

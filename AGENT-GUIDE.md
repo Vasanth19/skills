@@ -121,7 +121,7 @@ Some skills have **mandatory checkpoints** — gates where the user must approve
 - r-x-thread (2 active rules)
 
 **Experimental skills** (no active feedback yet, watch for issues):
-- c-ai-media, c-replicate, c-learnloop
+- c-ai-media, t-replicate, c-learnloop
 - p-ai-character, p-longform-visual, p-snap-bg-swap
 - r-social-post-postforme, r-youtube-data-api
 - *[See LEARNINGS-INDEX.md → Feedback Velocity for full list]*
@@ -135,7 +135,7 @@ Some skills have **mandatory checkpoints** — gates where the user must approve
 Some skills call other skills. **Always aware of the chain.**
 
 **Example — p-vsl depends on:**
-- c-heygen (avatar render)
+- t-heygen (avatar render)
 - c-studio-script (script prep)
 - c-studio-audio (transcription)
 - c-broll (planning)

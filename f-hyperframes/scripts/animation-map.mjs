@@ -6,7 +6,7 @@
 // human-readable summaries. Outputs a single animation-map.json.
 //
 // Usage:
-//   node skills/hyperframes/scripts/animation-map.mjs <composition-dir> \
+//   node skills/f-hyperframes/scripts/animation-map.mjs <composition-dir> \
 //     [--frames N] [--out <dir>] [--min-duration S] [--width W] [--height H] [--fps N]
 
 import { mkdir, writeFile } from "node:fs/promises";

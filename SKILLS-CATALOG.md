@@ -4,6 +4,18 @@
 
 Every skill is **self-sufficient** (reads LEARNINGS.md before executing) and **self-improving** (appends feedback after every run).
 
+## Skill Prefix Taxonomy
+
+| Prefix | Name | Purpose |
+|--------|------|---------|
+| `c-` | Custom tool | Local/orchestration building block, auto-invoked |
+| `p-` | Pipeline | End-to-end deliverable producer |
+| `r-` | Role workflow | Agent role action, Paperclip-routed |
+| `f-` | Framework | Tech/library reference knowledge, auto-invoked in context |
+| `b-` | Brand | Brand-locked pipeline variant |
+| `t-` | Third-party platform | External API wrapper (has auth/cost/rate-limits) |
+| `x-` | Experimental | WIP/unstable |
+
 ---
 
 ## 🎬 SHORT-FORM REELS (9:16 vertical)
@@ -261,7 +273,7 @@ Every skill is **self-sufficient** (reads LEARNINGS.md before executing) and **s
 ### HeyGen Avatar Rendering
 | Skill | AI Method | Capability | Self-Learn |
 |-------|-----------|-----------|-----------|
-| **c-heygen** | HeyGen API | Avatar green-screen render, status polling, download | ✅ LEARNINGS.md |
+| **t-heygen** | HeyGen API | Avatar green-screen render, status polling, download | ✅ LEARNINGS.md |
 
 **When to use:** Any p-avatar-* or p-viral-reel (--style avatar) skill.
 **Checkpoint:** User manually triggers render; agent polls for completion.
@@ -289,8 +301,8 @@ Every skill is **self-sufficient** (reads LEARNINGS.md before executing) and **s
 ### Replicate & Custom AI Models
 | Skill | Service | Capability | Self-Learn |
 |-------|---------|-----------|-----------|
-| **c-replicate** | Replicate model hub | Run custom AI models, API operations | ✅ LEARNINGS.md |
-| **c-kie-ai** | KIE AI platform | KIE platform integration (if needed) | ✅ LEARNINGS.md |
+| **t-replicate** | Replicate model hub | Run custom AI models, API operations | ✅ LEARNINGS.md |
+| **t-kie-ai** | KIE AI / fal.ai platform | KIE + fal.ai image & video generation | ✅ LEARNINGS.md |
 
 **When to use:** Custom model experimentation, one-off AI generation beyond standard tools.
 

@@ -72,7 +72,7 @@ Replacement plan options per segment:
 
 **If `--style avatar`:**
 
-→ Skill: `c-heygen` → browser render or human delegation
+→ Skill: `t-heygen` → browser render or human delegation
 → Script: adapted `.txt`, background: `#00FF00` solid
 
 → Skill: `c-studio-production` → circle PIP detection

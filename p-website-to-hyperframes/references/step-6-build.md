@@ -86,7 +86,7 @@ Check the storyboard's transition specification for this beat:
 - **Shader transition**: no exit animation needed — the shader handles the blend. Read `packages/shader-transitions/README.md` for the API, available shaders, and setup. The package handles WebGL init, capture, and GSAP integration — do not copy raw GLSL manually.
 - **Hard cut**: no exit animation. The scene simply ends.
 
-For all CSS transition types and their GSAP implementations, read `skills/hyperframes/references/transitions/catalog.md`.
+For all CSS transition types and their GSAP implementations, read `skills/f-hyperframes/references/transitions/catalog.md`.
 
 ### 7. Asset cross-reference
 
@@ -118,10 +118,10 @@ After building the composition, check WITH ACTUAL CODE:
 - [ ] **Caption exits have a hard kill.** If you animate captions out with `tl.to(groupEl, { opacity: 0 }, group.end)`, follow it with `tl.set(groupEl, { opacity: 0, visibility: "hidden" }, group.end)` as a deterministic kill — per-word karaoke tweens can override the exit tween and leave captions stuck on screen. Linter: `caption_exit_missing_hard_kill`.
 - [ ] **No duplicate media nodes.** If the same image/video source is referenced twice with identical `data-start` + `data-duration`, the compiler discovers it twice and can double-render. Dedupe by using a single `<img>` with appropriate z-layering, or stagger the `data-start` values. Linter: `duplicate_media_discovery_risk`.
 
-**If `skills/hyperframes-animation-map/` is installed**, run it:
+**If `skills/f-hyperframes-animation-map/` is installed**, run it:
 
 ```bash
-node skills/hyperframes-animation-map/scripts/animation-map.mjs <composition-dir>
+node skills/f-hyperframes-animation-map/scripts/animation-map.mjs <composition-dir>
 ```
 
 Read the summaries. Fix every flag: offscreen, collision, invisible, pacing issues.

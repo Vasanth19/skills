@@ -106,7 +106,7 @@ List all available: demo clips, final videos, extracted B-roll, voiceover, trans
 → Keep overlays short: "Prompt", "Files", "Voice", "Render".
 
 ### Step 8 — Render Avatar (avatar format only)
-→ Skill: `c-heygen` → API path with stitched audio as voice source.
+→ Skill: `t-heygen` → API path with stitched audio as voice source.
 → Green background `#00FF00`. Submit ONE combined render.
 → Poll, download, split back using saved split map.
 → Read `references/heygen-api-workflow.md` for API details.
@@ -174,7 +174,7 @@ Weak: "Follow for more." / "Let me know what you think."
 
 ## Related Skills
 
-- `c-heygen` — lower-level HeyGen details and troubleshooting.
+- `t-heygen` — lower-level HeyGen details and troubleshooting.
 - `c-ffmpeg` — video compositing, trimming, speed adjust.
 - `c-studio-script` — script writing, TTS preprocessing, duration analysis.
 - `c-studio-audio` — TTS, SFX, transcription.

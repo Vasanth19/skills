@@ -126,7 +126,7 @@ How this beat hands off to the next. Specify the type and parameters.
 
 Rule of thumb: if the beat is the _centerpiece_ of the video, shader-transition into it. If the beat is connective tissue, CSS-transition. A brand reel of 5-7 beats usually wants 1-2 shader transitions (the hero reveal + the CTA) and the rest CSS or hard cuts — too many shader transitions flatten their impact.
 
-**CSS transitions** (choose from `skills/hyperframes/references/transitions/catalog.md`):
+**CSS transitions** (choose from `skills/f-hyperframes/references/transitions/catalog.md`):
 
 - Velocity-matched upward: exit `y:-150, blur:30px, 0.33s power2.in` → entry `y:150→0, blur:30px→0, 1.0s power2.out`
 - Whip pan: exit `x:-400, blur:24px, 0.3s power3.in` → entry `x:400→0, blur:24px→0, 0.3s power3.out`

@@ -1,6 +1,6 @@
 # Creative Studio Skills
 
-Claude Code skills library for video production workflows. Organized by prefix: **c-** custom tools, **r-** role workflows, **p-** project pipelines.
+Claude Code skills library for video production workflows. Organized by prefix: **c-** custom tools, **r-** role workflows, **p-** pipelines, **f-** frameworks, **b-** brand pipelines, **t-** third-party platforms, **x-** experimental.
 
 ## Install
 
@@ -10,7 +10,7 @@ npx skills add vasanth/skills@c-ffmpeg
 
 # Install all studio domain skills
 npx skills add vasanth/skills@c-ffmpeg
-npx skills add vasanth/skills@c-heygen
+npx skills add vasanth/skills@t-heygen
 npx skills add vasanth/skills@c-broll
 npx skills add vasanth/skills@c-studio-audio
 npx skills add vasanth/skills@c-studio-script
@@ -59,7 +59,6 @@ Composable tools used by any agent. Claude auto-invokes when the task matches.
 
 Core tools:
 - `c-ffmpeg` — All video compositing (PIP, chroma key, concat, loudnorm, etc.)
-- `c-heygen` — HeyGen avatar green-screen rendering
 - `c-broll` — B-roll library management & planning
 - `c-studio-audio` — TTS voiceover + transcription + loudnorm
 - `c-studio-script` — Script preparation & voice adaptation
@@ -68,7 +67,32 @@ Core tools:
 - `c-html-gfx` — HTML graphics & banners (headless Chrome)
 - `c-web-capture` — Website scroll capture (Playwright)
 - `c-cloud-media` — Cloudflare R2 upload & CDN
-- `c-kie-ai`, `c-replicate`, `c-learnloop` — Platform integrations
+- `c-learnloop` — LearnLoop API integration
+
+## Framework Skills (f-) — Tech/Library Reference Knowledge
+
+Auto-invoked when the task involves the relevant framework or library.
+
+- `f-hyperframes` — HyperFrames HTML video composition authoring
+- `f-hyperframes-cli` — HyperFrames CLI (init, lint, preview, render, transcribe, tts)
+- `f-hyperframes-registry` — HyperFrames registry blocks & components
+- `f-gsap` — GSAP animation reference for HyperFrames compositions
+- `f-remotion` — Remotion (React-based video) best practices
+- `f-sfx` — Sound effects reference
+
+## Brand Pipeline Skills (b-) — Brand-locked Pipeline Variants
+
+Production pipelines locked to a specific brand's workflow.
+
+- `b-growthguide-avatar-broll` — GrowthGuide 20s portrait short: HeyGen avatar + b-roll
+
+## Third-Party Platform Skills (t-) — External API Wrappers
+
+Skills with auth requirements, cost implications, and rate limits.
+
+- `t-heygen` — HeyGen avatar green-screen rendering
+- `t-kie-ai` — AI image/video via kie.ai and fal.ai
+- `t-replicate` — Replicate model hub (custom AI models)
 
 ## Role Workflows (r-) — Intentional Human Actions
 
@@ -146,7 +170,7 @@ desiredSkills:
   - p-avatar-short
   - p-hook-reel
   - c-ffmpeg
-  - c-heygen
+  - t-heygen
   - c-broll
   - c-studio-script
   - c-studio-audio
