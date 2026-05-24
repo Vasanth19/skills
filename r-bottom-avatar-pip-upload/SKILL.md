@@ -116,6 +116,22 @@ Hand `beats.json` to the `remotion/` subproject (uses the `f-remotion` framework
 - Scene 1 MUST render visible brand content at frame 0 — no fade-in from black/navy (first-frame rule, same as the sibling recipe; a dark first frame reads as broken in-feed).
 - Output: `renders/broll-bg.mp4`.
 
+**Exact render command (VERIFIED in the prod container — use these flags, they matter):**
+
+```bash
+cd "$SKILL_DIR/remotion"
+[ -d node_modules ] || npm install --no-audit --no-fund --loglevel=error   # first run only; slow
+npx remotion render TopicBroll renders/broll-bg.mp4 \
+  --props=./beats.json \
+  --browser-executable=/usr/bin/chromium \
+  --gl=swiftshader \
+  --disable-chromium-sandbox \
+  --concurrency=1
+```
+
+- `--gl=swiftshader` is REQUIRED in the container — `angle` times out connecting to headless Chrome. `--concurrency=1` avoids the CPU-autodetect crash + OOM on shared-cpu-1x. `--browser-executable=/usr/bin/chromium` uses the system browser (baked into the cfw-agent image).
+- **Performance note:** software rendering on `shared-cpu-1x` is SLOW (minutes for a ~15s clip). If renders time out the skill subprocess, the cfw-agent machine needs more CPU/RAM, or render at a lower fps/scale.
+
 ### Stage 5 — Composite PIP + loudnorm + outro + upload (`cfw-bottom-avatar-pip` helper)
 
 The `cfw-bottom-avatar-pip` ffmpeg helper composites the uploaded video as the PIP over the b-roll background:
