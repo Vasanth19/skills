@@ -29,6 +29,7 @@ p-thumbnail
 p-viral-reel
 p-vsl
 r-bottom-avatar-pip
+r-bottom-avatar-pip-upload
 r-alternating-visual
 r-screen-rec-vo
 b-growthguide-avatar-broll
