@@ -1,6 +1,6 @@
 ---
 name: r-bottom-avatar-pip-upload
-description: "UPLOAD variant of the MGG bottom-avatar PIP Short — user uploads their own talking-head video, the skill transcribes it, beat-plans a topic-matched b-roll background from the video's OWN transcript, renders it in Remotion, and composites the uploaded video as a 540x540 rounded PIP over it. Fully autonomous — never asks the user for a script."
+description: "UPLOAD variant of the MGG bottom-avatar PIP Short — user uploads their own talking-head video, the skill transcribes it, beat-plans a topic-matched b-roll background from the video's OWN transcript, assembles that background in ffmpeg (AI-generated cinematic stills + Ken Burns + crossfades + captions), and composites the uploaded video as a 540x540 rounded PIP over it. Fully autonomous — never asks the user for a script."
 ---
 
 # r-bottom-avatar-pip-upload
@@ -37,7 +37,7 @@ This is the **distribution** recipe (`r-` prefix → catalog classifies it as di
 ## Output
 
 - **Canvas:** 1080×1920 (9:16 portrait), background fill `#0F172A` (dark navy)
-- **Background:** topic-matched b-roll video (Remotion-rendered) filling the full canvas
+- **Background:** topic-matched b-roll video (ffmpeg-assembled from AI-generated cinematic stills) filling the full canvas
 - **PIP:** the uploaded video, center-cropped to square, scaled to 540×540, rounded corners r=54, `overlay=270:1380`
 - **Audio:** the uploaded video's audio, `loudnorm`-normalized, carries the whole piece (b-roll is silent)
 - **Outro:** MGG outro appended (`mgg-outro-vertical-5s.mp4`, audio > -60 dB)
@@ -70,10 +70,11 @@ uploaded video
 [3] beat-plan (GLM-5.1) ───────────────► beats.json  ({scenes:[{text,keywords[],durationInFrames}]})
    │                                       see beat-planner.md for the prompt
    ▼
-[4] Remotion render (remotion/ subproject) ─► broll-bg.mp4  (1080×1920, topic-matched, 30fps)
+[4a] cfw-broll-source (kie.ai/ffmpeg) ──► one cinematic still per beat
+[4b] cfw-broll-assemble (ffmpeg) ───────► broll-bg.mp4  (1080×1920, Ken Burns + xfade + captions, 30fps)
    │
    ▼
-[5] cfw-bottom-avatar-pip (ffmpeg) ────► composite + loudnorm + outro ─► R2 upload ─► URL
+[5] cfw-bottom-avatar-pip (ffmpeg) ────► composite + loudnorm + outro ─► R2 upload ─► cleanup ─► URL
 ```
 
 ### Stage 1 — Extract audio
@@ -109,28 +110,33 @@ Feed the transcript + duration to GLM-5.1 using the prompt in **[`beat-planner.m
 
 Strip any ```json fences before parsing. Validate: JSON parses, every scene's duration is 60–120, and the sum is within one scene-length of the target. If validation fails, re-call once with a stricter directive; if it still fails, fail fast.
 
-### Stage 4 — Remotion renders the topic b-roll background
+### Stage 4 — Assemble the topic b-roll background (ffmpeg, no browser)
 
-Hand `beats.json` to the `remotion/` subproject (uses the `f-remotion` framework). Remotion renders a 1080×1920 @ 30fps background video where each scene runs for its `durationInFrames`, shows its `text` as an on-screen phrase, and visualizes its `keywords` as b-roll (generated or library, per `brollMode`).
+For each beat, source one cinematic still, then assemble them into a full-frame background with Ken Burns motion, crossfades, and burned captions — all in **ffmpeg, no Remotion/headless browser**. Renders a ~15s background in ~2–3s on shared-cpu-1x.
 
-- Scene 1 MUST render visible brand content at frame 0 — no fade-in from black/navy (first-frame rule, same as the sibling recipe; a dark first frame reads as broken in-feed).
-- Output: `renders/broll-bg.mp4`.
-
-**Exact render command (VERIFIED in the prod container — use these flags, they matter):**
+**4a. Source one still per beat — `cfw-broll-source`** (kie.ai `z-image`, on-brand cinematic stills; auto-falls back to a clean concept card if generation fails, so it never hard-stops):
 
 ```bash
-cd "$SKILL_DIR/remotion"
-[ -d node_modules ] || npm install --no-audit --no-fund --loglevel=error   # first run only; slow
-npx remotion render TopicBroll renders/broll-bg.mp4 \
-  --props=./beats.json \
-  --browser-executable=/usr/bin/chromium \
-  --gl=swiftshader \
-  --disable-chromium-sandbox \
-  --concurrency=1
+# for each beat i in beats.json (generate in parallel to cut wall-clock):
+cfw-broll-source --keywords "<beat.keywords, comma-joined>" --text "<beat.text>" --out "$WORK/broll/$i.png"
+```
+~0.8 kie credits + ~15–40s per still; the fallback card is instant.
+
+**4b. Build the assembler plan** — convert beats to the assembler schema (frames → seconds @30fps):
+
+```json
+{ "fps": 30, "segments": [ { "src": "broll/0.png", "durationSec": 3.0, "caption": "<beat.text>" } ] }
 ```
 
-- `--gl=swiftshader` is REQUIRED in the container — `angle` times out connecting to headless Chrome. `--concurrency=1` avoids the CPU-autodetect crash + OOM on shared-cpu-1x. `--browser-executable=/usr/bin/chromium` uses the system browser (baked into the cfw-agent image).
-- **Performance note:** software rendering on `shared-cpu-1x` is SLOW (minutes for a ~15s clip). If renders time out the skill subprocess, the cfw-agent machine needs more CPU/RAM, or render at a lower fps/scale.
+**4c. Assemble — `cfw-broll-assemble`** (pure ffmpeg: cover-scale to 1080×1920, Ken Burns `zoompan` on stills, ~0.5s `xfade` crossfades, `drawtext` captions in the TOP safe zone only):
+
+```bash
+cfw-broll-assemble --plan "$WORK/broll-plan.json" --out "$WORK/renders/broll-bg.mp4"
+```
+
+- Output: 1080×1920 @30fps, silent (audio comes from the avatar PIP in Stage 5). Captions are kept clear of the bottom 540px PIP zone, and the first frame is a real cover-scaled still (first-frame rule satisfied automatically).
+
+> **Why ffmpeg, not Remotion:** Remotion renders every frame through a headless Chrome browser (software-GL on a CPU-only VM) — minutes per clip plus ~293 MB of node deps. This ffmpeg path produces the same length in ~2–3s with no browser, which is why the whole recipe runs comfortably on `shared-cpu-1x`. (Remotion stays available via the `f-remotion` skill only for genuinely animated graphics / kinetic typography — not footage behind a talking head.)
 
 ### Stage 5 — Composite PIP + loudnorm + outro + upload (`cfw-bottom-avatar-pip` helper)
 
@@ -142,6 +148,7 @@ The `cfw-bottom-avatar-pip` ffmpeg helper composites the uploaded video as the P
 4. Audio = the uploaded video's audio, `loudnorm`-normalized (the b-roll background is silent).
 5. Append the MGG outro (`mgg-outro-vertical-5s.mp4`). Re-encode the outro to stereo 48kHz and stitch with the **concat filter** (not the demuxer + `-c copy`) to avoid the channel-layout jitter artifact. Verify outro audio mean_volume > -60 dB.
 6. Upload final + cover to Cloudflare R2 (`cfw-r2-upload` / `cloud-r2-upload` helper) and **return the R2 URL**.
+7. **Clean up (REQUIRED — disk hygiene):** once the R2 URL is confirmed, delete the per-run working directory (downloaded upload, `audio.wav`, sourced stills, `broll-bg.mp4`, intermediate renders). The cfw-agent volume is small (~1 GB); leaving working files behind fills it within a handful of runs. `rm -rf "$WORK"`. (The `cfw-*` helpers already self-clean their own temp dirs; this removes the orchestration-level working dir.)
 
 ```bash
 cfw-bottom-avatar-pip \
