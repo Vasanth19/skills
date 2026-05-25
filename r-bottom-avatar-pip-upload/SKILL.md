@@ -26,6 +26,16 @@ This is the **distribution** recipe (`r-` prefix → catalog classifies it as di
 
 **Proceed autonomously. Never ask the user for a script, a topic, b-roll choices, durations, or confirmation.** The uploaded video IS the brief. Everything downstream (transcript → beats → b-roll → composite) is derived deterministically from it. If something is genuinely missing (e.g. the upload has no audio track), fail fast with the exact error per the global Fail-Fast rule — do not stall waiting for user input mid-pipeline.
 
+## How to run (ONE command — do this)
+
+The entire pipeline is wired into a single deterministic container command. When the user uploads a video and asks for a bottom-avatar PIP, just run:
+
+```bash
+cfw-bottom-avatar-pip-upload --upload "<local path or URL of the uploaded video>"
+```
+
+It transcribes → beat-plans → sources b-roll stills → assembles the background → composites the avatar PIP → uploads to R2, and **prints the final R2 URL on the last stdout line**. Reply to the user with that URL. It reads `$BRAND_ID` for the output path and runs fully autonomously — you do NOT orchestrate the stages yourself or ask the user anything. The stage-by-stage breakdown below is reference for maintainers; the command above is the execution path.
+
 ## Inputs
 
 | Parameter | Required | Default | Description |
