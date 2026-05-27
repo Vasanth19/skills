@@ -68,7 +68,7 @@ Post
 
 | Status | Meaning | Writable by |
 |---|---|---|
-| `draft` | Post row exists but not scheduled | User / agent |
+| `draft` | Post row exists but not scheduled (incl. approved posts with no connected platform yet) | User / agent / approval handler |
 | `scheduled` | `scheduledAt` set, waiting for publish time | Scheduler / approval handler |
 | `publishing` | Platform API call in flight | Publisher worker |
 | `published` | Platform confirmed publish | Webhook handler |
@@ -97,9 +97,38 @@ PostTiming
   @@unique([brandId, platform, dayOfWeek, timeSlot])
 ```
 
+### Approval always succeeds — unconnected platforms become drafts
+
+**A missing platform connection is NOT an approval failure.** When a dish is
+approved (`POST /api/v1/inbox/approve`), each output's target platform is
+checked against the brand's active `PlatformConnection`s:
+
+- **Connected** → the post is scheduled (3-tier algorithm below) and, if a
+  publish time is computed, queued with PostForMe.
+- **Not connected** (or connected but no schedulable slot) → the post is still
+  created, as a **draft** (`status = "draft"`, `scheduledAt = null`, no PostForMe
+  call). The composition is still marked `approved` and the approval token is
+  stamped. The owner (or an agent) schedules these drafts later — from the
+  calendar or programmatically — once a platform is connected.
+
+Approval only returns an error (HTTP 422) when **nothing** could be created at
+all (e.g. an output has no caption). The response separates the outcomes:
+
+```jsonc
+{
+  "scheduled": [{ "platform": "linkedin", "scheduledAt": "…", "postId": "…", "pfmPostId": "…" }],
+  "drafted":   [{ "platform": "linkedin", "postId": "…" }],   // approved, awaiting a connection / slot
+  "failed":    [{ "platform": "…", "error": "…" }]            // genuine errors only (no caption, PFM/DB error)
+}
+```
+
+This is the standard everywhere approval happens (inbox + workspace dish
+preview): approving never blocks on connection state; it degrades to a draft.
+
 ### How scheduling works
 
-1. **Approval creates posts** with `status = "scheduled"`
+1. **Approval creates posts** with `status = "scheduled"` (connected) or
+   `status = "draft"` (unconnected / unschedulable — see above)
 2. **Scheduler worker** polls every minute:
    ```sql
    SELECT * FROM posts

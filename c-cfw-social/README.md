@@ -47,6 +47,8 @@ CFW Social is the main application — a Next.js 16 app with a Prisma/PostgreSQL
 | `publishing.md` | Posts, scheduling, calendar, platform constraints |
 | `media-capture.md` | Presigned uploads, capture events, linking |
 | `auth.md` | Auth cascade, middleware, HMAC, encryption |
+| `local-dev.md` | Base URL + working curl per auth mode + SSE consumption + dev-brand bootstrap (localhost:3000) |
+| `prod.md` | Production API quickstart — `app.cfw.social`, Vercel key pull, brand ID lookup, security notes on dev endpoints |
 | `integrations.md` | Telegram, Discord, Slack, Stripe, PostForMe setup |
 | `admin-runbook.md` | Recovery, rotation, deletion, billing, tuning |
 | `routes.json` | Every HTTP route + auth mode + sample body |

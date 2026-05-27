@@ -11,7 +11,7 @@ This skill teaches you how to **call** cfw-agent from outside — via its MCP en
 ## Prerequisites
 
 - cfw-agent running on `http://localhost:8081` (host) or `https://agent.cfw.social` (prod)
-- A plaintext `openclawApiKey` for a brand
+- A brand-scoped API key plaintext (mint one via cfw-social `POST /api/v1/api-keys` or the `/settings/api-keys` UI)
 - `jq` installed (`brew install jq`)
 
 ## 30-second smoke test
@@ -23,8 +23,9 @@ bash /Users/vasanth/Code/skills/c-cfw-agent/mcp-example.sh --no-tool-call
 # Full smoke with LLM (~$0.02, ~3 seconds)
 bash /Users/vasanth/Code/skills/c-cfw-agent/mcp-example.sh \
   --base-url=http://localhost:8081 \
-  --api-key="$(cd /Users/vasanth/Code/cfw/cfw-agent && pnpm tsx --env-file=.env scripts/decrypt-brand-key.ts e2e-brand-001 2>/dev/null | tail -1)" \
+  --api-key="<brand-api-key-plaintext>" \
   --brand-id=e2e-brand-001
+# Get the key from cfw-social /settings/api-keys or via POST /api/v1/api-keys
 ```
 
 ## Register in Claude Code

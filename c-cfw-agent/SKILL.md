@@ -4,7 +4,8 @@ description: >-
   How to interact with the cfw-agent orchestrator via its Model Context Protocol
   (MCP). Covers the `cfw_run` tool (single tool that takes brandId + prompt and
   returns generated outputs as R2 URLs), MCP registration in Claude Code, auth
-  (`x-api-key` flow with brand-scoped `openclawApiKey`), the 3 MCP catalog
+  (`x-api-key` flow with bcrypt-verified api_keys row plaintext (the same row
+  users mint at cfw-social `/settings/api-keys`)), the 3 MCP catalog
   resources (`cfw://catalog/agent-guide`, `skills-catalog`, `skills-json`), 10
   example prompts, error modes, local vs prod, and the bring-your-own smoke test.
   Also covers the 28 MCP tools exposed by cfw-social at `/api/v1/mcp` that
@@ -37,7 +38,7 @@ How to talk to the **cfw-agent** orchestrator — the service that runs the AI l
 
 | Path | Audience | Auth | Use it when… |
 |---|---|---|---|
-| `cfw-social → POST /chat/stream` | Internal | `x-api-key` (decrypted `Brand.openclawApiKey`) | cfw-social web UI or chat channels trigger runs |
+| `cfw-social → POST /chat/stream` | Internal | `x-api-key` (a brand-scoped api_keys row plaintext, bcrypt-verified) | cfw-social web UI or chat channels trigger runs |
 | **External → `POST /mcp`** | **You** | **`x-api-key` header** | You want to call `cfw_run` from Claude Code, curl, or CI |
 
 This skill covers the **external MCP path**.

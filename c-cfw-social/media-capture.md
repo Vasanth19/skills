@@ -4,27 +4,93 @@ How media files (images, videos, audio, documents) flow into the CFW Social syst
 
 ---
 
+## ⚠️ CRITICAL — The Only Correct Way to Attach Media to a Post
+
+  **Never upload to the dev sink and pass that URL to a post.** No workspace scoping,
+  no Capture/Source row, URL gone on restart.
+
+  Mandatory sequence:
+  1. Create workspace → get `workspaceId`
+  2. `GET /api/v1/captures/presign-upload?filename=...` (needs session cookie or signed-token — master key alone is NOT enough)
+  3. `PUT <presignedUrl>` — directly to R2, not through cfw-social
+  4. `POST /api/v1/captures/{captureId}/link { workspaceId }` — creates the Source row
+  5. `POST /api/v2/posts { mediaUrl: <publicUrl from step 2>, workspaceId }` — use the R2 CDN URL only
+
+  **What NOT to do:**
+  - `/api/v1/dev/upload` → stores to /tmp, gone on restart, no Source row                                                                    - Using `localhost:3000/api/v1/dev/media/...` as mediaUrl → localhost-only, not a real CDN URL
+  - Skipping the `/link` call → R2 has the file but the workspace has no Source row
+
+### Mandatory sequence
+
+**Step 1 — Create the workspace first**
+```
+POST /api/v2/workspaces  { name: "..." }
+→ workspaceId
+```
+
+**Step 2 — Presign the upload (workspace-scoped)**
+```
+GET /api/v1/captures/presign-upload?filename=foo.png&contentType=image/png
+Auth: signed-token OR session cookie  ← master key alone is NOT enough
+→ { presignedUrl, publicUrl, storageKey }
+```
+`storageKey` format: `${brandId}/${workspaceId}/${mediaId}.ext` — this ties the file to the workspace in R2.
+
+**Step 3 — PUT directly to R2**
+```
+PUT <presignedUrl>
+Content-Type: image/png
+Body: <raw file bytes>
+```
+Upload straight to the R2 presigned URL — do NOT route through the cfw-social server.
+
+**Step 4 — Link the capture to the workspace**
+```
+POST /api/v1/captures/{captureId}/link  { workspaceId }
+```
+Creates the `Source` row. Without this the workspace has no record of the media and the agent cannot reference it.
+
+**Step 5 — Use publicUrl as mediaUrl in the post**
+```
+POST /api/v2/posts  { workspaceId, platform, mediaUrl: <publicUrl from Step 2>, ... }
+```
+`publicUrl` is the R2 CDN URL (`https://cdn.cfwsocial.com/...`). This is the only durable, workspace-scoped URL that should ever appear in `Post.mediaUrl`.
+
+### Auth blocker for scripted flows
+`presign-upload` requires `signed-token` or a **session cookie** — the master key is not accepted. To call it from a script:
+- Grab the `cfw-session-token` cookie from browser devtools, or
+- Pull a signed capture JWT from `approval_tokens` in the DB.
+
+### What NOT to do
+
+| Wrong approach | Why it breaks |
+|---|---|
+| `PUT /api/v1/dev/upload?key=<brandId>/file.png` | Stores to `/tmp` — gone on restart, not workspace-scoped, no Source row created |
+| Using `/api/v1/dev/media/...` as `mediaUrl` in a post | localhost-only, not a real CDN URL, 404s in any non-local context |
+| Skipping `POST /api/v1/captures/{captureId}/link` | File exists in R2 but workspace has no Source row — agent and UI cannot see it |
+| Uploading at brand level (`${brandId}/filename`) instead of workspace level | Bypasses tenant isolation, file not scoped to any workspace |
+
+---
+
 ## Overview
 
 ```
-Client requests upload
-    │
-    ▼
-GET /api/v1/captures/presign-upload
-    │
-    ├──▶ Returns presigned R2 URL
-    │
-    ▼
-Client uploads file directly to R2
-    │
-    ▼
-R2 confirms upload
-    │
-    ▼
-Client notifies cfw-social
-    │
-    ▼
-cfw-social creates Media row + links to workspace
+1. Create workspace
+        │
+        ▼
+2. GET /api/v1/captures/presign-upload  (signed-token or session cookie)
+        │
+        ├──▶ { presignedUrl (R2), publicUrl (CDN), storageKey }
+        │
+        ▼
+3. PUT <presignedUrl>  ← direct to R2, NOT through cfw-social
+        │
+        ▼
+4. POST /api/v1/captures/{captureId}/link  { workspaceId }
+        │    Creates Source row — workspace now owns the media
+        │
+        ▼
+5. POST /api/v2/posts  { mediaUrl: publicUrl, workspaceId, platform, ... }
 ```
 
 ---

@@ -44,7 +44,7 @@ Read those once at session start and you won't "chat blind."
 claude mcp add cfw-agent-local http://localhost:8081/mcp \
   --transport http \
   --scope user \
-  -H "x-api-key: <PLAINTEXT_OPENCLAW_API_KEY>"
+  -H "x-api-key: <BRAND_API_KEY_PLAINTEXT>"
 ```
 
 ### Production (Railway, when deployed)
@@ -53,7 +53,7 @@ claude mcp add cfw-agent-local http://localhost:8081/mcp \
 claude mcp add cfw-agent https://agent.cfw.social/mcp \
   --transport http \
   --scope user \
-  -H "x-api-key: <PLAINTEXT_OPENCLAW_API_KEY>"
+  -H "x-api-key: <BRAND_API_KEY_PLAINTEXT>"
 ```
 
 Notes:
@@ -65,22 +65,26 @@ Verify with `claude mcp list` — the entry should show `✓ Connected`. If it s
 
 ---
 
-## 3. Get your brand's plaintext api key
+## 3. Get your brand's api key
 
-Every `x-api-key` header is the **decrypted** value of `Brand.openclawApiKey` (or `TelegramBot.openclawApiKey` as a fallback). The DB stores it AES-256-GCM-encrypted under `ENCRYPTION_KEY`; only someone with that env can decrypt it.
+The `x-api-key` header value is a **brand-scoped api_keys row plaintext** — a key that lives in cfw-social's `api_keys` table and is bcrypt-verified on each request.
 
-If you have access to the cfw-agent repo and its `.env`:
+How auth works (Phase 3 model, shipped 2026-05-18):
 
-```bash
-cd /path/to/cfw-agent
-pnpm tsx --env-file=.env scripts/decrypt-brand-key.ts <BRAND_ID>
-# Or, with metadata on one line:
-pnpm tsx --env-file=.env scripts/decrypt-brand-key.ts <BRAND_ID> --verbose
-```
+1. cfw-agent receives the `x-api-key` header value.
+2. It extracts the first 12 characters as the prefix.
+3. It queries `SELECT … FROM api_keys WHERE brand_id = $1 AND prefix = $2 AND is_active = true`.
+4. It runs `bcrypt.compare(providedKey, row.keyHash)` — match → auth OK; updates `api_keys.last_used_at`.
+5. The **same plaintext** is forwarded as `x-api-key` on cfw-agent's MCP back-channel to cfw-social `/api/v1/mcp`. cfw-social's `requireApiBrand` bcrypt-verifies the same row, so **one secret works for both legs**.
 
-Exit codes: `0` ok, `1` brand not found, `2` brand exists but no key set, `3` decryption failed (wrong `ENCRYPTION_KEY`), `4` usage error.
+**To mint a key:**
 
-If you DON'T have the repo, ask whoever provisioned the brand to hand you the plaintext key out-of-band. **The key is brand-scoped** — one brand, one key — so different brands need separate registrations or you have to override the header per call.
+- UI: go to cfw-social `/settings/api-keys` and generate a new key for the brand.
+- API: `POST /api/v1/api-keys` with cfw-social master auth. The response includes the full plaintext — copy it immediately, it is not stored in readable form.
+
+The key is brand-scoped — different brands need separate keys (and separate MCP registrations, or per-call header overrides).
+
+> **History note (removed in Phase 3 — 2026-05-18):** prior to this release, the x-api-key was the AES-256-GCM-decrypted value of `Brand.openclawApiKey`. That column was dropped in migration `20260518000000_drop_openclaw_api_key` (cfw-social commit `0327637`, cfw-agent commit `1429bbd`). The `scripts/decrypt-brand-key.ts` helper was also deleted. Do not use that approach.
 
 ---
 
@@ -205,7 +209,7 @@ Each prompt is paste-ready into a fresh Claude Code session with `cfw-agent-loca
 | Surface | Cause | What you'll see |
 |---|---|---|
 | `result.isError: true, content="Error: unknown_brand"` | `brandId` doesn't exist in the cfw-social Postgres | 401-ish tool error; no LLM call burned |
-| `result.isError: true, content="Error: invalid_api_key"` | `x-api-key` doesn't match the brand's decrypted key | 401-ish tool error; no LLM call burned |
+| `result.isError: true, content="Error: invalid_api_key"` | `x-api-key` bcrypt-verification failed for the brand's api_keys row | 401-ish tool error; no LLM call burned |
 | JSON-RPC `-32602` "prompt is required" / "brandId is required" | Missing required arg | Tool-call rejected before reaching the agent |
 | JSON-RPC `-32602` "Unknown tool: …" | Wrong tool name | Tool-call rejected |
 | `result.isError: true` with skill-subprocess output | The agent picked a skill but it crashed (missing `yt-dlp`, `chromium`, `mlx_whisper` on Linux, missing brand-ref.md field, etc.) | Look at the surrounding `stages` + `toolCalls` and tail the cfw-agent log |
@@ -237,7 +241,7 @@ If you want to confirm a server is reachable and serving the protocol **without*
 ```bash
 bash /Users/vasanth/Code/skills/c-cfw-agent/mcp-example.sh \
   --base-url=http://localhost:8081 \
-  --api-key="$CFW_OPENCLAW_KEY" \
+  --api-key="$CFW_API_KEY" \
   --brand-id="$BRAND_ID"
 ```
 

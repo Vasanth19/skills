@@ -247,14 +247,12 @@ HTTP/1.1 503 Service Unavailable
 
 | Field | Algorithm | Key |
 |---|---|---|
-| `Brand.openclawApiKey` | AES-256-GCM | `ENCRYPTION_KEY` env |
 | `Brand.pfmProjectApiKey` | AES-256-GCM | `ENCRYPTION_KEY` env |
 | `Brand.pfmProjectWebhookSecret` | AES-256-GCM | `ENCRYPTION_KEY` env |
 | `PlatformConnection.accessTokenEnc` | AES-256-GCM | `ENCRYPTION_KEY` env |
 | `PlatformConnection.refreshTokenEnc` | AES-256-GCM | `ENCRYPTION_KEY` env |
 | `TelegramBot.botToken` | AES-256-GCM | `ENCRYPTION_KEY` env |
 | `TelegramBot.webhookSecret` | AES-256-GCM | `ENCRYPTION_KEY` env |
-| `TelegramBot.openclawApiKey` | AES-256-GCM | `ENCRYPTION_KEY` env |
 | `SlackInstall.botTokenEnc` | AES-256-GCM | `ENCRYPTION_KEY` env |
 | `DiscordBot.tokenEnc` | AES-256-GCM | `ENCRYPTION_KEY` env |
 | `CustomerConfig.anthropicKeyEnc` | AES-256-GCM | `ENCRYPTION_KEY` env |

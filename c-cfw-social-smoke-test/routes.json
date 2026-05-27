@@ -1,6 +1,6 @@
 {
   "_comment": "Manifest of every src/app/api/**/route.ts handler in cfw-social. The `auth` tag is the GATEWAY-level auth (what src/proxy.ts allows), NOT just what the handler imports. Many handlers call requireApiBrand but the middleware blocks unauthenticated traffic upstream, so the effective auth is `session`. Placeholders inside {...} must match a key in PLACEHOLDER inside smoke.mjs. Regenerate by hand; bump _version.",
-  "_version": "2026-05-15.3",
+  "_version": "2026-05-18.1",
   "routes": [
     { "path": "/api/health", "methods": ["GET"], "auth": "public" },
 

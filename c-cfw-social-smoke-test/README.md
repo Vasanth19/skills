@@ -122,7 +122,7 @@ Full list with placeholders is in `mcp.md` §6. Short recap of what each tests:
 | `error: missing required argument 'commandOrUrl'` when running `claude mcp add` | URL placed after flags instead of right after name | Put the URL second: `claude mcp add <name> <url> --transport http -H "..."` |
 | `curl: (7) Failed to connect to localhost:8081` | cfw-agent not running | `cd ~/Code/cfw/cfw-agent && pnpm tsx --env-file=.env src/server.ts &` |
 | `result.isError: true, "Error: unknown_brand"` | `brandId` doesn't exist in your local Postgres | `psql cfw_social_dev -c "SELECT id, slug FROM brands LIMIT 10;"` and pick a real one |
-| `result.isError: true, "Error: invalid_api_key"` | Header key doesn't match `Brand.openclawApiKey` for that brand | Re-decrypt: `pnpm tsx --env-file=.env scripts/decrypt-brand-key.ts <brandId>` and update the MCP registration |
+| `result.isError: true, "Error: invalid_api_key"` | The `x-api-key` header value doesn't match any active `api_keys` row for that brand | Check the brand has at least one active key: `psql cfw_social_dev -c "SELECT prefix, name, active FROM api_keys WHERE brand_id='<brandId>';"` — if empty or inactive, generate a new key from the API Keys settings page and update the MCP registration |
 | `cfw-agent-local` not visible in fresh Claude Code window | Window was open before registration | Close and reopen Claude Code (user-scope MCPs are loaded at startup) |
 | Skill subprocess fails with `mlx_whisper: command not found` | You're running cfw-agent in Linux/Docker; the audio skill is Mac-only today | Skip use case #8 in container; runs fine on host. Groq Whisper swap is planned. |
 | `c-studio-audio` works locally but skill needs a voice_id | Skill reads from `brand-ref.md`; that brand's file may be missing or empty | Check `/Users/vasanth/Code/cfw/cfw-social/creatives/brand-guidelines/<slug>/brand-ref.md` |
@@ -140,7 +140,7 @@ Full list with placeholders is in `mcp.md` §6. Short recap of what each tests:
 | Brand keys | local seeded keys (won't work in prod) | provisioned per-tenant in production cfw-social |
 | Cost ceiling | your local API budget | Railway-side limits + provider quotas |
 
-The plaintext key is **brand-scoped and environment-scoped**. The same brand will have a different plaintext key in local vs prod (different `ENCRYPTION_KEY`). Never copy a local key and try it against prod — it won't authenticate, and that's by design.
+Brand API keys (stored in the `api_keys` table, bcrypt-verified server-side) are environment-scoped. A key seeded in local dev won't exist in production and vice versa — never copy a local key and try it against prod. Generate and register the appropriate key for each environment.
 
 ---
 

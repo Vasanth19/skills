@@ -1,8 +1,13 @@
 {
   "_comment": "Manifest of every src/app/api/**/route.ts handler in cfw-social. The `auth` tag is the GATEWAY-level auth (what src/proxy.ts allows), NOT just what the handler imports. Many handlers call requireApiBrand but the middleware blocks unauthenticated traffic upstream, so the effective auth is `session`. Placeholders inside {...} must match a key in PLACEHOLDER inside smoke.mjs. Regenerate by hand; bump _version.",
-  "_version": "2026-05-15.3",
+  "_version": "2026-05-18.1",
   "routes": [
     { "path": "/api/health", "methods": ["GET"], "auth": "public" },
+
+    { "_comment": "Better Auth catch-all — sign-in, sign-up, session, sign-out, etc. Auth is delegated to Better Auth's own handlers.", "path": "/api/auth/{...all}", "methods": ["GET", "POST"], "auth": "public" },
+
+    { "_comment": "Hono catch-all — mirrors v1 routes through src/lib/api/routes/* under /api/v2. Each Hono sub-route has its own auth; see src/lib/api/routes/ for canonical bodies. Currently a parallel surface to v1 during the V2 migration.", "path": "/api/v2/{...path}", "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"], "auth": "api-or-session" },
+
 
     { "path": "/api/v1/agents", "methods": ["POST"], "auth": "session", "body": { "workspaceId": "$WORKSPACE_ID", "archetype": "free-form" } },
     { "path": "/api/v1/agents/{agentId}/discovery", "methods": ["PUT"], "auth": "session", "body": { "allowDiscovery": true } },

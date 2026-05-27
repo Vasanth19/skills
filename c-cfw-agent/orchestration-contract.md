@@ -18,10 +18,10 @@ The canonical boundary between **cfw-social** and **cfw-agent** (or any future o
 
 All requests carry:
 ```
-x-api-key: <Brand.openclawApiKey decrypted>
+x-api-key: <brand-scoped api_keys plaintext>
 ```
 
-cfw-agent validates against `Brand.openclawApiKey` first, `TelegramBot.openclawApiKey` as fallback.
+cfw-agent bcrypt-verifies the value against the `api_keys` table for the brand (prefix lookup + `bcrypt.compare` against stored hash). The same plaintext is reused by cfw-agent's MCP back-channel to cfw-social — one secret covers both legs.
 
 The sync-webhook uses `CFW_SKILL_SYNC_KEY` env (service account key).
 

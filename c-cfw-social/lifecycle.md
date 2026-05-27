@@ -190,11 +190,19 @@ The chat endpoint (`/approval/{token}/chat` GET/POST) allows the human to ask qu
 
 A `Post` is a concrete content item scheduled for or published to a specific platform.
 
+> **Draft fallback:** approval always succeeds. If the target platform has no
+> active `PlatformConnection` (or no schedulable slot), the Post is created as a
+> `draft` (`scheduledAt = null`, no PFM call) instead of failing. It's scheduled
+> later — from the calendar or by an agent — once a platform is connected. See
+> `publishing.md` § "Approval always succeeds — unconnected platforms become drafts".
+
 ```
 ┌─────────┐   approval creates Post rows   ┌───────────┐
-│approved │ ──────────────────────────────▶│ scheduled │
+│approved │ ──────────────────────────────▶│ scheduled │  (connected + slot)
 │composition│  one Post per platform        └─────┬─────┘
-└─────────┘                                        │
+└────┬────┘                                        │
+     │  no connection / no slot                    │
+     └──────────────▶ draft (schedule later)       │
                                                    │ scheduler polls
                                                    │ (or webhook pushes)
                                                    ▼

@@ -95,11 +95,15 @@ WHERE id = 'key_old123';
 
 1. Generate new key (64-char hex)
 2. Re-encrypt all sensitive columns:
-   - `Brand.openclawApiKey`
    - `Brand.pfmProjectApiKey`
+   - `Brand.pfmProjectWebhookSecret`
    - `PlatformConnection.accessTokenEnc`
+   - `PlatformConnection.refreshTokenEnc`
    - `TelegramBot.botToken`
-   - etc.
+   - `TelegramBot.webhookSecret`
+   - `SlackInstall.botTokenEnc`
+   - `DiscordBot.tokenEnc`
+   - `CustomerConfig.anthropicKeyEnc` / `openaiKeyEnc` / `pfmKeyEnc`
 3. Update `.env` on both services
 4. Restart both services
 5. Verify by decrypting a test value

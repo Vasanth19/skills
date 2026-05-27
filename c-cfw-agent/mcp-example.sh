@@ -9,7 +9,7 @@
 # Usage:
 #   bash mcp-example.sh \
 #     --base-url=http://localhost:8081 \
-#     --api-key="$CFW_OPENCLAW_KEY" \
+#     --api-key="$CFW_API_KEY" \
 #     --brand-id=e2e-brand-001
 #
 # Or via env vars:

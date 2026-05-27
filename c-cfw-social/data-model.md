@@ -81,8 +81,7 @@ Brand
   trialEndsAt          DateTime?
   apiAddonActive       Boolean  @default(false)
 
-  // Agent access (AES-256-GCM encrypted)
-  openclawApiKey       String?  @map("openclaw_api_key") @db.Text
+  // External service credentials (AES-256-GCM encrypted)
   pfmProjectApiKey     String?  @map("pfm_project_api_key") @db.Text
   pfmProjectWebhookSecret String? @map("pfm_project_webhook_secret") @db.Text
 

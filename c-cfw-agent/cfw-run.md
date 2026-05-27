@@ -122,14 +122,12 @@ Claude Code automatically requests `progressToken` — you'll see real-time prog
 Every `cfw_run` call must carry:
 
 ```
-x-api-key: <plaintext openclawApiKey>
+x-api-key: <brand api_keys plaintext>
 ```
 
-Resolution order (same as `/chat/stream`):
-1. `Brand.openclawApiKey` (canonical, WS-01)
-2. `TelegramBot.openclawApiKey` (back-compat fallback)
+Auth resolution: bcrypt-verified against the `api_keys` table for the brand.
 
-Both are AES-256-GCM encrypted at rest; decrypted at request time with `ENCRYPTION_KEY`.
+cfw-agent extracts the first 12 characters as the key prefix, queries `api_keys` for a matching active row, and runs `bcrypt.compare` against the stored hash. The same plaintext is reused as `x-api-key` on cfw-agent's MCP back-channel calls to cfw-social, so one key covers both legs.
 
 ---
 
@@ -137,7 +135,7 @@ Both are AES-256-GCM encrypted at rest; decrypted at request time with `ENCRYPTI
 
 ```
 1. Caller sends JSON-RPC to POST /mcp
-2. cfw-agent validates x-api-key against Brand.openclawApiKey
+2. cfw-agent bcrypt-verifies x-api-key against api_keys table
 3. cfw-agent calls cfw-social MCP tool: record_inbound_message
    → gets conversationId
 4. cfw-agent builds AgentTurnContext:
@@ -177,7 +175,7 @@ Note: Video/audio provider costs are charged to **their** providers, not visible
 | Error | Cause | What to do |
 |---|---|---|
 | `unknown_brand` | `brandId` doesn't exist | Check `psql cfw_social_dev -c "SELECT id, slug FROM brands"` |
-| `invalid_api_key` | `x-api-key` doesn't match | Re-decrypt: `pnpm tsx --env-file=.env scripts/decrypt-brand-key.ts <brandId>` |
+| `invalid_api_key` | `x-api-key` bcrypt-verification failed | Mint a new key at cfw-social `/settings/api-keys` or via `POST /api/v1/api-keys` |
 | `prompt is required` / `brandId is required` | Missing required arg | Add both to `arguments` |
 | `Unknown tool: ...` | Wrong tool name | Must be `cfw_run` |
 | Skill subprocess crash | Missing binary (`yt-dlp`, `chromium`, `mlx_whisper`) | Check cfw-agent logs |
@@ -192,7 +190,7 @@ Before calling `cfw_run`:
 
 - [ ] cfw-agent is running (`curl http://localhost:8081/health`)
 - [ ] Brand exists in DB
-- [ ] `openclawApiKey` is set for the brand
+- [ ] An active `api_keys` row exists for the brand (visible at cfw-social `/settings/api-keys`)
 - [ ] Brand's `brand-ref.md` has `voice_id` / `avatar_id` (if using audio/avatar skills)
 - [ ] Skills directory is mounted (`SKILLS_DIR` env points to `/Users/vasanth/Code/skills`)
 - [ ] R2 credentials are configured (for asset uploads)

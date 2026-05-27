@@ -25,7 +25,9 @@ when_to_use: >
   "how do approvals work", "cfw-social routes", "cfw-social middleware",
   "better-auth cfw", "cfw-social webhook", "stripe webhook cfw",
   "postforme webhook cfw", "telegram bot cfw", "discord bot cfw",
-  "slack install cfw".
+  "slack install cfw", "external agent call cfw", "call cfw api from agent",
+  "api/v2 cfw", "cfw api key access", "programmatic api cfw",
+  "how to call app.cfw.social", "cfw rest api".
 allowed-tools: Bash, Read, Write, Edit
 ---
 
@@ -39,6 +41,7 @@ This is the canonical skill for understanding, operating, and debugging the **CF
 |---|---|---|
 | **Data model** | `data-model.md` | Entity definitions, field glossaries, relationships, indexes |
 | **Lifecycle** | `lifecycle.md` | How a run executes, how outputs are produced, how approvals flow, how posts get published |
+| **Composition authoring** | `composition-authoring.md` | How an agent must build compositions: per-platform image sizes/aspect ratios, reel specs, carousel multi-image flow, per-platform caption formatting. **Read before calling `propose_composition`.** |
 | **Brand management** | `brand-management.md` | Onboarding, DNA, insights, social accounts, channel connections, API keys |
 | **Workspace ops** | `workspace-operations.md` | CRUD, sources, assets, listing runs/outputs/posts within a workspace |
 | **Approval workflow** | `approval-workflow.md` | send-for-approval, signed tokens, inbox actions, approval chat |
@@ -48,6 +51,9 @@ This is the canonical skill for understanding, operating, and debugging the **CF
 | **Integrations** | `integrations.md` | Telegram, Discord, Slack, Stripe, PostForMe setup guides |
 | **Admin runbook** | `admin-runbook.md` | Stuck run recovery, key rotation, account deletion, billing changes |
 | **API routes** | `routes.json` | Canonical manifest of every HTTP route + auth mode + sample body |
+| **Local dev API quickstart** | `local-dev.md` | Base URL + working curl per auth mode + SSE consumption + dev-brand bootstrap (localhost:3000) |
+| **Production API quickstart** | `prod.md` | Base URL (`app.cfw.social`), how to pull prod master key via Vercel, brand ID lookup, security notes on dev endpoints |
+| **External agent API** | `external-agent-api.md` | How external agents/scripts call `app.cfw.social` via API key — `/api/v2/` route catalog, auth, SSE, Python + TS examples |
 | **Quick start** | `README.md` | First-time orientation for operators |
 
 ## How to use this skill
