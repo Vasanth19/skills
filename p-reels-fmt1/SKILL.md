@@ -41,6 +41,17 @@ In BOTH cases, motion-graphics card text is always clean/derived, never raw tran
 
 Verified end-to-end on real assets (see **Verified render** below).
 
+## Intake — ask the user FIRST (when running this recipe)
+
+Before doing anything else, ask the user to **upload the two videos separately**:
+
+1. **Main recorded video** — their primary footage / screen recording (becomes the spine).
+2. **B-roll video(s)** — the clip(s) to cut away to.
+
+Do NOT assume these, pull from a library, or start any step until BOTH are provided as separate
+uploads. Confirm you have both files, then proceed. (If the user explicitly says "use my library
+b-roll", that satisfies #2 — otherwise wait for the upload.)
+
 ## Inputs
 
 - `main_video` — the user's recorded primary footage with a narration/voice track. **Must have a
