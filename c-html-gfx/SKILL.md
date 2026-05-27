@@ -3,6 +3,9 @@ name: c-html-gfx
 description: HTML graphics and screenshot generation for video overlays, banners, explainer slides, and Remotion-based motion graphics. Use when creating 1920x1080 GFX cards, YouTube/LinkedIn banners, animated explainer slides, or rendering React/TSX compositions with Remotion.
 when_to_use: Trigger on HTML GFX, GFX card, overlay graphic, video graphic, banner, YouTube banner, LinkedIn banner, explainer slide, HTML screenshot, headless Chrome screenshot, Remotion render, React video.
 allowed-tools: Bash
+kind: component
+visibility: internal
+dependsOn: [f-remotion]
 ---
 
 # HTML GFX — Graphics for Video

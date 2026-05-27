@@ -4,6 +4,14 @@ description: Finger-snap background swap reel pipeline. Detects snap points in a
 disable-model-invocation: true
 argument-hint: "[brand] [production-name] [source-video]"
 allowed-tools: Bash, Read, Write
+kind: pipeline
+visibility: catalog
+produces:
+  dish: Snap BG-Swap Reel
+  format: 9:16 vertical video
+  duration: 30-60s
+inputs: [source_video]
+dependsOn: [c-ai-media, c-production, c-ffmpeg]
 ---
 
 # pipeline-snap-bg-swap — Snap Background Swap Reel
@@ -34,7 +42,7 @@ Viral format: avatar snaps fingers → background changes. Each snap = new scene
 
 ### Step 1 — Snap Detection ⛔ CHECKPOINT
 
-→ Skill: `c-studio-production` → snap point detection
+→ Skill: `c-production` → snap point detection
 → Audio peak analysis (RMS threshold 0.7, min gap 0.5s, 50ms chunks)
 → Returns list of timestamps (seconds)
 → Output: `interim/broll-plan/snap-points.json`

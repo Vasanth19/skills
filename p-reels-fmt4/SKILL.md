@@ -5,7 +5,12 @@ when-to-use: Use when the user wants a faceless explainer reel — animation/mot
 version: 0.1.0
 kind: pipeline
 visibility: catalog
-dependsOn: c-studio-script, f-remotion, c-studio-audio, c-ffmpeg
+produces:
+  dish: Faceless Explainer Reel
+  format: 9:16 vertical video
+  duration: 30-60s
+inputs: [script]
+dependsOn: [c-script, f-remotion, c-audio, c-ffmpeg]
 ---
 
 # p-reels-fmt4 — Script → Explainer Reel (No Talking Head)
@@ -19,15 +24,15 @@ it works.
 ## Inputs
 
 - `topic` or `script` — the source idea or a full script. If only a topic, generate the script.
-- `voice` (optional) — VO voice id for `c-studio-audio` (ElevenLabs via Floe).
+- `voice` (optional) — VO voice id for `c-audio` (ElevenLabs via Floe).
 - `style` (optional) — visual/animation style for the explainer.
 - `target_duration` (optional) — desired reel length.
 
 ## Steps
 
-1. **Write / clean script** — `c-studio-script`: produce a short-form explainer script (or clean
+1. **Write / clean script** — `c-script`: produce a short-form explainer script (or clean
    a supplied one); estimate duration; TTS-preprocess.
-2. **Generate voiceover** — `c-studio-audio`: TTS the script to a VO track; normalize loudness;
+2. **Generate voiceover** — `c-audio`: TTS the script to a VO track; normalize loudness;
    (optionally) get word/segment timings for caption + animation sync.
 3. **Build animation** — `f-remotion`: author the explainer compositions (motion graphics, title
    cards, transitions), 9:16, synced to the VO timings.
@@ -46,8 +51,8 @@ voiceover and synced captions — no talking head.
 
 - Scaffold the Remotion project (compositions, fps, scene durations, animation style) — none
   exists yet. Decide whether `f-hyperframes` is an acceptable alternate renderer.
-- Pin the VO ↔ animation sync contract: does `c-studio-audio` emit word/segment timings that
+- Pin the VO ↔ animation sync contract: does `c-audio` emit word/segment timings that
   `f-remotion` consumes for on-screen text/animation timing?
-- `c-studio-audio` TTS config (voice id, ElevenLabs/Floe access) must be set.
+- `c-audio` TTS config (voice id, ElevenLabs/Floe access) must be set.
 - Define the default explainer visual style (templates, palette, typography).
 - No render done — validate end-to-end before production.

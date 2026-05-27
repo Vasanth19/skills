@@ -1,15 +1,23 @@
 ---
-name: r-screen-rec-vo
+name: p-screen-rec-vo
 description: "Produce one 9:16 Short with full-frame Remotion screen-rec (no avatar PIP). Avatar is VO-only — HeyGen render's audio is extracted and used as the VO track. Sahil-format adaptation."
+kind: pipeline
+visibility: catalog
+produces:
+  dish: Screen-Rec VO Short
+  format: 9:16 vertical video
+  duration: 35-50s
+inputs: [script]
+dependsOn: [t-heygen, f-remotion, c-ffmpeg]
 ---
 
-# r-screen-rec-vo
+# p-screen-rec-vo
 
 > Produces one 9:16 YouTube Short with a full-frame Remotion screen-rec (no avatar PIP). The avatar is voiceover-only — its HeyGen render's audio is extracted and used as the VO track. Intended for "Sahil-style" prompt-on-screen reveals, UI walkthroughs, or any reel where the brand deliberately breaks the talking-head pattern.
 
 **Brand:** Mr Growth Guide (B-GROWTHGUIDE) — Sahil-format adaptation recipe
 **Paperclip ticket:** VAS-52 (first production using this recipe)
-**Sibling recipes:** `r-bottom-avatar-pip` (default MGG Shorts), `r-alternating-visual` (tutorial alternating cuts)
+**Sibling recipes:** `p-bottom-avatar-pip` (default MGG Shorts), `p-alternating-visual` (tutorial alternating cuts)
 
 ## Sub-documents
 
@@ -23,13 +31,13 @@ description: "Produce one 9:16 Short with full-frame Remotion screen-rec (no ava
 
 ## When to Use
 
-Pick `r-screen-rec-vo` when:
+Pick `p-screen-rec-vo` when:
 - The reel is a prompt-on-screen reveal (typing into Claude/ChatGPT UI live) — visual payload is the prompt + result, not the creator's face
 - Brand deliberately wants face-off-camera to vary the algo grid
 - Creator's voice is still the anchor (no stock VO) — HeyGen render's audio carries
 - Duration target: 35-50s (Sahil-strict is 15-30s; MGG's denser voice lands 40-50s, acceptable)
 
-**Do NOT use if** the reel needs visible face reactions, hand gestures, or on-camera delivery. Use `r-bottom-avatar-pip` for those or for news-jacks.
+**Do NOT use if** the reel needs visible face reactions, hand gestures, or on-camera delivery. Use `p-bottom-avatar-pip` for those or for news-jacks.
 
 ## Inputs
 

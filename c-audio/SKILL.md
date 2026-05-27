@@ -1,8 +1,10 @@
 ---
-name: c-studio-audio
+name: c-audio
 description: Audio production for the creative studio. Use for text-to-speech voiceover generation (ElevenLabs via Floe API), SFX generation, audio chunk splitting, speech-to-text transcription (MLX Whisper on Apple Silicon), and audio loudness normalization.
 when_to_use: Trigger on TTS, voiceover, ElevenLabs, script-to-audio, SFX, sound effect, transcribe, whisper, MLX, loudnorm, audio chunk, audio split, LUFS, voiceover generation.
 allowed-tools: Bash
+kind: component
+visibility: internal
 ---
 
 # Studio Audio — TTS, SFX, Transcription

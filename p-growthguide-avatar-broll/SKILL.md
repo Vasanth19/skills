@@ -1,5 +1,5 @@
 ---
-name: b-growthguide-avatar-broll
+name: p-growthguide-avatar-broll
 description: "Assemble a 20s portrait 9:16 Short: HeyGen avatar at bottom, b-roll switching every 3-5s on top. Human-in-loop HeyGen render (subprocess agents cannot hit premium_credits). Caches avatar render to avoid re-burning credits."
 brand: B-GROWTHGUIDE
 version: "2.0"
@@ -7,10 +7,18 @@ created: "2026-04-17"
 revised: "2026-04-18"
 issue: VAS-7
 revision_note: "v2.0 — Step 2 rewritten for human-in-loop HeyGen per brand.yaml heygenWorkflow. Direct API calls (mcp__heygen__create_video_from_avatar, heygen-browser-render) are forbidden from subprocess adapters — they fail with MOVIO_PAYMENT_INSUFFICIENT_CREDIT."
-move-to: .claude/skills/b-growthguide-avatar-broll/
+move-to: .claude/skills/p-growthguide-avatar-broll/
+kind: pipeline
+visibility: catalog
+produces:
+  dish: GrowthGuide Avatar B-roll Short
+  format: 9:16 vertical video
+  duration: 20s
+inputs: [script]
+dependsOn: [t-heygen, c-broll, c-ffmpeg]
 ---
 
-# b-growthguide-avatar-broll
+# p-growthguide-avatar-broll
 
 > Assemble a 20-second 1080×1920 Short: HeyGen Cozy Tech Guru avatar anchored at the bottom, b-roll clips cycling in the top 60% zone. Avatar render is cached by script hash — re-running with the same script does NOT burn fresh credits.
 
@@ -208,7 +216,7 @@ Run `scripts/broll-select.sh` to validate clips and build placement plan at `$PR
 Run `scripts/composite.sh`:
 
 ```bash
-bash "$BRAND_ROOT/creatives/skills/b-growthguide-avatar-broll/scripts/composite.sh" \
+bash "$BRAND_ROOT/creatives/skills/p-growthguide-avatar-broll/scripts/composite.sh" \
   --avatar "$AVATAR_MP4" \
   --duration 20 \
   --broll-dir "$BRAND_ROOT/creatives/brolls/$BROLL_THEME" \
@@ -277,7 +285,7 @@ mempalace_add_drawer(
   wing: "gsai",
   room: "productions",
   name: "{ORD_ID}",
-  content: "ORD: {ORD_ID} — b-growthguide-avatar-broll (2026-04-17)
+  content: "ORD: {ORD_ID} — p-growthguide-avatar-broll (2026-04-17)
 STATUS: done
 SCRIPT: {first 60 chars}...
 AVATAR: Cozy Tech Guru ({lookId}) — cache {hit|miss}

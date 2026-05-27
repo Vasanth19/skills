@@ -4,6 +4,14 @@ description: Full VSL longform production pipeline. Produces one 16:9 landscape 
 disable-model-invocation: true
 argument-hint: "[brand] [production-name]"
 allowed-tools: Bash, Read, Write
+kind: pipeline
+visibility: catalog
+produces:
+  dish: VSL
+  format: 16:9 video
+  duration: 5-20 min
+inputs: [script]
+dependsOn: [c-script, t-heygen, c-broll, c-html-gfx, c-audio, c-production, c-ffmpeg, c-ai-media]
 ---
 
 # p-vsl — VSL Longform Production
@@ -51,7 +59,7 @@ Read brand path from `~/.gsai/ecosystem.yaml`. Create production folder:
 If `script` points to a draft `.md`: present to user for approval before proceeding.
 If `.txt` TTS-clean already: skip approval, confirm word count and estimated duration.
 
-→ Skill: `c-studio-script` (duration calc, TTS preprocessing if needed)
+→ Skill: `c-script` (duration calc, TTS preprocessing if needed)
 → Save TTS-clean to: `interim/scripts/{name}-tts.txt`
 
 **Gate: User approves script before render.**
@@ -82,7 +90,7 @@ If `speed != 1.0`: apply speed adjust → `interim/video/base/{name}-green-scree
 
 ## Step 4 — Transcription
 
-→ Skill: `c-studio-audio` → MLX Whisper
+→ Skill: `c-audio` → MLX Whisper
 → Input: downloaded avatar audio (or extracted audio from green-screen MP4)
 → Output: `interim/audio/{name}.srt` + `.txt`
 
@@ -118,7 +126,7 @@ Run in parallel where possible:
 → Output: `interim/broll/gfx/`
 
 **6c. Website Scroll** (if in plan):
-→ Skill: `c-web-capture` → long-form preset (1920x1080, 12s)
+→ Skill: `c-broll` → long-form preset (1920x1080, 12s)
 → Output: `interim/broll/segments/`
 
 ---
@@ -159,7 +167,7 @@ If verify fails: fix and recomposite before proceeding.
 
 ## Step 10 — Delivery ⛔ CHECKPOINT
 
-→ Skill: `c-studio-production` → run 12-point delivery checklist
+→ Skill: `c-production` → run 12-point delivery checklist
 → Name final: `ls-{category}01-{description}.mp4` → copy to `final/`
 
 **Gate: All 12 checks pass. User reviews final before marking done.**

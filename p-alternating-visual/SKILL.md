@@ -1,15 +1,23 @@
 ---
-name: r-alternating-visual
+name: p-alternating-visual
 description: "Produce one 9:16 Short with alternating segments: avatar talking → Remotion/NanoBanana visual → avatar → visual → avatar → outro. MGG tutorial/explainer recipe."
+kind: pipeline
+visibility: catalog
+produces:
+  dish: Alternating-Visual Short
+  format: 9:16 vertical video
+  duration: 30-40s
+inputs: [script]
+dependsOn: [t-heygen, f-remotion, c-ai-media, c-ffmpeg]
 ---
 
-# r-alternating-visual
+# p-alternating-visual
 
 > Produces one 9:16 Short (or 16:9 long-form) with alternating segments: avatar talking → visual (Remotion or NanoBanana image) → avatar → visual → avatar → outro.
 
 **Brand:** Mr Growth Guide (B-GROWTHGUIDE) — tutorial/explainer recipe
 **Paperclip ticket:** VAS-8
-**Sibling recipes:** `r-bottom-avatar-pip` (default PIP-over-broll Shorts), `r-screen-rec-vo` (no-face VO-only)
+**Sibling recipes:** `p-bottom-avatar-pip` (default PIP-over-broll Shorts), `p-screen-rec-vo` (no-face VO-only)
 
 ## Sub-documents
 

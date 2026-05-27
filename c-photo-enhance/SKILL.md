@@ -3,6 +3,8 @@ name: c-photo-enhance
 description: Free photo enhancement using ffmpeg filters. Applies named presets (cinematic, vibrant, warm, cool, bw, matte, sharp) to still images. Downloads source photo from any HTTP URL or R2, processes locally with ffmpeg, uploads result to R2. Zero API cost.
 when_to_use: Trigger on photo filter, enhance photo, image filter, color grade photo, cinematic photo, warm filter, cool filter, black and white photo, matte photo, sharpen image, photo enhancement, photo preset, filter photo, grade image.
 allowed-tools: Bash
+kind: component
+visibility: internal
 ---
 
 # c-photo-enhance — Photo Filter Pipeline

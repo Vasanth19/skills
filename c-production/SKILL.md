@@ -1,8 +1,11 @@
 ---
-name: c-studio-production
+name: c-production
 description: Production management for the creative studio. Use for creating production folder structures, running delivery checklists, updating the HTML dashboard, verifying output files, managing snap detection, extracting hook clips, and coordinating multi-step pipeline state.
 when_to_use: Trigger on production folder, create production, delivery checklist, dashboard update, snap detection, hook clip, c-ffmpeg verify, c-ffmpeg delivery, production structure, interim folder, finals folder, production state, step checkpoint, output verify.
 allowed-tools: Bash, Read, Write, Edit
+kind: component
+visibility: internal
+dependsOn: [c-broll, c-ffmpeg]
 ---
 
 # Studio Production — Folder, Delivery & Dashboard

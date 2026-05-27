@@ -4,6 +4,14 @@ description: Social media banner creation pipeline. Creates pixel-perfect banner
 disable-model-invocation: true
 argument-hint: "[brand] [platform]"
 allowed-tools: Bash, Read, Write
+kind: pipeline
+visibility: catalog
+produces:
+  dish: Social Banner
+  format: image
+  duration: n/a
+inputs: [platform]
+dependsOn: [c-html-gfx, c-ffmpeg]
 ---
 
 # pipeline-banner — Platform Banner Creation

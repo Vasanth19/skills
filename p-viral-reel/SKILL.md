@@ -4,6 +4,14 @@ description: Viral reel recreation pipeline. Downloads a viral source video, tra
 disable-model-invocation: true
 argument-hint: "[brand] [production-name] [source-url] [--style avatar|ai-generated]"
 allowed-tools: Bash, Read, Write
+kind: pipeline
+visibility: catalog
+produces:
+  dish: Viral Reel Recreation
+  format: 9:16 vertical video
+  duration: 30-60s
+inputs: [source_url]
+dependsOn: [c-script, t-heygen, c-html-gfx, c-audio, c-production, c-ffmpeg, c-ai-media]
 ---
 
 # p-viral-reel — Viral Reel Recreation
@@ -42,7 +50,7 @@ Take a viral format → adapt to brand → deliver 9:16 short.
 yt-dlp -f "bestvideo[height<=1080]+bestaudio" \
   --merge-output-format mp4 -o "source.mp4" "$SOURCE_URL"
 ```
-→ Skill: `c-studio-audio` → MLX Whisper → `interim/audio/source.srt`
+→ Skill: `c-audio` → MLX Whisper → `interim/audio/source.srt`
 
 Identify viral format type: hook structure, pacing, visual rhythm.
 
@@ -51,7 +59,7 @@ Identify viral format type: hook structure, pacing, visual rhythm.
 ## Step 2 — Segment Map / Script Adaptation ⛔ CHECKPOINT
 
 **If `--style avatar`:**
-→ Skill: `c-studio-script` → voice adaptation
+→ Skill: `c-script` → voice adaptation
 → Match word count ±10% to preserve timing (150 wpm baseline)
 → Apply brand vocabulary, CTA swap, phonetic readiness
 → Output: `interim/scripts/{name}-adapted.txt`
@@ -75,7 +83,7 @@ Replacement plan options per segment:
 → Skill: `t-heygen` → browser render or human delegation
 → Script: adapted `.txt`, background: `#00FF00` solid
 
-→ Skill: `c-studio-production` → circle PIP detection
+→ Skill: `c-production` → circle PIP detection
 → Identify PIP position in source video (size, center, overlay_diameter at 115%)
 
 → Cover frame: `c-html-gfx` → brand card at 1080×1920 (`$cover_style`)
@@ -97,7 +105,7 @@ For segments marked `veo-talking-head`:
 
 ## Step 4 — TTS Voiceover (avatar style only — if no HeyGen)
 
-→ Skill: `c-studio-audio` → ElevenLabs TTS
+→ Skill: `c-audio` → ElevenLabs TTS
 → `interim/audio/{name}-vo.mp3`
 
 ---

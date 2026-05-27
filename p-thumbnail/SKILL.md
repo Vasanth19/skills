@@ -4,6 +4,14 @@ description: YouTube thumbnail production pipeline. Generates multiple thumbnail
 disable-model-invocation: true
 argument-hint: "[brand] [production-name] [topic]"
 allowed-tools: Bash, Read, Write
+kind: pipeline
+visibility: catalog
+produces:
+  dish: YouTube Thumbnail
+  format: image
+  duration: n/a
+inputs: [topic, avatar_frame]
+dependsOn: [c-html-gfx, c-ffmpeg]
 ---
 
 # pipeline-thumbnail — YouTube Thumbnail

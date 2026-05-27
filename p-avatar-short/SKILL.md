@@ -4,6 +4,14 @@ description: Avatar-based 9:16 short production pipeline. Produces a portrait sh
 disable-model-invocation: true
 argument-hint: "[brand] [production-name] [--shared-render scripts...] [--source-video path] [layout?]"
 allowed-tools: Bash, Read, Write
+kind: pipeline
+visibility: catalog
+produces:
+  dish: Avatar Short
+  format: 9:16 vertical video
+  duration: 30-60s
+inputs: [script, avatar_source]
+dependsOn: [c-script, t-heygen, c-broll, c-html-gfx, c-audio, c-production, c-ffmpeg, c-ai-media]
 ---
 
 # pipeline-avatar-short — Avatar Short (9:16)
@@ -38,7 +46,7 @@ Produces a 9:16 portrait short with chroma-keyed avatar composite.
 ## Mode A: Individual Render (Default)
 
 ### Step 1 — Script ⛔ CHECKPOINT
-→ Skill: `c-studio-script` → short-form (75–150 words, 30–60s)
+→ Skill: `c-script` → short-form (75–150 words, 30–60s)
 → TTS preprocess → `interim/scripts/{name}-tts.txt`
 **Gate: User approves script.**
 
@@ -54,7 +62,7 @@ If `source_video` provided: skip.
 → If `speed` set: apply speed adjust
 
 ### Step 4 — Transcription
-→ Skill: `c-studio-audio` → MLX Whisper
+→ Skill: `c-audio` → MLX Whisper
 → Output SRT → `interim/audio/{name}.srt`
 
 ### Step 5 — B-Roll Planning ⛔ CHECKPOINT
@@ -66,7 +74,7 @@ If `source_video` provided: skip.
 ### Step 6 — Asset Generation
 → AI images: `c-ai-media` → `brolls/images/` (read `brand-ref.md` first)
 → GFX cards: `c-html-gfx` → `interim/broll/gfx/`
-→ Website scroll: `c-web-capture` (if in plan) → `interim/broll/segments/`
+→ Website scroll: `c-broll` (if in plan) → `interim/broll/segments/`
 
 ### Step 7 — Contextual Background
 → Skill: `c-ai-media` → contextual bg for avatar segments
@@ -83,7 +91,7 @@ If `source_video` provided: skip.
 → Loudness: -14 LUFS two-pass
 
 ### Step 10 — Outro
-→ Skill: `c-studio-production` → append brand outro
+→ Skill: `c-production` → append brand outro
 → CFW: `cfw-outro-cta-vertical.mp4` | MGG: `mgg-outro-cta-vertical.mp4`
 
 ### Step 11 — Delivery ⛔ CHECKPOINT
@@ -109,7 +117,7 @@ Verify total word count and estimated duration:
 - HeyGen limit: ~10 min per render; split if needed
 
 ### Step 2 — Preprocess
-→ Skill: `c-studio-script` → TTS preprocessing pass on combined script
+→ Skill: `c-script` → TTS preprocessing pass on combined script
 → Verify: no markdown, no stage directions, no abbreviations, clean sentences
 
 ### Step 3 — HeyGen Render ⛔ CHECKPOINT
@@ -134,7 +142,7 @@ Verify total word count and estimated duration:
 → Output: `interim/video/base/shared-render-{speed}x.mp4`
 
 ### Step 7 — Transcription + Segment Mapping
-→ Skill: `c-studio-audio` → MLX Whisper on the avatar's audio
+→ Skill: `c-audio` → MLX Whisper on the avatar's audio
 → Output: `interim/audio/shared-render.srt`
 
 Parse SRT to find timecode boundaries for each `[SEGMENT: ...]` marker.

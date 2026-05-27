@@ -5,7 +5,12 @@ when-to-use: Use when the user gives a topic or script and wants a complete reel
 version: 0.1.0
 kind: pipeline
 visibility: catalog
-dependsOn: c-studio-script, t-heygen, f-remotion, f-hyperframes, c-ffmpeg
+produces:
+  dish: Avatar + Animation Reel
+  format: 9:16 vertical video
+  duration: 30-60s
+inputs: [script]
+dependsOn: [c-script, t-heygen, f-remotion, f-hyperframes, c-ffmpeg]
 ---
 
 # p-reels-fmt3 — Script → Full Video (Talking Head + B-Rolls) → Reel
@@ -26,7 +31,7 @@ here. Do not claim it works.
 
 ## Steps
 
-1. **Write / clean script** — `c-studio-script`: produce a short-form script from the topic (or
+1. **Write / clean script** — `c-script`: produce a short-form script from the topic (or
    clean a supplied script); extract hook; TTS-preprocess for HeyGen.
 2. **Render talking head** — `t-heygen`: green-screen avatar render driven by the script.
 3. **Render b-roll / animation** — `f-remotion` and/or `f-hyperframes`: build animated b-roll

@@ -5,7 +5,12 @@ when-to-use: Use when the user already has a recorded main video AND one or more
 version: 0.1.0
 kind: pipeline
 visibility: catalog
-dependsOn: c-ffmpeg, c-broll
+produces:
+  dish: Footage Reel
+  format: 9:16 vertical video
+  duration: 30-60s
+inputs: [main_video, broll_clips]
+dependsOn: [c-ffmpeg, c-broll]
 ---
 
 # p-reels-fmt1 — Manual Video + B-Rolls → Vertical Reel

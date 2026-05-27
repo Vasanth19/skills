@@ -4,6 +4,14 @@ description: Faceless GFX short production pipeline. Produces a 9:16 short with 
 disable-model-invocation: true
 argument-hint: "[brand] [production-name] [topic]"
 allowed-tools: Bash, Read, Write
+kind: pipeline
+visibility: catalog
+produces:
+  dish: Faceless GFX Short
+  format: 9:16 vertical video
+  duration: 30-60s
+inputs: [topic]
+dependsOn: [c-script, c-audio, c-html-gfx, c-production, c-ffmpeg]
 ---
 
 # pipeline-gfx-short — Faceless GFX Short (9:16)
@@ -37,18 +45,18 @@ Produces a faceless portrait short: voiceover + HTML GFX cards + Ken Burns motio
 ## Steps
 
 ### Step 1 — Script ⛔ CHECKPOINT
-→ Skill: `c-studio-script` → short-form (75–150 words)
+→ Skill: `c-script` → short-form (75–150 words)
 → Hook styles: pattern-interrupt, math-hook, result-first
 → TTS preprocess → `interim/scripts/{name}-tts.txt`
 **Gate: User approves script.**
 
 ### Step 2 — Voiceover
-→ Skill: `c-studio-audio` → ElevenLabs via Floe API
+→ Skill: `c-audio` → ElevenLabs via Floe API
 → Voice: `$voice_id` (from brand-ref.md if not specified)
 → Output: `interim/audio/{name}-vo.mp3`
 
 ### Step 3 — Transcription
-→ Skill: `c-studio-audio` → MLX Whisper on voiceover
+→ Skill: `c-audio` → MLX Whisper on voiceover
 → Output: `interim/audio/{name}.srt`
 
 ### Step 4 — Scene Planning ⛔ CHECKPOINT
@@ -81,7 +89,7 @@ GFX types (dark studio theme): `hero-stat`, `callout-card`, `pipeline-diagram`, 
 → Loudness: -14 LUFS two-pass
 
 ### Step 9 — Outro
-→ `c-studio-production` → append brand outro
+→ `c-production` → append brand outro
 
 ### Step 10 — Delivery ⛔ CHECKPOINT
 → 12-point checklist → `final/pr-gfx01-{desc}.mp4`

@@ -42,7 +42,7 @@ If no `execution_id`:
 → Extract TTS-clean script from variant
 
 Verify script is TTS-clean (no markdown, stage directions, abbreviations).
-If not clean: run `c-studio-script` TTS preprocess first.
+If not clean: run `c-script` TTS preprocess first.
 
 ### Step 3 — Create HeyGen Video ⛔ CHECKPOINT
 

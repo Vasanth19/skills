@@ -4,6 +4,14 @@ description: LinkedIn carousel PDF pipeline. Writes slide content, generates AI 
 disable-model-invocation: true
 argument-hint: "[brand] [production-name] [topic]"
 allowed-tools: Bash, Read, Write
+kind: pipeline
+visibility: catalog
+produces:
+  dish: LinkedIn Carousel
+  format: PDF carousel
+  duration: n/a
+inputs: [topic]
+dependsOn: [c-script, c-ai-media]
 ---
 
 # pipeline-linkedin-carousel — LinkedIn PDF Carousel
@@ -81,7 +89,7 @@ convert slide-*.png carousel.pdf
 
 ### Step 5 — LinkedIn Caption
 
-→ Skill: `c-studio-script` → write LinkedIn post copy:
+→ Skill: `c-script` → write LinkedIn post copy:
 - Hook line (matches cover slide)
 - Tease slides 2–3 (don't give it all away)
 - CTA: "Save this + follow for more"

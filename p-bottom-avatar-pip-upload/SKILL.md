@@ -1,20 +1,28 @@
 ---
-name: r-bottom-avatar-pip-upload
+name: p-bottom-avatar-pip-upload
 description: "UPLOAD variant of the MGG bottom-avatar PIP Short — user uploads their own talking-head video, the skill transcribes it, beat-plans a topic-matched b-roll background from the video's OWN transcript, assembles that background in ffmpeg (AI-generated cinematic stills + Ken Burns + crossfades + captions), and composites the uploaded video as a 540x540 rounded PIP over it. Fully autonomous — never asks the user for a script."
+kind: pipeline
+visibility: catalog
+produces:
+  dish: Bottom-Avatar PIP Short (Upload)
+  format: 9:16 vertical video
+  duration: 30-60s
+inputs: [uploadedVideo]
+dependsOn: [c-broll, c-ffmpeg, f-remotion]
 ---
 
-# r-bottom-avatar-pip-upload
+# p-bottom-avatar-pip-upload
 
 > Produces one 9:16 YouTube Short from a **user-uploaded talking-head video**. The uploaded clip becomes the avatar PIP (540×540 rounded, pinned flush bottom-center). The background is a topic-matched b-roll video that the skill generates *from the uploaded video's own transcript* — no script is requested from the user, no avatar is rendered (the user already supplied their face + voice).
 
 **Brand:** Mr Growth Guide (B-GROWTHGUIDE) — Shorts recipe, upload variant
-**Sibling recipe:** `r-bottom-avatar-pip` (the HeyGen-rendered avatar variant — that one writes a script + renders an avatar; this one consumes a video the user already has).
+**Sibling recipe:** `p-bottom-avatar-pip` (the HeyGen-rendered avatar variant — that one writes a script + renders an avatar; this one consumes a video the user already has).
 
 This is the **distribution** recipe (`r-` prefix → catalog classifies it as discoverable). cfw-social can expose it to any agent with Discovery on, or curate it into an Agent's allow-list.
 
 ## What makes this variant different
 
-| | `r-bottom-avatar-pip` (sibling) | `r-bottom-avatar-pip-upload` (this) |
+| | `p-bottom-avatar-pip` (sibling) | `p-bottom-avatar-pip-upload` (this) |
 |---|---|---|
 | Avatar source | HeyGen render (script → avatar) | **User-uploaded video** (their real face + voice) |
 | Script | Written by the agent | **None — derived from the upload's transcript** |
@@ -53,7 +61,7 @@ It transcribes → beat-plans → sources b-roll stills → assembles the backgr
 - **Outro:** MGG outro appended (`mgg-outro-vertical-5s.mp4`, audio > -60 dB)
 - **Delivery:** uploaded to Cloudflare R2; the skill returns the R2 URL
 
-## MGG brand parameters (reused from `r-bottom-avatar-pip/brand-params.md`)
+## MGG brand parameters (reused from `p-bottom-avatar-pip/brand-params.md`)
 
 | Parameter | Value | Notes |
 |---|---|---|
@@ -184,4 +192,4 @@ cfw-bottom-avatar-pip \
 
 ## Installation note
 
-Skills install onto the agent from the repo via the `production.txt` allowlist at the repo root (`/Users/vasanth/Code/skills/production.txt`). For this recipe to be available in production, `r-bottom-avatar-pip-upload` must be added to that allowlist alongside `r-bottom-avatar-pip`. (Flagged for integration — not edited by this skill.)
+Skills install onto the agent from the repo via the `production.txt` allowlist at the repo root (`/Users/vasanth/Code/skills/production.txt`). For this recipe to be available in production, `p-bottom-avatar-pip-upload` must be added to that allowlist alongside `p-bottom-avatar-pip`. (Flagged for integration — not edited by this skill.)

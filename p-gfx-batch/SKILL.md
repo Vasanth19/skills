@@ -4,6 +4,9 @@ description: Batch GFX creation pipeline. Creates multiple HTML infographic over
 disable-model-invocation: true
 argument-hint: "[brand] [production-name] [script-path]"
 allowed-tools: Bash, Read, Write
+kind: pipeline
+visibility: internal
+dependsOn: [c-ffmpeg, c-html-gfx]
 ---
 
 # pipeline-gfx-batch — Batch GFX Production

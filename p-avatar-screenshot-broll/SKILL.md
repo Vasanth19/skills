@@ -1,6 +1,9 @@
 ---
 name: p-avatar-screenshot-broll
 description: Avatar-led longform video compositing pipeline for HeyGen/talking-head videos that need realistic website, product, docs, and GitHub screenshot b-roll. Use when creating or revising landscape educational videos with Remotion or HyperFrames, removing side bands from square avatar footage, adding hook text, using live screenshots with Ken Burns motion, keeping b-roll segments under 15 seconds, and verifying screenshot coverage and final MP4 quality.
+kind: pipeline
+visibility: internal
+dependsOn: [c-ffmpeg, c-html-gfx, c-broll, t-heygen]
 ---
 
 # Avatar Screenshot B-Roll Pipeline
@@ -185,10 +188,9 @@ Sample coverage report:
 
 Use these skills when available:
 - `t-heygen`: poll/download HeyGen video and handle avatar footage.
-- `c-web-capture`: capture website screenshots or scroll b-roll.
+- `c-broll`: capture website screenshots or scroll b-roll, and register reusable b-roll assets in the brand library when the output should become part of the library.
 - `c-html-gfx`: create graphics, browser frames, and Remotion compositions.
 - `c-ffmpeg`: crop, probe, sample frames, contact sheets, and final verification.
-- `p-broll` / `p-broll-media`: register reusable b-roll assets in the brand library when the output should become part of the library.
 
 ## Example Output
 

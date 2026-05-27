@@ -4,6 +4,14 @@ description: Hook-jacked reel production pipeline. Takes a 4-7s hook clip from a
 disable-model-invocation: true
 argument-hint: "[brand] [production-name] [hook-source-url]"
 allowed-tools: Bash, Read, Write
+kind: pipeline
+visibility: catalog
+produces:
+  dish: Hook-Jacked Reel
+  format: 9:16 vertical video
+  duration: 30-60s
+inputs: [hook_source_url, script]
+dependsOn: [c-script, c-broll, c-production, c-ffmpeg]
 ---
 
 # pipeline-hook-reel — Hook-Jacked Reel (9:16)
@@ -34,7 +42,7 @@ Viral hook + brand continuation format. Creator's hook clip is the scroll-stop; 
 ## Steps
 
 ### Step 1 — Hook Extraction ⛔ CHECKPOINT
-→ Skill: `c-studio-production` → hook extract
+→ Skill: `c-production` → hook extract
 → Download with yt-dlp (windowed: `hook_start` to `hook_end`)
 → Extract punch-point clip (4–7s only)
 → NEVER speed-adjust hook — creator's voice stays natural
@@ -43,7 +51,7 @@ Viral hook + brand continuation format. Creator's hook clip is the scroll-stop; 
 **Gate: User verifies clean audio cut and visual quality.**
 
 ### Step 2 — Continuation Script ⛔ CHECKPOINT
-→ Skill: `c-studio-script` → short-form continuation (picks up from hook's implied promise)
+→ Skill: `c-script` → short-form continuation (picks up from hook's implied promise)
 → Duration: 30–45s (to keep total < 60s)
 → Hook's final line becomes the bridge into continuation
 **Gate: User approves script.**
@@ -57,7 +65,7 @@ Delegate to sub-pipeline based on `$continuation_style`:
 Output: `video/compositing/continuation-v1.mp4`
 
 ### Step 4 — Stitch Assembly
-→ Skill: `c-ffmpeg` → `c-studio-production` separate-tracks-mux
+→ Skill: `c-ffmpeg` → `c-production` separate-tracks-mux
 1. Extract audio tracks separately (hook + continuation)
 2. Concat audio independently
 3. Concat video independently
@@ -66,7 +74,7 @@ Output: `video/compositing/continuation-v1.mp4`
 → Output: `video/compositing/stitched-v1.mp4`
 
 ### Step 5 — Outro
-→ `c-studio-production` → append brand outro
+→ `c-production` → append brand outro
 
 ### Step 6 — Delivery ⛔ CHECKPOINT
 → 12-point checklist → `final/pr-hook01-{desc}.mp4`

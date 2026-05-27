@@ -4,6 +4,14 @@ description: AI character animated short pipeline. Produces a 9:16 short using G
 disable-model-invocation: true
 argument-hint: "[brand] [production-name] [story-concept] [--type human|plush]"
 allowed-tools: Bash, Read, Write
+kind: pipeline
+visibility: catalog
+produces:
+  dish: AI Character Short
+  format: 9:16 vertical video
+  duration: 30-60s
+inputs: [story_concept]
+dependsOn: [c-ai-media, c-ffmpeg]
 ---
 
 # pipeline-ai-character — AI Character Short (9:16)

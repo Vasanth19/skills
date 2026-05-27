@@ -3,6 +3,8 @@ name: t-replicate
 description: Replicate.ai model hosting — run open-source and commercial ML models via API. Use for FLUX, SDXL, video models, and any model hosted at c-replicate.com/models.
 when_to_use: Trigger on c-replicate, c-replicate.ai, REPLICATE_API_TOKEN, run model c-replicate, FLUX c-replicate, SDXL c-replicate.
 allowed-tools: Bash
+kind: component
+visibility: internal
 ---
 
 # Replicate — Direct API

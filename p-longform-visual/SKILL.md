@@ -4,6 +4,14 @@ description: Longform visual composite pipeline. Produces a tutorial/walkthrough
 disable-model-invocation: true
 argument-hint: "[brand] [production-name] [main-video]"
 allowed-tools: Bash, Read, Write
+kind: pipeline
+visibility: catalog
+produces:
+  dish: Longform Visual
+  format: 16:9 video
+  duration: 5-20 min
+inputs: [main_video]
+dependsOn: [c-audio, c-html-gfx, c-ffmpeg, f-remotion]
 ---
 
 # pipeline-longform-visual — Longform Visual Composite
@@ -34,7 +42,7 @@ Educational/tutorial video: main recording + Remotion GFX + HTML slides + demo f
 
 ### Step 1 — Transcribe + Section Map ⛔ CHECKPOINT
 
-→ Skill: `c-studio-audio` → MLX Whisper on `$main_video`
+→ Skill: `c-audio` → MLX Whisper on `$main_video`
 → Output: `interim/audio/main.srt`
 
 Analyze SRT → build section map:

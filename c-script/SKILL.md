@@ -1,8 +1,10 @@
 ---
-name: c-studio-script
+name: c-script
 description: Script writing and processing for the creative studio. Use for writing VSL longform scripts, short-form scripts, TTS preprocessing (cleaning scripts for ElevenLabs/HeyGen), voice style adaptation, duration estimation, hook extraction, and rewriting scripts to hit target duration.
 when_to_use: Trigger on script, write script, VSL script, short script, TTS clean, preprocess script, voice adapt, script duration, hook extract, script rewrite, word count, speaking rate, TTS text, script analyze, script value segments, short-form script, longform script.
 allowed-tools: Bash, Read, Write, Edit
+kind: component
+visibility: internal
 ---
 
 # Studio Script — Writing & Processing

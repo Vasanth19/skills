@@ -7,6 +7,14 @@ metadata:
     - short
     - long
     - avatar
+kind: pipeline
+visibility: catalog
+produces:
+  dish: Demo Video
+  format: 9:16 or 16:9 video
+  duration: 30s-12 min
+inputs: [source_recording]
+dependsOn: [c-script, t-heygen, c-broll, c-html-gfx, c-audio, c-production, c-ffmpeg, c-ai-media]
 ---
 
 # Demo Video Production Pipeline
@@ -77,7 +85,7 @@ List all available: demo clips, final videos, extracted B-roll, voiceover, trans
 - Clean TTS script + visual beat map before final voiceover.
 
 ### Step 5 — Generate Voiceover (Skip if `voiceover` provided)
-→ Skill: `c-studio-audio` → ElevenLabs via Floe API.
+→ Skill: `c-audio` → ElevenLabs via Floe API.
 → Save generation log: voice_id, model_id, output path, byte count.
 → After generation: MLX transcription on final voiceover → retime scenes.
 
@@ -98,7 +106,7 @@ List all available: demo clips, final videos, extracted B-roll, voiceover, trans
 → Skill: `c-broll` → check library → match to script → placement plan.
 → AI images: `c-ai-media` → read `brand-ref.md` first.
 → GFX cards: `c-html-gfx` → `interim/broll/gfx/`.
-→ Website scroll: `c-web-capture`.
+→ Website scroll: `c-broll`.
 
 **Short format specifically:**
 → Remotion interactive B-roll: prompt typing, animated cursor, file cards, folder tree, tool chips.
@@ -131,7 +139,7 @@ List all available: demo clips, final videos, extracted B-roll, voiceover, trans
 - Save `DELIVERY.md` with final paths, model/voice IDs, verification numbers.
 
 ### Step 11 — Delivery
-→ 12-point checklist (see `c-studio-production` delivery checklist).
+→ 12-point checklist (see `c-production` delivery checklist).
 → Short output: `final/pr-demo01-{desc}.mp4`
 → Long/avatar output: `final/ls-demo01-{desc}.mp4`
 
@@ -176,12 +184,12 @@ Weak: "Follow for more." / "Let me know what you think."
 
 - `t-heygen` — lower-level HeyGen details and troubleshooting.
 - `c-ffmpeg` — video compositing, trimming, speed adjust.
-- `c-studio-script` — script writing, TTS preprocessing, duration analysis.
-- `c-studio-audio` — TTS, SFX, transcription.
+- `c-script` — script writing, TTS preprocessing, duration analysis.
+- `c-audio` — TTS, SFX, transcription.
 - `c-html-gfx` — HTML graphics, banners, slides.
-- `c-web-capture` — website scroll B-roll.
+- `c-broll` — website scroll B-roll.
 - `c-broll` — library management, placement plans.
-- `c-studio-production` — folder structure, delivery checklist.
+- `c-production` — folder structure, delivery checklist.
 - `c-ai-media` — AI image/video generation.
 
 ## Self-Improvement Feedback Loop
