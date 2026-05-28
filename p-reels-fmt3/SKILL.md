@@ -2,7 +2,7 @@
 name: p-reels-fmt3
 description: Turn a topic or script into a full vertical reel where a HeyGen avatar narrates CONTINUOUSLY (its audio is the single never-interrupted voice bed) while rich full-frame HyperFrames/Remotion graphics periodically take over the picture. Trigger on "make a full reel from this topic", "script to talking-head reel with animated graphics", "generate an avatar video with animated b-roll", "full produced short from a script", "avatar + animation reel".
 when-to-use: Use when the user gives a topic or script and wants a complete reel where the avatar's voiceover never stops (continuous audio bed) and rich animated full-frame graphics (HyperFrames and/or Remotion) periodically take over the frame on top of the avatar.
-version: 0.3.0
+version: 0.4.0
 kind: pipeline
 visibility: catalog
 produces:
@@ -60,10 +60,10 @@ windows (see Step 7) — the avatar VO must be present across the entire duratio
 
 | Parameter | Required | Default | Description |
 |---|---|---|---|
-| `avatar` | Yes | — | Talking-head MP4 (with audio). HeyGen render, or any reused avatar clip. **Its audio is the continuous voice bed for the whole reel.** |
+| `avatar` | Yes | — | Talking-head MP4 (with audio). HeyGen render, or any reused avatar clip. **Its audio is the continuous voice bed for the whole reel.** Reused 16:9 studio renders often carry baked-in **white/cream side bands** (the studio room frame) — Step 1.5 detects and crops them (left/right only, never the top) before the avatar becomes the base layer. |
 | `gfx_segments[]` | Yes | — | Rich full-frame animated graphics, 1080×1920, one per takeover window. Prefer HyperFrames/Remotion renders (charts/diagrams/figures/VFX); AI/library clips only as a supplement. |
 | `outro` | No | — | Brand outro MP4 (e.g. `brand-assets/outros/<brand>-outro-vertical-5s.mp4`). The ONLY place a different audio is allowed (it's appended after the bed ends). |
-| `avatar_layout` | No | `letterbox` | `letterbox` (avatar centered on navy canvas) or `fill` (scale-to-cover + crop). |
+| `avatar_layout` | No | `fill` | `fill` (band-clean → scale-to-cover, **default** — person fills the 9:16 frame, no navy bars) or `letterbox` (cleaned avatar centered on navy canvas). |
 | `takeover_windows[]` | Yes | — | List of `(start, end)` times during the avatar's runtime when a graphics segment covers the picture. Audio underneath keeps playing. |
 | `target_duration` | No | 36-44s | Final reel length (avatar bed + outro). |
 | `bg_color` | No | `0x0F172A` | Dark-navy canvas behind a letterboxed avatar (palette navy). |
@@ -107,21 +107,85 @@ ffmpeg -hide_banner -i "$AVATAR" -af "silencedetect=noise=-35dB:d=0.5" -f null -
   | grep -E "silence_(start|end)" || echo "narration continuous"
 ```
 
-### Step 2 — Build the avatar base (full length, loudnormed once)
+### Step 1.5 — Detect & crop the avatar's white side bands (NEW in v0.4 — do this BEFORE compositing)
 
-Normalize the **whole** avatar to 1080×1920 letterboxed on navy, loudnorm the audio **once**
-here so the entire bed has consistent loudness and is never re-touched:
+Reused 16:9 HeyGen / studio renders frequently carry baked-in **white/cream bands** down the
+left and right (the studio-room frame). Shown full-frame those bands are ugly. So before the
+avatar becomes the base layer, **measure** the side margins and, if white bands exist, **crop
+them off the LEFT and RIGHT only**. **NEVER crop the top** — the head must not be cut (sides,
+and bottom if you must, never the top).
+
+**1. Measure — sample thin edge columns vs the centre.** Downscale a 1px-wide region to 1×1 and
+read its grey value (the true average luma of that column). Scan from each edge inward to find
+where the white band ends and the person/room content begins. A white band reads `luma ≈ 255`;
+content reads well below (`< 245`, typically 40–150). Sample at a few timestamps to confirm the
+bands are static (they almost always are — they're a baked frame border):
 
 ```bash
-ffmpeg -y -i "$AVATAR" \
-  -vf "scale=1080:-2,pad=1080:1920:0:(1920-ih)/2:color=$BG,setsar=1,fps=30" \
+W=$(ffprobe -v error -select_streams v -show_entries stream=width -of csv=p=0 "$AVATAR")
+H=$(ffprobe -v error -select_streams v -show_entries stream=height -of csv=p=0 "$AVATAR")
+col_luma () {  # x  (returns avg luma 0-255 of a 2px-wide column at the mid-frame)
+  v=$(ffmpeg -hide_banner -loglevel error -ss 13 -i "$AVATAR" -vframes 1 \
+        -vf "crop=2:$H:$1:0,scale=1:1,format=gray" -f rawvideo - 2>/dev/null | xxd -p)
+  echo $((16#$v))
+}
+LEFT=0;  for x in $(seq 0 5 $((W/2)));    do [ "$(col_luma $x)" -lt 245 ] && { LEFT=$x;  break; }; done
+RIGHT=$W; for x in $(seq $((W-2)) -5 $((W/2))); do [ "$(col_luma $x)" -lt 245 ] && { RIGHT=$((x+2)); break; }; done
+echo "content spans x=$LEFT … x=$RIGHT  (white bands: left 0–$LEFT, right $RIGHT–$W)"
+```
+
+**2. Decide & crop.** If `LEFT > a few px` or `RIGHT < W−few px`, white bands exist → crop to the
+content span (**left/right only, full height — y offset stays 0 so the top is untouched**). Round
+the crop width to an even number for yuv420p. If `LEFT≈0` **and** `RIGHT≈W`, skip the crop —
+no bands:
+
+```bash
+CW=$(( RIGHT - LEFT )); CW=$(( CW - CW % 2 ))      # even width
+if [ "$LEFT" -gt 4 ] || [ "$RIGHT" -lt $((W-4)) ]; then
+  AVATAR_CLEAN="$WORK/avatar-clean.mp4"
+  ffmpeg -y -i "$AVATAR" -vf "crop=$CW:$H:$LEFT:0,setsar=1" \
+    -c:v libx264 -pix_fmt yuv420p -c:a copy "$AVATAR_CLEAN"   # crop=W:H:X:0  → Y=0 keeps the top
+else
+  AVATAR_CLEAN="$AVATAR"                                       # no bands — use as-is
+fi
+```
+
+`crop=$CW:$H:$LEFT:0` — width `CW`, **full source height `$H`**, x-offset `$LEFT`, **y-offset `0`**.
+The `0` y-offset is the guarantee that the top edge (and head) is preserved; only the sides are
+removed. Verify the new edges are no longer white (`col_luma 2` on the cropped clip should read
+content, not 255) and eyeball one frame to confirm the head still has headroom.
+
+> **Worked example (mr-growth-guide `avatar_1.1x.mp4`, v4):** 1280×720 source. Edge scan: content
+> spans **x=280…995** (left band 0–280, right band 995–1280, both pure `luma=255`, stable across
+> t=1…25s). Crop applied: **`crop=712:720:282:0`** (x=282 trims 2px of anti-aliased fringe, width
+> 712 even, full height 720, y=0). Result: no white at the new edges (luma 40–115), head fully
+> preserved.
+
+### Step 2 — Build the avatar base (full length, band-clean → scale-to-cover, loudnormed once)
+
+Take the **band-cleaned** avatar (`$AVATAR_CLEAN` from Step 1.5) and normalize the **whole** clip
+to 1080×1920. **Default (`fill`):** scale-to-cover so the cleaned person fills the frame (no navy
+bars, no white room visible) — because the bands are already gone the cover-crop only trims the
+near-square cleaned content symmetrically, and the full source height keeps the head safe.
+Loudnorm the audio **once** here so the entire bed has consistent loudness and is never re-touched:
+
+```bash
+ffmpeg -y -i "$AVATAR_CLEAN" \
+  -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30" \
   -af "loudnorm=I=-16:TP=-1.5:LRA=11" \
   -c:v libx264 -pix_fmt yuv420p -c:a aac -ar 48000 -ac 2 "$WORK/base.mp4"
 ```
 
-`fill` layout instead: `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920`.
+`letterbox` layout instead (cleaned avatar centered on navy, e.g. if cropping made it too tall):
+`scale=1080:-2,pad=1080:1920:0:(1920-ih)/2:color=$BG`. Either way the input is the **cleaned**
+avatar — never the band-laden original.
 **Do not slice the avatar into chunks** — the whole point is one unbroken audio bed. The
 talking-head simply shows through whenever no graphics overlay is enabled.
+
+> **Why crop-then-cover (not letterbox the raw 16:9):** v3 letterboxed the raw avatar on navy,
+> which left the white studio room visible inside the avatar's own frame (v3's documented
+> limitation). v4's Step 1.5 removes the room's white border first, so scale-to-cover yields a
+> clean full-frame talking-head with the head intact.
 
 ### Step 3 — Generate the rich full-frame graphics (HyperFrames / Remotion)
 
@@ -235,6 +299,38 @@ Confirm: 1080×1920, video **and** audio present, duration in target range, deco
 avatar-visible timestamp and a graphics-takeover timestamp to eyeball the picture alternation
 (`ffmpeg -ss <t> -i "$OUT" -vframes 1 frame.jpg`).
 
+## Verified render (v4 — 2026-05-27, continuous-bed + white-band crop)
+
+v4 = v3's continuous-audio-bed technique with the **avatar white-band crop** (Step 1.5) added.
+Everything else (continuous VO bed, rich HyperFrames takeovers, overlay windows, outro) is the
+proven v3 recipe — this pass only cleans the avatar.
+
+- **Output:** `/Users/vasanth/vasanth-hq/mr-growth-guide/creatives/tests/reels-preview-2026-05-27/fmt3-v4/avatar-animation-reel-v4.mp4`
+- **Spec:** 1080×1920, 30fps, H.264 + AAC stereo 48 kHz, **36.59s**, ~7.8 MB. Full decode: zero errors.
+- **White-band measurement (Step 1.5):** source `avatar_1.1x.mp4` is 1280×720 with pure-white
+  (`luma=255`) bands left **0–280** and right **995–1280**; content spans **x=280…995**, stable
+  across t=1…25s. **Crop applied: `crop=712:720:282:0`** (left/right only, **full height 720,
+  y=0 → top preserved**; x=282 trims 2px anti-aliased fringe, width 712 even). Cropped edges read
+  luma 40–115 (no white). Then scale-to-cover to 1080×1920 (`fill`).
+- **Top/head preserved:** y-offset 0 in the crop + full source height + scale-to-cover-on-height;
+  spot-frame at 3s confirms full headroom, scalp not clipped, no white at any edge (edge luma 107–138).
+- **Avatar / voice bed (reused, no HeyGen credits):** same source as v3 → **band-cropped** →
+  scale-to-cover 1080×1920 → **loudnormed once** (`I=-16`) → slowed `setpts/0.86 + atempo=0.86`
+  to a **31.57s continuous bed**. `-map 0:a` carries the avatar audio through the overlay pass untouched.
+- **Graphics takeovers:** the same three rich HyperFrames compositions rendered for v3
+  (g1 bar-chart "OUTPUT TRIPLED" 5s, g2 3-step flow 5s, g3 "70%" VFX 3.2s), re-normalized to spec
+  and overlaid full-frame.
+- **Overlay windows (over the 31.57s bed):** g1 `8–13s`, g2 `17.5–22.5s`, g3 `27.5–30.7s` via
+  `overlay=enable='between(t,a,b)'` + `setpts=PTS-STARTPTS+start/TB`.
+- **Outro:** `brand-assets/outros/mgg-outro-vertical-5s.mp4` (1080×1920, 5s) appended via concat.
+- **Continuity proof:** `volumedetect` per window — g1 −17.5 dB, g2 −20.6 dB, g3 −17.7 dB, all
+  matching the avatar-visible segment (−18.3 dB) → the VO plays at full loudness under every
+  graphics takeover. `silencedetect d=0.4` on the final bed flags only ~0.4s pauses at
+  13.34/23.84/27.79s — **byte-for-byte identical to the bare base bed** (proven by running
+  silencedetect on `base.mp4`: same start/end timestamps), i.e. natural inter-sentence breaths in
+  the source speech, NOT gaps introduced by the crop or the overlay. The crop touches video only;
+  audio is untouched.
+
 ## Verified render (v3 — 2026-05-27, continuous-bed)
 
 v3 end-to-end run proving the continuous-audio-bed technique (format preview — topical match
@@ -251,7 +347,7 @@ not required):
 - **Overlay windows (over the 31.6s bed):** g1 `8–13s`, g2 `17.5–22.5s`, g3 `27.5–30.7s` via `overlay=enable='between(t,a,b)'` + `setpts=PTS-STARTPTS+start/TB`. Avatar talking-head shows through the rest (0–8, 13–17.5, 22.5–27.5, 30.7–31.6).
 - **Outro:** `brand-assets/outros/mgg-outro-vertical-5s.mp4` (1080×1920, 5s) appended via concat.
 - **Continuity proof:** `volumedetect` per window — g1 −17.8 dB, g2 −20.8 dB, g3 −17.8 dB, all matching the avatar-visible segments (−17.8 to −19.7 dB) → the VO plays at full loudness under every graphics takeover. `silencedetect d=0.4` flags only ~0.4s pauses at 13.34/23.84/27.80s — **identical to the bare base bed before overlay** (proven by running silencedetect on `base.mp4`), i.e. natural inter-sentence breaths in the source speech, NOT gaps introduced by the technique. The outro sting (−32.3 dB, after the bed ends) is the only different audio.
-- **Note:** the avatar source has a white-room background inside its own 16:9 frame, so the letterbox shows navy bars top/bottom with the avatar's room behind it. For a navy-only avatar background, source a green-screen HeyGen render and chroma-key before the pad step.
+- **Note (v3 limitation, fixed in v4):** the avatar source has white/cream studio-room bands inside its own 16:9 frame, so v3's letterbox showed the white room behind the navy bars. **v4 fixes this** with Step 1.5 (detect → crop left/right → scale-to-cover) — the person now fills the frame with no white bands. For a navy-only avatar background instead, source a green-screen HeyGen render and chroma-key before the pad step.
 
 ## Notes & gotchas
 
