@@ -1,8 +1,8 @@
 ---
 name: p-reels-fmt2
-description: Make a vertical reel from b-roll plus a HeyGen talking-head avatar, composited as a bottom picture-in-picture. Trigger on "make a reel with an avatar over brolls", "brolls with a talking head PIP", "HeyGen avatar reel with b-roll background", "bottom-avatar short".
-when-to-use: Use when the user wants b-roll media as the background and a HeyGen-generated talking head as a picture-in-picture overlay in a vertical (9:16) reel.
-version: 1.0.0
+description: Make a vertical reel from a full-frame rich-graphics background (animated HyperFrames/Remotion charts/figures/diagrams; b-roll optional supplement) plus a HeyGen talking-head avatar, composited as a bottom picture-in-picture. Trigger on "make a reel with an avatar over graphics", "make a reel with an avatar over brolls", "brolls with a talking head PIP", "HeyGen avatar reel with rich-graphics background", "bottom-avatar short".
+when-to-use: Use when the user wants a full-frame animated-graphics (or b-roll) background with a HeyGen-generated talking head as a picture-in-picture overlay in a vertical (9:16) reel.
+version: 1.1.0
 kind: pipeline
 visibility: catalog
 produces:
@@ -13,11 +13,29 @@ inputs: [script, broll]
 dependsOn: [t-heygen, c-ffmpeg, c-broll]
 ---
 
-# p-reels-fmt2 — B-Rolls + HeyGen Talking Head → PIP Vertical Reel
+# p-reels-fmt2 — Rich-Graphics Background + HeyGen Talking Head → PIP Vertical Reel
 
-Produces one 9:16 (1080×1920) MP4 reel: full-frame b-roll background with a HeyGen talking-head
-avatar composited as a rounded square picture-in-picture pinned flush bottom-center, the avatar's
-own voice as the audio bed, and an optional brand outro appended.
+Produces one 9:16 (1080×1920) MP4 reel: a **full-frame rich-graphics background** (animated
+HyperFrames/Remotion charts, figures, diagrams, VFX) with a HeyGen talking-head avatar composited
+as a rounded square picture-in-picture pinned flush bottom-center, the avatar's own voice as the
+audio bed, and an optional brand outro appended.
+
+**Background = rich motion graphics, NOT flat random clips.** The full-frame layer behind the PIP
+must be authored HyperFrames/Remotion graphics (animated counters, bar charts, flow diagrams, ghost
+watermarks, glow/grid ambient layers) matching the brand graphics bar — see the reference
+compositions in `f-hyperframes` and the MGG productions. Library b-roll may *supplement* a
+graphics-forward background but must never be the whole bed.
+
+**Two hard rules for the background (both fixed in v3, 2026-05-27):**
+1. **Scale-to-COVER, never pad/letterbox/stretch.** Whatever the source (graphics render or b-roll),
+   it must fill the full 1080×1920 canvas and crop the overflow — never pillarbox, never distort:
+   `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920`. (In v2 the background was
+   stretched and didn't fill the phone width — `force_original_aspect_ratio=increase` + `crop` is
+   the fix. Do NOT use `pad`, `force_original_aspect_ratio=decrease`, or a bare `scale=1080:1920`
+   that distorts a landscape source.)
+2. **Graphics-forward.** Generate the background as HyperFrames/Remotion (see Step 2 below). A
+   1080×1920 HyperFrames render is already 9:16 so the cover-crop is a no-op for it — the filter
+   still applies for any supplemental landscape b-roll.
 
 This recipe is the **same ffmpeg compositing path** that `p-bottom-avatar-pip` runs end-to-end
 (ffmpeg PIP — **NOT Remotion**). The difference is the framing: this format is the longer
@@ -25,14 +43,22 @@ This recipe is the **same ffmpeg compositing path** that `p-bottom-avatar-pip` r
 20s Shorts recipe. Read `p-bottom-avatar-pip/brand-params.md` for the canonical PIP geometry and
 `c-ffmpeg/references/portrait-layouts.md` for the filter primitives.
 
-**Verified:** 2026-05-27 — rendered end-to-end against a reused MGG avatar render (no new HeyGen
-credits). Reference output: `mr-growth-guide/creatives/tests/reels-preview-2026-05-27/fmt2/avatar-pip-reel.mp4`
-(32.17s, 1080×1920, H.264, AAC stereo 48k).
+**Verified (v3):** 2026-05-27 — rendered end-to-end with a HyperFrames rich-graphics background
+(4-scene: title → animated counters → bar chart → flow diagram) scale-to-COVERed full-frame, a
+reused MGG avatar PIP (no new HeyGen credits), and the brand outro appended. Reference output:
+`mr-growth-guide/creatives/tests/reels-preview-2026-05-27/fmt2-v3/avatar-pip-reel-v3.mp4`
+(32.17s, 1080×1920, H.264 yuv420p, AAC stereo 48k; bg fills full width, no bars/stretch, PIP over it).
+The HyperFrames source is in that folder's `work/bg-graphics/index.html`.
 
 ## Inputs
 
-- `broll_media[]` — b-roll clips and/or AI stills for the full-frame background (landscape
-  recordings, AI clips, or screenshots; this recipe scale-to-covers them into 9:16).
+- `bg_graphics` — the full-frame background. **Default: author rich HyperFrames/Remotion motion
+  graphics** (animated charts/figures/diagrams/VFX) at native 1080×1920, then render to MP4 (see
+  Step 2). Match the brand graphics bar (palette navy `#0f172a` / green `#22c55e` / light `#f1f5f9`;
+  reference compositions in `f-hyperframes`).
+- `broll_media[]` (optional supplement) — b-roll clips and/or AI stills to *supplement* a
+  graphics-forward background (landscape recordings, AI clips, or screenshots; this recipe
+  scale-to-covers them into 9:16). Never the whole bed on its own.
 - `avatar_video` — a talking-head video (HeyGen-rendered, or any existing talking head). When
   driving from a script instead, render via `t-heygen` first (mode table:
   `p-bottom-avatar-pip/heygen-workflow.md`). **Reuse a cached render when available — never burn
@@ -46,7 +72,8 @@ credits). Reference output: `mr-growth-guide/creatives/tests/reels-preview-2026-
 |---|---|---|
 | Canvas | 1080×1920, 25 fps | 9:16 portrait |
 | Canvas color | `#0F172A` (dark navy) | Shows through only where b-roll has letterbox gaps |
-| B-roll fit | scale-to-cover + center crop | `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920` — fills the full frame, no pillarbox |
+| Background | rich HyperFrames/Remotion motion graphics, full-frame | Animated charts/figures/diagrams/VFX matching the brand bar (palette navy/green/light). Library b-roll may supplement but graphics-forward. |
+| Background fit | scale-to-COVER + center crop | `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920` — fills the full frame, no pillarbox, no stretch. **Never `pad`/letterbox, never a distorting bare `scale=1080:1920`.** (v3 fix) |
 | Avatar background | auto-detect (see Step 3) | Green `#00FF00` → chroma-key out; opaque (studio/white) → keep, show in square PIP card |
 | Chroma-key (green only) | `colorkey=0x00FF00:0.25:0.05,colorkey=0x00FF00:0.40:0.01` | Two-pass. `chromakey` filter is NOT in this build — use `colorkey`. Skip entirely for opaque avatars. |
 | Avatar square crop | `crop=S:S:Xoff:0` | `S = min(w,h)`, `Xoff = (w-S)/2` — face-weighted center crop. ffprobe the avatar first; HeyGen renders 1280×720 or 1920×1080. |
@@ -73,15 +100,33 @@ Set `$AV` = avatar video, `$OUT` = final path, `$W` = a scratch `work/` dir, `$M
    To drive from a script: `t-heygen` per `p-bottom-avatar-pip/heygen-workflow.md`. ffprobe the
    avatar for `width,height,duration` — this drives the crop math and the b-roll coverage length.
 
-2. **Build the b-roll background.** Pick ≥4 clips (`c-broll`). Cut a window from each and
-   scale-to-cover the full 9:16 frame, normalize to 25fps, strip audio:
-   ```bash
-   ffmpeg -ss 2 -t 7 -i "$CLIP" \
-     -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=25,format=yuv420p" \
-     -an -c:v libx264 -preset medium -crf 20 -y "$W/bgNN.mp4"
-   ```
-   Concat the segments (same codec → demuxer `-c copy`) into `$W/bg-all.mp4`. Total background
-   length must be **≥ avatar duration**; the composite trims to the avatar via `shortest=1`.
+2. **Build the rich-graphics background (graphics-forward).** Author a full-frame 1080×1920
+   HyperFrames composition (or Remotion scene set) of animated graphics — counters, bar charts,
+   flow diagrams, ghost watermark, glow + grid ambient layers — matching the brand bar (palette
+   navy `#0f172a` / green `#22c55e` / light `#f1f5f9`; reference: the `ord-*-mgg-4s-hf-promo`
+   `hyperframes/index.html` and the `why-gsai` Remotion scenes). Make it **≥ avatar duration**; the
+   composite trims to the avatar via `shortest=1`. Keep all real content in the **top ~65%** of the
+   frame (above y≈1340) — the PIP card occupies the bottom-center 540×540 zone at `overlay=270:1380`.
+
+   - **Author + lint + render** (HyperFrames):
+     ```bash
+     npx hyperframes init bg-graphics --non-interactive   # then author index.html
+     npx hyperframes lint                                  # 0 errors required
+     npx hyperframes render --output bg-graphics.mp4 --quality high --fps 25
+     ```
+     **Font gotcha:** the compiler resolves `font-family` literally — do NOT put `var(--font-*)` in
+     `font-family` (it falls back to a generic face). Use a mapped name (`'Oswald'`, `'JetBrains Mono'`,
+     `'Inter'`, `'Montserrat'`, …) directly in the `font-family` value.
+   - A native 1080×1920 graphics render is already 9:16 — the cover-crop below is a no-op for it.
+   - **Supplemental b-roll only** (optional, never the whole bed): cut windows and scale-to-COVER
+     into 9:16, normalize to 25fps, strip audio, then concat with the graphics:
+     ```bash
+     ffmpeg -ss 2 -t 7 -i "$CLIP" \
+       -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=25,format=yuv420p" \
+       -an -c:v libx264 -preset medium -crf 20 -y "$W/bgNN.mp4"
+     ```
+   The final background is `$W/bg-all.mp4` (the graphics render, optionally concatenated with
+   supplemental b-roll via demuxer `-c copy` when codecs match).
 
 3. **Detect avatar background, branch chroma-key.** Sample edge pixels at a mid frame
    (`p-bottom-avatar-pip/brand-params.md` § "Avatar Background Detection"):
@@ -141,6 +186,13 @@ pinned bottom-center, avatar audio bed, optional captions + outro.
 
 ## Notes & gotchas
 
+- **Background is RICH motion graphics, not flat clips.** Author HyperFrames/Remotion (animated
+  charts/figures/diagrams) matching the brand bar; supplement with b-roll only if needed.
+- **Scale-to-COVER, never pad/stretch.** `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920`.
+  A bare `scale=1080:1920` distorts landscape sources; `pad` / `force_original_aspect_ratio=decrease`
+  letterboxes. Both are wrong — the bg must fill the full phone width and crop the overflow.
+- **HyperFrames font gotcha:** never use `var(--font-*)` inside a `font-family` value — the compiler
+  resolves it literally and falls back to a generic face. Use a mapped name (`'Oswald'`, `'JetBrains Mono'`).
 - **No `#` comments inside `filter_complex`** — parse error. Save complex graphs as `.sh` if long.
 - **Avatar is the audio + duration master.** `shortest=1` on the overlay clips the composite to the
   avatar; ensure b-roll background is at least as long.

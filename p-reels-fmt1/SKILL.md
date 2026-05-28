@@ -1,8 +1,8 @@
 ---
 name: p-reels-fmt1
-description: Make a vertical reel from a recorded video by transcribing it, then placing b-roll cutaways and motion-graphics cards on the exact lines they relate to. Trigger on "make a reel from my footage", "cut my video with brolls into a reel", "edit my recorded clip into a vertical short", "transcript-driven reel from my recording".
-when-to-use: Use when the user has a recorded main video WITH a narration/voice track and wants it edited into a vertical (9:16) reel where cutaways and animated cards land on the content they illustrate — not at fixed intervals.
-version: 2.0.0
+description: Make a vertical reel where rich animated motion-graphics (charts/diagrams/figures) fill the FULL frame as the background and the recorded person sits as a webcam PIP pinned at the bottom. Transcribe the recording, build the background graphics by content, keep the bottom band clear for the person. Trigger on "make a reel from my footage", "cut my video into a vertical short with motion graphics", "edit my recorded clip into a vertical short", "transcript-driven reel from my recording".
+when-to-use: Use when the user has a recorded main video WITH a narration/voice track and wants it edited into a vertical (9:16) reel where animated background graphics carry the visuals and the speaker appears as a bottom webcam inset — graphics driven by what is said, not at fixed intervals.
+version: 3.0.0
 kind: pipeline
 visibility: catalog
 produces:
@@ -10,16 +10,50 @@ produces:
   format: 9:16 vertical video
   duration: 30-60s
 inputs: [main_video, broll_clips]
-dependsOn: [c-ffmpeg, c-broll, c-audio, f-hyperframes]
+dependsOn: [c-ffmpeg, c-broll, c-audio, f-hyperframes, f-hyperframes-cli]
 ---
 
-# p-reels-fmt1 — Transcript-Driven Footage Reel
+# p-reels-fmt1 — Graphics-Background Reel with Bottom Webcam PIP
 
-Turn a recorded, narrated video into a vertical 9:16 reel. **The recorded video is the
-MAIN/talking track** — its picture is the spine and its narration audio is the single,
-continuous voice bed for the whole reel. We then **transcribe** the narration and use the
-transcript to decide, by content, where to cut to a b-roll segment or pop a motion-graphics
-card. Placement is **by what is said**, never at fixed intervals.
+Turn a recorded, narrated video into a vertical 9:16 reel where **rich animated motion-graphics
+fill the full frame as the background** and **the recorded person is a webcam PIP pinned at the
+bottom**. The recording's narration is the single, continuous voice bed for the whole reel. We
+**transcribe** the narration and use the transcript to decide, by content, what the background
+graphics show at each moment (an animated chart, a hub/flow diagram, a stat). Background content
+is chosen **by what is said**, never at fixed intervals.
+
+## Layout (v3 — THE format, read first)
+
+This is a fixed three-zone layout. Build to it; do not improvise a different arrangement.
+
+```
+┌──────────────────────────────┐ 1080×1920
+│  UPPER ZONE  (y 0 → ~1240)   │  ← motion-graphics overlays: eyebrow,
+│                              │     headline, charts, diagrams, figures.
+│   [ animated chart / hub /   │     These NEVER enter the bottom band.
+│     flow diagram / stat ]    │
+│                              │
+│  ── reserved line ──         │  (~680px reserved at the bottom)
+│                              │
+│      ┌──────────────┐        │  BOTTOM ZONE: recorded person as a
+│      │  webcam PIP  │        │  webcam inset (green-bordered card),
+│      │   (person)   │        │  centered, ~90px from the bottom.
+│      └──────────────┘        │
+└──────────────────────────────┘
+```
+
+- **Background = full-frame rich graphics**, not flat clips. Author a HyperFrames/Remotion
+  composition (animated charts, hub/flow diagrams, stick figures, counters, motion VFX) on the
+  brand palette. Library b-roll is only a supplement, never the primary background.
+- **Person = a PIP pinned at the bottom** (like a webcam inset). If the source recording already
+  has a webcam corner (common for slide-deck screen recordings), **crop the webcam region** so the
+  PIP shows the person, not the slide.
+- **Motion-graphics overlays live in the UPPER zone and MUST NEVER cover the bottom PIP.** The
+  background composition reserves the bottom band (≈680px) — all graphic content stays above it.
+
+> **v2 was wrong** (the bug this version fixes): the motion-graphics overlay covered the PIP, and
+> the background was the flat recorded picture. v3 inverts it — graphics are the full-frame
+> background, the person is a small bottom inset, and the two zones never overlap.
 
 ## Transcript usage — clean narration vs. incidental talk (READ FIRST)
 
@@ -56,11 +90,15 @@ b-roll", that satisfies #2 — otherwise wait for the upload.)
 
 - `main_video` — the user's recorded primary footage with a narration/voice track. **Must have a
   speech audio stream** (verify with ffprobe + `volumedetect`; if silent, stop or swap source).
-  Normalized to 9:16; its audio is the ONLY voice bed for the whole reel.
-- `broll_clips[]` — b-roll for cutaways. Treated as **silent** (audio discarded); the main voice
-  bed plays underneath. Sources: segments chopped from the main recording itself, the user's
-  screen-recording / AI-clip library, or both.
-- `transcript` (derived) — produced by transcribing `main_video` (step 1). Drives placement.
+  Its audio is the ONLY voice bed for the whole reel; its picture becomes the **bottom webcam PIP**
+  (crop the webcam region if the source is a slide-deck recording with a webcam corner).
+- `background_graphics` (built) — a full-frame 1080×1920 HyperFrames/Remotion composition of
+  animated charts/diagrams/figures, authored by transcript content (step 3). This is the visual
+  spine of the reel, not the recorded picture.
+- `broll_clips[]` — OPTIONAL supplement to the graphics background. Treated as **silent** (audio
+  discarded); the main voice bed plays underneath. Use only when a real screen-recording shows
+  something the graphics can't. Sources: the user's screen-recording / AI-clip library.
+- `transcript` (derived) — produced by transcribing `main_video` (step 1). Drives the graphics.
 - `target_duration` (optional) — default 30–45s. Append outro adds ~5s.
 - `outro` (optional) — a pre-made vertical outro clip (keeps its own audio).
 
@@ -73,19 +111,46 @@ b-roll", that satisfies #2 — otherwise wait for the upload.)
 | Pixel format | `yuv420p` (final), `rgba` (cards before overlay) | broad player compat |
 | Video codec | `libx264 -preset veryfast -crf 20` | H.264 |
 | Audio codec | `aac`, `48000 Hz`, stereo, `192k` | one continuous voice bed |
-| Letterbox fit | `force_original_aspect_ratio=decrease` + `pad` (black) | never stretch/distort |
-| Loudness | `loudnorm I=-14 TP=-1.5 LRA=11` | applied ONCE on the spine audio |
-| Cutaway/card count | ~4–6 across the reel | chosen by transcript content |
-| Card render | Chrome `--headless=new --default-background-color=00000000` → transparent PNG | motion-graphics fallback (see note) |
+| Letterbox fit | `force_original_aspect_ratio=decrease` + `pad` (black) | outro/supplemental b-roll only |
+| Loudness | `loudnorm I=-14 TP=-1.5 LRA=11` | applied ONCE on the recording's audio |
+| Background-graphics scenes | ~5–6 across the reel | one per transcript beat |
+| PIP band reserved | ≈680px at the bottom | graphics never enter it |
+| PIP geometry | ~600×520 card, centered, ~90px from bottom, ~8px green border | webcam inset |
+| Graphics render | `npx hyperframes render --quality draft` (fast; ~17s for 41s @ draft) | real motion graphics |
+| Card fallback | Chrome `--headless=new --default-background-color=00000000` → transparent PNG | only if hyperframes render fails |
 | `+faststart` | on | web/mobile streaming |
 
-## The normalize filter (spine, every cutaway, outro)
+## The background composition (the visual spine)
+
+The background is a full-frame 1080×1920 HyperFrames composition with `data-duration` = the reel's
+body length (e.g. 41s). It reserves the bottom band so nothing lands under the PIP — bake this into
+the CSS:
+
+```css
+:root { --pip-band: 680px; }              /* reserved for the bottom webcam PIP */
+.scene { position: absolute; top: 0; left: 0; right: 0; bottom: var(--pip-band);
+         display: flex; flex-direction: column; justify-content: center; padding: 130px 80px 40px; }
+```
+
+Author one scene per transcript beat (hook, the concept, a pipeline/flow, a counter, a chart, a
+diagram), crossfade between them, and follow `f-hyperframes` house style (brand palette, entrance
+animations on every element, no exit animations except the final scene). Render it to a plain
+1080×1920 MP4 (no audio):
+
+```bash
+npx hyperframes init bg --non-interactive   # scaffold; author index.html
+npx hyperframes lint                        # 0 errors before render
+npx hyperframes render --output bg-graphics.mp4 --fps 30 --quality draft
+```
+
+## The normalize filter (outro / supplemental b-roll only)
 
 ```
 scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1,fps=30,format=yuv420p
 ```
 
 Landscape source (1920x1080) gets letterboxed; portrait-ish source gets pillarboxed. No stretching.
+(The background-graphics MP4 is already 1080×1920 and needs no padding.)
 
 ## Steps
 
@@ -108,55 +173,63 @@ mlx_whisper --model mlx-community/whisper-large-v3-turbo --output-format srt --o
 loop/hallucinate on long or low-content audio; read the SRT and trim your excerpt to the clean,
 coherent span before planning.
 
-### 2. Parse transcript → choose cutaway/card moments (BY CONTENT)
-Read the SRT. Identify ~4–6 lines that each carry a concrete, illustratable idea, and decide for
-each whether it wants a **b-roll cutaway** (a thing you can show) or a **motion-graphics card** (a
-concept/list/label to spell out). The window for each is the SRT timecode of that line — the
-cutaway/card lands ON the line, the main keeps talking elsewhere. Build a placement plan:
+### 2. Parse transcript → choose ONE background-graphic per beat (BY CONTENT)
+Read the SRT. Identify ~5–6 lines that each carry a concrete, illustratable idea, and decide what
+animated background graphic each beat wants — a hub/flow diagram, a counter, a bar chart, a
+project-container grid, a stick-figure/VFX motif. The window for each is the SRT timecode of that
+line — the background scene changes ON the line; the narration keeps playing underneath. Build a
+scene plan (real example, verified):
 
-| Window (from SRT) | What | Why this line |
+| Window (from SRT) | Background graphic | Why this line |
 |---|---|---|
-| 0–6.5s | MAIN talking track | hook — let the speaker land it |
-| 6.5–13.5s | **card**: "Your Creator Operating System" | line: "Claude becomes your creator operating system" |
-| 13.5–20s | **b-roll**: messy-notes→clean-brief screen rec | line: "turns messy notes into usable assets" |
-| 20–27s | MAIN | line: "12 moves that make Claude Desktop useful" |
-| 27–34s | **card**: Videos · Newsletters · Offers · Calendars | line: "videos, newsletters, offers, scripts, calendars" |
-| 34–41s | **b-roll**: Claude project-containers screen rec | line: "Move 1 — use projects, separate work streams" |
+| 0–6.5s | strike-through "a smarter search box" | hook: "Most people use Claude like a smarter search box… the slow way" |
+| 6.5–13.5s | **hub diagram**: CLAUDE core + orbit nodes | "Claude becomes your creator operating system" |
+| 13.5–20s | **flow diagram**: messy notes → finished asset | "turns messy notes into usable assets" |
+| 20–27s | **counter + 12-cell grid** | "12 moves that make Claude actually useful" |
+| 27–34s | **animated bar chart**: Videos/Newsletters/Offers/Calendars | "videos, newsletters, offers, scripts, calendars" |
+| 34–41s | **project-container grid** | "Move 1 — use projects, separate work streams" |
 | outro 5s | outro clip | — |
 
-### 3. Build the motion-graphics cards (transparent overlays)
-Author each card as a self-contained 1080×1920 HTML file on a `background:transparent` body, using
-brand colors (read the brand's VISUAL-STANDARDS / DESIGN). For richer animated cards use
-`f-hyperframes` (Remotion/HyperFrames compositions). **Motion-graphics fallback** when Remotion /
-Chromium render is too slow for a preview: render a still transparent card with headless Chrome and
-hard-cut it in with ffmpeg `overlay … enable='between(t,…)'` (the fmt4 transparent-card technique):
+The recorded person is the bottom webcam PIP across the WHOLE reel — it does not change per beat.
+
+### 3. Build the full-frame background-graphics composition (HyperFrames)
+Author ONE 1080×1920 HyperFrames composition (`data-duration` = body length) with one scene per
+beat from step 2, crossfading between them. Reserve the bottom band (`--pip-band: 680px`) in CSS so
+nothing lands under the PIP. Follow `f-hyperframes` house style: brand palette (navy `#0f172a`,
+green `#22c55e`, light `#f1f5f9`), entrance animation on every element, persistent decoratives
+(glow, grid), no exit animations except the final scene. Build animated charts/diagrams with
+GSAP+CSS/SVG — never a chart library. Then lint and render to a plain MP4 (no audio):
 ```bash
-"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
-  --headless=new --disable-gpu --hide-scrollbars --force-device-scale-factor=1 \
-  --default-background-color=00000000 --window-size=1080,1920 \
-  --screenshot="card1.png" "card1.html"
-ffprobe -v error -show_entries stream=pix_fmt -of default=noprint_wrappers=1 card1.png  # expect rgba
+npx hyperframes init bg --non-interactive   # scaffold
+# author index.html (scenes, GSAP timeline, reserved bottom band)
+npx hyperframes lint                         # 0 errors before render
+npx hyperframes render --output bg-graphics.mp4 --fps 30 --quality draft   # ~17s for 41s @ draft
+ffprobe -v error -show_entries stream=width,height -of default=noprint_wrappers=1 bg-graphics.mp4  # 1080x1920
 ```
-The `--default-background-color=00000000` flag is what gives a true transparent (rgba) PNG — without
-it the card has an opaque white background and won't composite.
+**`hyperframes add data-chart`** installs a ready animated-chart block if you'd rather wire one in
+than hand-author it (see `f-hyperframes-registry`). **Fallback** (only if the hyperframes render
+fails or is too slow): author still transparent cards with headless Chrome
+(`--default-background-color=00000000` → rgba PNG) and overlay them on a flat background — but
+PREFER the real motion-graphics composition.
 
-### 4. Build cutaway b-roll segments
-Chop the cutaway clips from the main recording and/or library. They are full-frame 9:16, **silent**
-(audio discarded — the spine's voice bed plays underneath). Normalize each to the canvas; trim to its
-window length. You do NOT need per-segment audio here because the spine carries one continuous track
-(step 5).
+### 4. (Optional) supplemental b-roll
+Only if a beat needs a real screen-recording the graphics can't convey, chop a clip from the
+library, normalize to 1080×1920, treat it as **silent**, and overlay it full-frame on the
+background for that window (`overlay=0:0:enable='between(t,START,END)'`) — keeping it above the PIP
+band. Most reels need none; the graphics composition IS the background.
 
-### 5. Composite: spine + overlays (continuous audio, one pass)
-The spine is the normalized main video for the whole span, with its narration loudnormed **once**.
-Layer each card PNG and each b-roll clip on top with `overlay … enable='between(t, START, END)'` so
-they appear only on their planned window — a hard cut to full-frame. Because the spine audio is never
-cut, **the voice bed stays perfectly continuous across every cutaway and card** (no per-segment audio,
-no drift). Inputs: `0`=main(excerpt), then b-roll clips, then card PNGs.
+### 5. Composite: graphics background + bottom webcam PIP (continuous audio, one pass)
+Input `0` = the background-graphics MP4 (full-frame, no audio). Input `1` = the recording. Crop the
+recording's **webcam region** (the person) — for a slide-deck recording with a webcam corner,
+`crop=W:H:X:Y` that corner; otherwise center-crop. Scale it to the PIP card, seat it on a green
+border card, and overlay it pinned at the bottom. The recording's narration is loudnormed **once**
+and is the single continuous voice bed — the PIP is never cut, so audio stays seamless.
 
 ```bash
-NORM="scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1,fps=30,format=yuv420p"
-FC="[0:v]${NORM}[spine];[1:v]${NORM},trim=duration=6.5,setpts=PTS-STARTPTS[b1];[2:v]${NORM},trim=duration=7,setpts=PTS-STARTPTS[b2];[3:v]scale=1080:1920,setsar=1,fps=30,format=rgba[c1];[4:v]scale=1080:1920,setsar=1,fps=30,format=rgba[c2];[spine][c1]overlay=0:0:enable='between(t,6.5,13.5)'[s1];[s1][b1]overlay=0:0:enable='between(t,13.5,20)'[s2];[s2][c2]overlay=0:0:enable='between(t,27,34)'[s3];[s3][b2]overlay=0:0:enable='between(t,34,41)'[v];[0:a]loudnorm=I=-14:TP=-1.5:LRA=11,aresample=48000[a]"
-ffmpeg -y -ss 0 -t 41 -i "$MAIN" -i "$BR1" -i "$BR2" -i card1.png -i card2.png \
+PIP_W=600; PIP_H=520; PIP_X=240; PIP_Y=1310; BW=8   # card ~600x520, centered, 90px from bottom
+# crop=360:340:1560:740 = the webcam corner of THIS source; re-measure per recording
+FC="[0:v]scale=1080:1920,setsar=1,fps=30,format=yuv420p[bg];[1:v]crop=360:340:1560:740,scale=${PIP_W}:${PIP_H},setsar=1,fps=30,format=yuv420p[pip];color=c=0x22c55e:s=$((PIP_W+2*BW))x$((PIP_H+2*BW)):d=41,fps=30[card];[card][pip]overlay=${BW}:${BW}[pipc];[bg][pipc]overlay=$((PIP_X-BW)):$((PIP_Y-BW))[v];[1:a]loudnorm=I=-14:TP=-1.5:LRA=11,aresample=48000[a]"
+ffmpeg -y -i bg-graphics.mp4 -ss 0 -t 41 -i "$MAIN" \
   -filter_complex "$FC" -map "[v]" -map "[a]" -t 41 \
   -r 30 -c:v libx264 -preset veryfast -crf 20 -pix_fmt yuv420p \
   -c:a aac -ar 48000 -ac 2 -b:a 192k body.mp4
@@ -178,58 +251,69 @@ ffprobe -v error -show_entries format=duration,size -show_entries stream=codec_t
 ffmpeg -v error -i "$OUTPUT" -f null -    # empty output = clean decode
 ```
 Confirm width=1080, height=1920, video+audio present, duration ≈ plan total, clean decode. Then pull
-frames at a main-track moment, a b-roll window, and a card window and eyeball them:
+frames at several scenes and **eyeball the three-zone layout**: full-frame graphics filling the
+upper area, the webcam PIP visible at the bottom, and overlays NOT covering the PIP:
 ```bash
-ffmpeg -y -ss 2  -i "$OUTPUT" -frames:v 1 frame_main.png
-ffmpeg -y -ss 16 -i "$OUTPUT" -frames:v 1 frame_broll.png
-ffmpeg -y -ss 10 -i "$OUTPUT" -frames:v 1 frame_card.png
+ffmpeg -y -ss 9  -i "$OUTPUT" -frames:v 1 frame_hub.png    # bg diagram + PIP
+ffmpeg -y -ss 30 -i "$OUTPUT" -frames:v 1 frame_chart.png  # bg chart + PIP
+ffmpeg -y -ss 43 -i "$OUTPUT" -frames:v 1 frame_outro.png  # outro
 ```
 
 ## Output
 
-One 9:16 (1080×1920) H.264 MP4 reel: the recorded video as the spine and single continuous voice
-bed; b-roll cutaways and motion-graphics cards hard-cut in on the transcript lines they relate to;
-optional outro appended. `+faststart` for streaming.
+One 9:16 (1080×1920) H.264 MP4 reel: full-frame animated motion-graphics as the background
+(charts/diagrams/figures driven by transcript content), the recorded person as a webcam PIP pinned
+at the bottom, and the narration as a single continuous voice bed; optional outro appended.
+`+faststart` for streaming.
 
 ## Notes & gotchas
 
-- **Placement is by content, never by clock.** A cutaway/card lands on the SRT line it illustrates.
-  Fixed-interval alternation (the old v1 behavior) is wrong for this format.
-- **One continuous audio bed.** The spine audio is loudnormed ONCE and never cut, so the narration
-  is seamless across every overlay. Do NOT rebuild audio per segment (that's the v1 concat model and
-  it can drift / re-trigger loudnorm pumping).
-- **Overlay, not concat, for cutaways/cards.** Overlaying on a continuous spine is what keeps the
-  voice bed unbroken. Reserve concat for appending the outro.
-- **Transparent cards need `--default-background-color=00000000`.** Without it the PNG is opaque and
-  the card hides the spine behind a white box.
-- **Whisper loops on long/low audio.** Read the SRT; trim the excerpt to the coherent span before
-  planning. SRT timecodes are ground truth (c-audio rule).
+- **The layout is fixed: graphics background + bottom PIP.** Graphics fill the full frame in the
+  upper zone; the person is a webcam inset at the bottom; the two NEVER overlap. v2 had this
+  inverted (overlay over PIP, flat picture background) — that was the bug.
+- **Background content is by content, never by clock.** Each background scene maps to the SRT line
+  it illustrates. Fixed-interval changes are wrong for this format.
+- **Reserve the bottom band in the composition CSS** (`--pip-band: 680px`) so no graphic ever lands
+  under the PIP. Verify with a frame spot-check.
+- **Crop the person, not the slide.** Slide-deck recordings put the webcam in a corner — `crop` that
+  corner so the PIP shows the person. Re-measure `crop=W:H:X:Y` per recording (pull a full frame
+  first). Center-crop only if the source is a clean talking-head.
+- **One continuous audio bed.** The recording's audio is loudnormed ONCE and never cut, so the
+  narration is seamless. Honor the incidental-talk principle (top of this file): transcript =
+  screen-content clues, derived card text only, never verbatim captions.
+- **HyperFrames render is fast enough for previews.** `--quality draft` renders 41s in ~17s on a
+  14-core Mac — no need for the still-PNG fallback in normal cases. Lint (0 errors) before render.
 - **Uniform fps + sample rate are mandatory.** `fps=30` on every video lane and `aresample=48000`
   on the audio prevent A/V desync at the outro boundary.
 - **No `#` comments inside `filter_complex`**, and **no embedded newlines** — both cause parse errors.
-- Richer animation: swap the still-PNG fallback for an `f-hyperframes` composition (animated entrance,
-  GSAP) rendered to a transparent video, overlaid the same way, when render time allows.
+  Keep the filter in a shell variable or `.sh` script.
+- **Fallback only if hyperframes fails:** Chrome still transparent cards
+  (`--default-background-color=00000000` → rgba PNG) overlaid on a flat background. Prefer real
+  motion graphics.
 
-## Verified render
+## Verified render (v3)
 
-Rendered end-to-end on 2026-05-27 (ffmpeg 8.1, mlx_whisper whisper-large-v3-turbo, Chrome headless):
+Rendered end-to-end on 2026-05-27 (ffmpeg 8.1, mlx_whisper whisper-large-v3-turbo, hyperframes 0.6.52):
 
-- **Main:** `mr-growth-guide/.../ls-prod01-mrgg-claude-cowork-longform-v2-reference.mp4`
-  (1920x1080, has narration — verified `max_volume -4.7 dB`, `mean_volume -22.3 dB`). Excerpt 0–41s.
-- **Transcription:** MLX Whisper → SRT. Clean span 0–41s (Whisper looped "Create a Claude" after
-  ~1:30, so the excerpt was trimmed to the coherent intro→Move 1 span).
-- **Placement (by content):**
-  - 0–6.5s — MAIN — hook "Most people use Claude like a smarter search box…"
-  - 6.5–13.5s — **card** "Your Creator Operating System" — on "Claude becomes your creator operating system"
-  - 13.5–20s — **b-roll** `ls-scrn07-messy-notes-to-clean-brief` — on "turns messy notes into usable assets"
-  - 20–27s — MAIN — "12 moves that make Claude Desktop actually useful"
-  - 27–34s — **card** "Videos · Newsletters · Offers & Scripts · Content Calendars" — on that exact list line
-  - 34–41s — **b-roll** `ls-scrn04-claude-project-workstreams` — on "Move 1 — use projects, separate work streams"
+- **Recording (→ bottom webcam PIP):** `mr-growth-guide/.../ls-prod01-mrgg-claude-cowork-longform-v2-reference.mp4`
+  (1920x1080, slide-deck recording with a webcam corner — narration verified `max_volume -4.7 dB`,
+  `mean_volume -22.3 dB`). Webcam cropped `crop=360:340:1560:740` → scaled to a 600×520 green-bordered
+  card, centered, 90px from bottom. Excerpt 0–41s.
+- **Transcription:** MLX Whisper → SRT. Clean span 0–41s (Whisper looped "One project for YouTube"
+  after ~0:55, so the excerpt was trimmed to the coherent intro→Move 1 span).
+- **Background graphics (HyperFrames, one scene per beat, by content):**
+  - 0–6.5s — strike-through "a smarter search box" — hook
+  - 6.5–13.5s — **hub diagram** CLAUDE core + 4 orbit nodes — "creator operating system"
+  - 13.5–20s — **flow diagram** messy notes → finished asset — "turns messy notes into usable assets"
+  - 20–27s — **counter "12" + 12-cell grid** — "12 moves that make Claude actually useful"
+  - 27–34s — **animated bar chart** Videos/Newsletters/Offers & Scripts/Content Calendars — that list line
+  - 34–41s — **project-container grid** (YouTube/Newsletter/Offers) — "Move 1 — use projects, separate work streams"
   - outro — `mgg-outro-vertical-5s.mp4`
-- **Technique:** continuous spine (main video normalized + loudnorm-once audio) with b-roll and
-  transparent-PNG cards composited via `overlay … enable='between(t,…)'`; outro appended via concat.
-  Cards rendered with Chrome `--headless=new --default-background-color=00000000` (the fmt4
-  transparent-card fallback) — Remotion not needed for the preview.
-- **Result:** `creatives/tests/reels-preview-2026-05-27/fmt1-v2/footage-reel-v2.mp4` — 1080x1920,
-  30fps, 46.0s, H.264 + AAC stereo, ~2.0 MB, clean decode. Frame spot-checks confirmed main-track,
-  both b-roll cutaways, and both cards land on their lines. Transcript SRT + card HTML saved alongside.
+- **Technique:** full-frame HyperFrames composition (brand palette, GSAP entrances, crossfades,
+  reserved 680px bottom band) rendered to `bg-graphics.mp4` (1080×1920, 41s, ~17s @ draft); recorded
+  webcam composited as a bottom PIP over it via ffmpeg `crop`+`overlay`; narration loudnormed once as
+  the continuous bed; outro appended via concat.
+- **Result:** `creatives/tests/reels-preview-2026-05-27/fmt1-v3/footage-reel-v3.mp4` — 1080x1920,
+  30fps, 46.02s, H.264 + AAC stereo, ~7.7 MB, clean decode. Frame spot-checks confirmed: full-frame
+  background graphics in the upper zone, webcam PIP visible at the bottom, overlays not covering the
+  PIP, outro present. Composition `index.html` + SRT saved under `fmt1-v3/work/`.
