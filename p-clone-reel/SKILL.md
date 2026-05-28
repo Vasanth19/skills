@@ -1,6 +1,6 @@
 ---
-name: p-viral-reel
-description: Viral reel recreation pipeline. Downloads a viral source video, transcribes it, adapts the script to brand voice, and delivers a 9:16 short in the viral format. Two styles — avatar PIP (HeyGen green-screen) or AI-generated (Higgsfield cinematic + Veo talking head).
+name: p-clone-reel
+description: Clone-a-viral pipeline — adapt a winning viral video into your brand voice on your topic. Downloads a viral source video, transcribes it, adapts the script to brand voice, and delivers a 9:16 short in the viral format. Two styles — avatar PIP (HeyGen green-screen) or AI-generated (Higgsfield cinematic + Veo talking head).
 disable-model-invocation: true
 argument-hint: "[brand] [production-name] [source-url] [--style avatar|ai-generated]"
 allowed-tools: Bash, Read, Write
@@ -14,7 +14,7 @@ inputs: [source_url]
 dependsOn: [c-script, c-heygen, c-html-gfx, c-audio, c-production, c-ffmpeg, c-ai-media]
 ---
 
-# p-viral-reel — Viral Reel Recreation
+# p-clone-reel — Viral Reel Recreation
 
 
 > **SELF-IMPROVEMENT RULE — READ FIRST:**
