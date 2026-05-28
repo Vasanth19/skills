@@ -50,6 +50,7 @@
     { "path": "/api/v1/chat/web", "methods": ["POST"], "auth": "session", "body": { "message": "smoke ping", "brandId": "$BRAND_ID" } },
     { "path": "/api/v1/chat/web/{conversationId}", "methods": ["GET"], "auth": "session" },
 
+    { "path": "/api/v1/compositions/{compositionId}", "methods": ["DELETE"], "auth": "api-or-session", "_note": "Soft-deletes dish + revokes live approval tokens. Added to proxy ALWAYS_OPEN_REGEXES 2026-05-27." },
     { "path": "/api/v1/compositions/{compositionId}/send-for-approval", "methods": ["POST"], "auth": "session", "body": {} },
 
     { "path": "/api/v1/dev/brands", "methods": ["GET", "POST", "PATCH"], "auth": "public", "body": {} },
@@ -113,6 +114,7 @@
 
     { "path": "/api/v1/workspaces/list", "methods": ["GET"], "auth": "session" },
     { "path": "/api/v1/workspaces/{workspaceId}", "methods": ["PATCH"], "auth": "session", "body": { "name": "smoke-rename" } },
+    { "path": "/api/v1/workspaces/{workspaceId}/compositions", "methods": ["GET", "POST"], "auth": "api-or-session", "_note": "GET: list compositions. POST: create ONE multi-platform dish (REST wrapper for propose_composition MCP logic). Body: { format, platforms[], captionIntent?, mediaUrls[]?, platformCaptions[{platform,caption}]? }. Returns { compositionId, platforms[], outputs[{outputId,platform,caption}] }. Added to proxy ALWAYS_OPEN_REGEXES 2026-05-27.", "body": { "format": "post", "platforms": ["instagram", "linkedin"], "captionIntent": "Caption text", "mediaUrls": ["https://r2.../image.png"], "platformCaptions": [{ "platform": "instagram", "caption": "IG caption" }, { "platform": "linkedin", "caption": "LI caption" }] } },
     { "path": "/api/v1/workspaces/{workspaceId}/assets", "methods": ["GET", "POST"], "auth": "session", "body": {} },
     { "path": "/api/v1/workspaces/{workspaceId}/outputs", "methods": ["GET"], "auth": "session" },
     { "path": "/api/v1/workspaces/{workspaceId}/posts", "methods": ["GET"], "auth": "session" },

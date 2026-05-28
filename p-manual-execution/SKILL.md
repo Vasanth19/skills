@@ -46,7 +46,7 @@ If not clean: run `c-script` TTS preprocess first.
 
 ### Step 3 — Create HeyGen Video ⛔ CHECKPOINT
 
-→ Skill: `t-heygen` → browser render (or MCP if available)
+→ Skill: `c-heygen` → browser render (or MCP if available)
 → Background: `#00FF00`
 → Full script as one render
 

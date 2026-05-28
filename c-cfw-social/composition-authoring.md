@@ -11,49 +11,70 @@ and per-platform caption formatting.
 
 ---
 
-## 1. The mental model the API actually enforces (today)
+## 1. The mental model (updated 2026-05-27)
 
-The data model is **one platform per Composition**, not one dish fanned across platforms.
+A Composition (dish) is **multi-platform by design** — one dish holds N `Output` rows,
+each tagged `metadata.platform` + `metadata.caption`. The approval page and inbox group
+outputs by platform into chips. "Approve all" fans out one `Post` per output.
 
 | Reality | Consequence for you |
 |---|---|
-| `Composition.platform` is a **scalar string** | One composition = one platform. There is no multi-platform composition. |
-| `Composition.runId` is `@unique` (1 Run ↔ 1 Composition) | **Never pass >1 platform to a single `propose_composition` call** — it creates the first composition, then throws a unique-constraint error on the second. |
-| `propose_composition` creates exactly **one `Output`** with `cdnUrl = mediaUrls[0]` | Extra images in `mediaUrls` are **dropped from the preview**. A carousel needs one `Output` per slide (see §4). |
-| `captions` is stored as `{ [platform]: captionIntent }`; `platformCaptions[]` is **not** populated | The single `captionIntent` string is the whole caption. Shape it per platform yourself. |
+| `Composition.platform` is the **primary/scalar** platform | Back-compat field. Set to `platforms[0]`. Do not use alone to infer all platforms. |
+| `Composition.captions` is `{ [platform]: caption }` | Full per-platform caption map on the Composition row. |
+| `Composition.platformCaptions` is `[{ platform, caption }]` | Array form; both are written by `propose_composition`. |
+| `Composition.runId` is `@unique` (1 Run ↔ 1 Composition) | ONE `propose_composition` call → ONE Composition. Pass all platforms in one call. |
+| `propose_composition` creates **one Output per platform** | Each output tagged `metadata.platform`. The approval phone preview switches between them via the platform bar chips. |
+| `Output.metadata.platform` drives the inbox + dish-rows | Always populate it — the `platforms` array on `DishRow` is derived from outputs, not from `Composition.platform`. |
 
-**So "one post for Instagram + Facebook + TikTok" is N separate compositions, one per
-platform** — that is the current design, not a bug to route around. Give each platform
-its own correctly-sized media and its own correctly-formatted caption.
+**"One post for Instagram + LinkedIn" = ONE `propose_composition` call with `platforms: ["instagram","linkedin"]`** and per-platform captions in `platformCaptions`. This produces one dish with two platform chips. Approve All → two Posts.
 
 ---
 
 ## 2. The correct authoring sequence
 
-For each platform you're publishing to:
-
 1. **Generate platform-sized media first** (via `run_skill` — ffmpeg, `c-html-gfx`,
    `c-broll`, etc.). Resize/crop to the platform's aspect ratio from §3. Upload to R2.
    Do **not** hand the API a generic 1:1 image and expect it to reframe for a 9:16 reel.
-2. **Call `propose_composition` once for that platform**:
+2. **Call `propose_composition` once with ALL target platforms**:
    ```jsonc
    {
      "workspaceId": "ws_...",
-     "format": "post",                 // post | carousel | reel | story | thread | multi_image
-     "platforms": ["instagram"],       // EXACTLY ONE — never a list
-     "captionIntent": "<caption already formatted for Instagram>",
-     "mediaUrls": ["https://r2.../ig-1080x1350.jpg"]   // first/cover image
+     "format": "post",
+     "platforms": ["instagram", "linkedin"],   // ALL platforms in one call
+     "captionIntent": "Fallback caption if no override",
+     "mediaUrls": ["https://r2.../image.jpg"],
+     "platformCaptions": [                     // per-platform overrides (recommended)
+       { "platform": "instagram", "caption": "IG caption with hashtags 🚀" },
+       { "platform": "linkedin",  "caption": "LinkedIn professional tone." }
+     ]
    }
    ```
-   It returns `{ compositions: [{ compositionId, platform, revisionId, caption }] }`.
+   Returns `{ compositions: [{ compositionId, platform, revisionId, caption }, ...] }`.
+   Every entry has the **same `compositionId`** — pass it once to `request_approval`.
 3. **For a carousel / multi-image:** call `attach_output_to_composition` with the
    `compositionId` and **all** slide URLs (see §4). This is what makes >1 image render.
-4. Repeat 1–3 per platform, then `request_approval` with each `compositionId`
-   (dish-scoped approval).
+4. Call `request_approval` once with the single `compositionId` (one token → all platforms).
 
 > **Do not** call `propose_composition` again to add an image to an existing dish —
-> that creates a *new* composition. Use `attach_output_to_composition` (its description
-> says exactly this).
+> that creates a *new* composition. Use `attach_output_to_composition`.
+
+### REST alternative (operator/script use, added 2026-05-27)
+
+`POST /api/v1/workspaces/{workspaceId}/compositions` accepts the same body (minus
+`workspaceId`) and returns `{ compositionId, platforms, outputs }`. Auth: brand API key
+(`x-api-key`) or master key (`cfw-api-key` + `x-cfw-brand`). To replace two fragmented
+compositions with one unified dish:
+
+```bash
+# 1. Create merged composition
+curl -X POST ".../api/v1/workspaces/{wsId}/compositions" \
+  -H "cfw-api-key: <master>" -H "x-cfw-brand: <brandId>" \
+  -d '{"format":"post","platforms":["instagram","linkedin"],"platformCaptions":[...],"mediaUrls":[...]}'
+
+# 2. Delete old single-platform compositions
+curl -X DELETE ".../api/v1/compositions/{oldIgId}" -H "cfw-api-key: <master>" -H "x-cfw-brand: <brandId>"
+curl -X DELETE ".../api/v1/compositions/{oldLiId}" -H "cfw-api-key: <master>" -H "x-cfw-brand: <brandId>"
+```
 
 ---
 
@@ -158,6 +179,34 @@ a reel — it's not a gallery). Use `attach_output_to_composition` only to add a
 
 ---
 
+## 5b. Text-only posts (no media)
+
+A **text-only post** (`format: "post"`, no `mediaUrls`) is valid — the API sets `kind: "text"`, `mimeType: "text/plain"`, and `cdnUrl: ""`. The phone preview hides the media container entirely (no camera-placeholder box).
+
+**Not every platform supports text-only.** The API enforces this at creation time:
+
+| Platform | Text-only supported? | Notes |
+|---|---|---|
+| **X / Twitter** | ✅ Yes | Native text tweet |
+| **LinkedIn** | ✅ Yes | Text post, org or personal |
+| **Facebook** | ✅ Yes | Text status |
+| **Threads** | ✅ Yes | Text thread |
+| **Bluesky** | ✅ Yes | Text post |
+| **Instagram** | ❌ No | Requires image or video — API rejects |
+| **TikTok** | ❌ No | Video required |
+| **YouTube** | ❌ No | Video required |
+| **Pinterest** | ❌ No | Image required |
+
+**What the API does when you send a media-required platform with no media:**
+`propose_composition.ts` has a `PLATFORMS_REQUIRING_MEDIA` set (`instagram`, `tiktok`, `youtube`, `pinterest`). If `!hasMedia`:
+- Those platforms are **silently dropped** from the Output creation loop.
+- If *all* requested platforms are media-required and there's no media → returns `error: "media_missing"` telling the agent to generate media first.
+- If at least one text-capable platform remains → proceeds normally with just those platforms.
+
+Rule for agents: **never include Instagram/TikTok/YouTube/Pinterest in `platforms[]` for a text-only post.** Filter them before calling the tool.
+
+---
+
 ## 6. Captions — format per platform, then send
 
 Send the **already-formatted** caption as `captionIntent`. The API does no trimming or
@@ -189,6 +238,7 @@ Practical rules when shaping `captionIntent`:
 ## 7. Quick checklist before `request_approval`
 
 - [ ] One `propose_composition` call **per platform** (never a platform list).
+- [ ] If text-only (no media), **only include text-capable platforms** (X, LinkedIn, Facebook, Threads, Bluesky) — Instagram/TikTok/YouTube/Pinterest require media (§5b).
 - [ ] Media pre-sized to the platform's aspect ratio (§3) and uploaded to **R2 / media.cfw.social** (CSP-allowlisted host — see §3 warning).
 - [ ] Carousel slides each attached as their own Output via `attach_output_to_composition` (§4).
 - [ ] Reels are 9:16 1080×1920 H.264 MP4 with audio (§5).

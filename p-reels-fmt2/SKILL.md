@@ -10,7 +10,7 @@ produces:
   format: 9:16 vertical video
   duration: 30-60s
 inputs: [script, broll]
-dependsOn: [t-heygen, c-ffmpeg, c-broll]
+dependsOn: [c-heygen, c-ffmpeg, c-broll]
 ---
 
 # p-reels-fmt2 — Rich-Graphics Background + HeyGen Talking Head → PIP Vertical Reel
@@ -70,7 +70,7 @@ left the full 720px height intact (offset Y=0 → top never cut), and convenient
   graphics-forward background (landscape recordings, AI clips, or screenshots; this recipe
   scale-to-covers them into 9:16). Never the whole bed on its own.
 - `avatar_video` — a talking-head video (HeyGen-rendered, or any existing talking head). When
-  driving from a script instead, render via `t-heygen` first (mode table:
+  driving from a script instead, render via `c-heygen` first (mode table:
   `p-bottom-avatar-pip/heygen-workflow.md`). **Reuse a cached render when available — never burn
   HeyGen credits for a layout change.**
 - `outro` (optional) — brand outro clip to append (must carry audio).
@@ -108,7 +108,7 @@ If none exists, generate once with PIL (540×540 RGBA, white rounded rect r=54 o
 Set `$AV` = avatar video, `$OUT` = final path, `$W` = a scratch `work/` dir, `$MASK` = pip mask.
 
 1. **Receive / render avatar.** Reuse an existing talking-head render if given (no HeyGen call).
-   To drive from a script: `t-heygen` per `p-bottom-avatar-pip/heygen-workflow.md`. ffprobe the
+   To drive from a script: `c-heygen` per `p-bottom-avatar-pip/heygen-workflow.md`. ffprobe the
    avatar for `width,height,duration` — this drives the crop math and the b-roll coverage length.
 
 2. **Build the rich-graphics background (graphics-forward).** Author a full-frame 1080×1920

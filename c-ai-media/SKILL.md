@@ -1,12 +1,14 @@
 ---
 name: c-ai-media
-description: AI image and video generation for the creative studio. Use for generating AI images (Gemini/Nanobanana), cinematic video scenes (Higgsfield), talking-head animation from image+audio (RunPod InfiniteTalk), and Veo talking-head generation.
-when_to_use: Trigger on AI image, generate image, Gemini image, Nanobanana, whiteboard image, cinematic scene, Higgsfield, RunPod, InfiniteTalk, talking head animation, Veo, character reference, character scene, AI b-roll generation.
+description: AI image and video generation for the creative studio. Use for generating AI images (kie.ai GPT-4o image, z-image, Imagen 4), cinematic video scenes (kie.ai Seedance/Kling/WAN), and talking-head animation (kie.ai InfiniTalk).
+when_to_use: Trigger on AI image, generate image, create photo, photo post, GPT-4o image, z-image, cinematic scene, Seedance video, Kling video, WAN video, InfiniTalk, talking head animation, character scene, AI b-roll generation.
 allowed-tools: Bash
+kind: component
+visibility: internal
+dependsOn: [c-kie-ai]
 ---
 
 # AI Media Generation
-
 
 > **SELF-IMPROVEMENT RULE — READ FIRST:**
 > 1. Before executing ANY step in this skill, read `LEARNINGS.md` in this same folder.
@@ -16,59 +18,182 @@ allowed-tools: Bash
 > 5. Summarize the feedback into 1–3 bullet points and append to `LEARNINGS.md` with today's date.
 > 6. If feedback is critical (affects correctness or quality), add it to the **Active Feedback** section so it applies on every future run.
 
+## ⚠️ CRITICAL — Return contract
+
+**You MUST output exactly one line at the end of your response in this format:**
+
+```
+IMAGE_URL: <https url>
+```
+
+If image generation fails for ANY reason (API error, timeout, no URL returned), you MUST output:
+
+```
+IMAGE_FAILED: <reason>
+```
+
+Never exit silently with no output. The caller reads the last line to determine success or failure.
+
+---
+
 ## Mandatory Pre-Generation Check
 
 **Before generating ANY image for a brand:**
-1. Read `brands/{brand-slug}/brand-ref.md` — check style guide / prompt template
-2. Use brand's prompt template as BASE prompt
-3. Pass reference image via `inputImagePath` for style consistency
-4. Output → `brolls/images/` (NOT interim/)
+1. Check `brands/{brand-slug}/brand-ref.md` if available — use style guide / prompt template
+2. Use brand's prompt template as BASE prompt if found
+3. Output → `brolls/images/` (NOT interim/)
 
-## Image Generation — Nanobanana (Primary)
+---
 
-Tool: `mcp__mcp-image__generate_image` (Gemini 2.5 Flash Image)
+## Image Generation — kie.ai (Primary Provider)
 
-Use Gemini (NOT openai image-to-image — has quality param bug).
+Use direct HTTP calls to the kie.ai API. **Do NOT use `mcp__mcp-image__generate_image` or any Nanobanana MCP** — those MCPs are not available in the production container.
 
-```
-mcp__mcp-image__generate_image:
-  prompt: "{brand_base_prompt} {scene_description}"
-  inputImagePath: "{reference_image}"
-  aspectRatio: "16:9" | "9:16" | "1:1"
-  outputPath: "{brand_path}/creatives/brolls/images/{id}-{desc}.png"
-```
+**Auth:** `KIE_AI_API_KEY` is already in the environment.
 
-### MGG Whiteboard Style
-Orange pixel-art 8-bit octopus, white bg, stick figures, blue label boxes. NOT purple, NOT smooth.
-Zoom: **1.1x max** (not 1.3x — labels at edges).
-
-### Gemini Character Reference (Pro Model)
+### Step 1 — Create the task
 
 ```bash
-python3 _scripts/gemini-character.py --prompt "$PROMPT" --model pro --output "$OUT"
+PROMPT="your image prompt here"
+MODEL="z-image"          # default: fast, cheap, reliable text-to-image
+ASPECT="1:1"             # "1:1" | "16:9" | "9:16"
+
+RESULT=$(curl -s --max-time 30 -X POST "https://api.kie.ai/api/v1/jobs/createTask" \
+  -H "Authorization: Bearer $KIE_AI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{\"model\": \"$MODEL\", \"input\": {\"prompt\": \"$PROMPT\", \"aspect_ratio\": \"$ASPECT\"}}")
+
+TASK_ID=$(echo "$RESULT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['data']['taskId'])" 2>/dev/null)
+echo "Task ID: $TASK_ID"
 ```
-**Always `--model pro`** — flash has consistency issues. Pass reference image to EVERY call.
 
-## Video Generation — Higgsfield Cinema Studio
+Check for errors before polling:
+```bash
+# Abort if no task ID
+if [ -z "$TASK_ID" ]; then
+  echo "IMAGE_FAILED: createTask returned no taskId — response: $RESULT"
+  exit 1
+fi
 
-Browser automation. ~24 credits per generation.
-Genre: General/Action/Horror/Comedy/Western/Suspense. Camera: Handheld/Auto/Dolly/Crane/Orbit/Tracking.
-See **[references/higgsfield.md](references/higgsfield.md)** for Chrome steps.
+# Check for credit error (code 402)
+CODE=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('code',''))" 2>/dev/null)
+if [ "$CODE" = "402" ]; then
+  echo "IMAGE_FAILED: insufficient kie.ai credits"
+  exit 1
+fi
+```
 
-## Video Generation — RunPod InfiniteTalk
-
-Animates portrait image with audio track.
+### Step 2 — Poll until complete (max 2.5 minutes)
 
 ```bash
-# Submit
-curl -s -X POST "https://api.runpod.ai/v2/infinitetalk/run" \
-  -H "Authorization: Bearer $RUNPOD_API_KEY" -H "Content-Type: application/json" \
-  -d "{\"input\": {\"image_url\": \"$IMAGE_URL\", \"audio_url\": \"$AUDIO_URL\", \"size\": \"720p\"}}"
+MAX_POLLS=30    # 30 × 5s = 150s max
+INTERVAL=5      # seconds between polls
+IMAGE_URL=""
 
-# Poll (60s interval, max 30 attempts)
-curl -s "https://api.runpod.ai/v2/infinitetalk/status/$JOB_ID" -H "Authorization: Bearer $RUNPOD_API_KEY"
+for i in $(seq 1 $MAX_POLLS); do
+  sleep $INTERVAL
+  RESP=$(curl -s --max-time 15 "https://api.kie.ai/api/v1/jobs/recordInfo?taskId=$TASK_ID" \
+    -H "Authorization: Bearer $KIE_AI_API_KEY")
+  STATE=$(echo "$RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('data',{}).get('state','unknown'))" 2>/dev/null)
+
+  echo "Poll $i/$MAX_POLLS — state: $STATE"
+
+  case "$STATE" in
+    success|completed|done)
+      IMAGE_URL=$(echo "$RESP" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+rj = d.get('data', {}).get('resultJson', '')
+if rj:
+    urls = json.loads(rj).get('resultUrls', [])
+    print(urls[0] if urls else '')
+" 2>/dev/null)
+      break
+      ;;
+    fail|failed|error)
+      ERR=$(echo "$RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('data',{}).get('error','unknown error'))" 2>/dev/null)
+      echo "IMAGE_FAILED: kie.ai task failed — $ERR"
+      exit 1
+      ;;
+  esac
+done
+
+# Check if we got a URL
+if [ -z "$IMAGE_URL" ]; then
+  if [ "$STATE" = "success" ] || [ "$STATE" = "completed" ] || [ "$STATE" = "done" ]; then
+    echo "IMAGE_FAILED: task completed but resultUrls was empty — response: $RESP"
+  else
+    echo "IMAGE_FAILED: polling timed out after ${MAX_POLLS} attempts (last state: $STATE)"
+  fi
+  exit 1
+fi
+
+echo "Got image URL: $IMAGE_URL"
 ```
-Status: `IN_QUEUE` → `IN_PROGRESS` → `COMPLETED`. Max 5 min audio per job.
+
+### Step 3 — Upload to R2 and return the URL
+
+```bash
+# Download the image
+TS=$(date +%s)
+TMP_FILE="/tmp/ai-image-${TS}.png"
+curl -fsSL --max-time 60 -o "$TMP_FILE" "$IMAGE_URL"
+
+if [ ! -f "$TMP_FILE" ] || [ ! -s "$TMP_FILE" ]; then
+  echo "IMAGE_FAILED: could not download image from $IMAGE_URL"
+  exit 1
+fi
+
+# Upload to R2
+R2_URL=$(r2-upload "$TMP_FILE" "$BRAND_ID/brolls/images/ai-${TS}.png" "image/png")
+
+if [ -z "$R2_URL" ]; then
+  echo "IMAGE_FAILED: r2-upload returned empty URL"
+  exit 1
+fi
+
+# ✅ SUCCESS — output the final URL (REQUIRED — last line of output)
+echo "IMAGE_URL: $R2_URL"
+```
+
+---
+
+## Model Reference (kie.ai text-to-image)
+
+| Model key | Quality | Speed | Credits | Best for |
+|-----------|---------|-------|---------|----------|
+| `z-image` | Good | ~15-30s | ~0.8 | Default — reliable, fast |
+| `google/imagen4-fast` | High | ~20-40s | ~1.5 | Brand photos, product shots |
+| `seedream/4.5-text-to-image` | High | ~30-50s | ~1.5 | Artistic, cinematic |
+| `gpt-image/1.5-text-to-image` | Excellent | ~60-120s | ~2.5 | Complex scenes, photorealism |
+
+**Default to `z-image` unless the user requests high quality or has a specific model preference.**
+
+### Image-to-image (editing an existing image)
+
+For i2i, the image URL MUST be a base64 data URI — kie.ai cannot fetch external URLs:
+
+```bash
+IMG_B64=$(python3 -c "import base64; print('data:image/png;base64,' + base64.b64encode(open('$IMG_PATH','rb').read()).decode())")
+
+RESULT=$(curl -s -X POST "https://api.kie.ai/api/v1/jobs/createTask" \
+  -H "Authorization: Bearer $KIE_AI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{\"model\": \"gpt-image/1.5-image-to-image\", \"input\": {\"prompt\": \"$PROMPT\", \"input_urls\": [\"$IMG_B64\"], \"aspect_ratio\": \"$ASPECT\"}}")
+```
+
+---
+
+## Video Generation — kie.ai (use `c-kie-ai` skill for full video pipelines)
+
+For quick video generation, use the standard createTask pattern with:
+- Hailuo i2v: `hailuo/02-image-to-video-pro` — `prompt` + `image_url` (base64)
+- Seedance: `bytedance/seedance-1.5-pro` — `prompt` + `image_url` + `aspect_ratio`
+- Kling: `kling/v2-5-turbo-image-to-video-pro` — `prompt` + `image_url` + `duration` + `aspect_ratio`
+
+**Note:** Video generation takes 3-5+ minutes. Use `enqueue_production` (off-turn) for video, NOT inline `run_skill`.
+
+---
 
 ## Zoom Presets
 
@@ -93,4 +218,3 @@ After completing this skill's task:
 3. Append to `LEARNINGS.md` in this folder with the date.
 4. If feedback is critical (affects correctness or quality), add it to the **Active Feedback** section at the top of `LEARNINGS.md`.
 5. Mark critical feedback with `[ACTIVE]` prefix so it is visually distinct.
-

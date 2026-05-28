@@ -1,5 +1,5 @@
 ---
-name: p-gfx-batch
+name: c-gfx-batch
 description: Batch GFX creation pipeline. Creates multiple HTML infographic overlay graphics from a script, screenshots them pixel-perfectly, and optionally converts to video clips with Ken Burns zoom.
 disable-model-invocation: true
 argument-hint: "[brand] [production-name] [script-path]"

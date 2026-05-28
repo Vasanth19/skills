@@ -19,9 +19,9 @@ p-bottom-avatar-pip-upload
 p-alternating-visual
 p-screen-rec-vo
 p-growthguide-avatar-broll
-p-gfx-batch
-p-avatar-screenshot-broll
-p-website-to-hyperframes
+c-gfx-batch
+c-avatar-screenshot-broll
+c-website-to-hyperframes
 c-ffmpeg
 c-ai-media
 c-html-gfx
@@ -31,9 +31,9 @@ c-photo-enhance
 c-script
 c-audio
 c-production
-t-heygen
-t-kie-ai
-t-replicate
+c-heygen
+c-kie-ai
+c-replicate
 f-remotion
 f-hyperframes
 f-hyperframes-cli

@@ -14,7 +14,7 @@ produces:
   format: 9:16 or 16:9 video
   duration: 30s-12 min
 inputs: [source_recording]
-dependsOn: [c-script, t-heygen, c-broll, c-html-gfx, c-audio, c-production, c-ffmpeg, c-ai-media]
+dependsOn: [c-script, c-heygen, c-broll, c-html-gfx, c-audio, c-production, c-ffmpeg, c-ai-media]
 ---
 
 # Demo Video Production Pipeline
@@ -114,7 +114,7 @@ List all available: demo clips, final videos, extracted B-roll, voiceover, trans
 → Keep overlays short: "Prompt", "Files", "Voice", "Render".
 
 ### Step 8 — Render Avatar (avatar format only)
-→ Skill: `t-heygen` → API path with stitched audio as voice source.
+→ Skill: `c-heygen` → API path with stitched audio as voice source.
 → Green background `#00FF00`. Submit ONE combined render.
 → Poll, download, split back using saved split map.
 → Read `references/heygen-api-workflow.md` for API details.
@@ -182,7 +182,7 @@ Weak: "Follow for more." / "Let me know what you think."
 
 ## Related Skills
 
-- `t-heygen` — lower-level HeyGen details and troubleshooting.
+- `c-heygen` — lower-level HeyGen details and troubleshooting.
 - `c-ffmpeg` — video compositing, trimming, speed adjust.
 - `c-script` — script writing, TTS preprocessing, duration analysis.
 - `c-audio` — TTS, SFX, transcription.

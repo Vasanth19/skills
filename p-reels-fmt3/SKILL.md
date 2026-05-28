@@ -10,7 +10,7 @@ produces:
   format: 9:16 vertical video
   duration: 30-60s
 inputs: [script]
-dependsOn: [c-script, t-heygen, f-remotion, f-hyperframes, c-ffmpeg, c-broll]
+dependsOn: [c-script, c-heygen, f-remotion, f-hyperframes, c-ffmpeg, c-broll]
 ---
 
 # p-reels-fmt3 — Avatar + Animation Reel (continuous-audio bed)
@@ -68,7 +68,7 @@ windows (see Step 7) — the avatar VO must be present across the entire duratio
 | `target_duration` | No | 36-44s | Final reel length (avatar bed + outro). |
 | `bg_color` | No | `0x0F172A` | Dark-navy canvas behind a letterboxed avatar (palette navy). |
 | `captions` | No | off | Burn SRT captions over the whole bed (optional — see Captions). |
-| `topic` / `script` | Conditional | — | If producing a fresh avatar via `t-heygen`, the script source (`c-script`). For a reused avatar, not needed. |
+| `topic` / `script` | Conditional | — | If producing a fresh avatar via `c-heygen`, the script source (`c-script`). For a reused avatar, not needed. |
 
 ## Output
 
@@ -95,7 +95,7 @@ BG="0x0F172A"
 
 ### Step 1 — Source the avatar (the voice bed)
 
-Reuse an existing avatar render (no new HeyGen credits) OR produce one via `t-heygen`
+Reuse an existing avatar render (no new HeyGen credits) OR produce one via `c-heygen`
 (`c-script` first). Note its duration — this sets the bed length:
 `ffprobe -v error -show_entries format=duration -of csv=p=0 "$AVATAR"`.
 
@@ -371,7 +371,7 @@ not required):
   VFX). Library AI clips are a supplement/fallback only.
 - **Reuse before you render.** Check any prior avatar render before calling HeyGen; check
   `creatives/brolls/` before sourcing supplemental clips.
-- **HeyGen path (fresh avatar):** if no reusable avatar exists, `c-script` → `t-heygen`
+- **HeyGen path (fresh avatar):** if no reusable avatar exists, `c-script` → `c-heygen`
   (9:16 1080×1920) → Step 2. The continuous bed wants the avatar's audio intact, so render the
   full narration in one pass (don't stitch multiple HeyGen clips with gaps).
 - **HyperFrames render tips:** `npx hyperframes lint` before render; `--quality draft` while

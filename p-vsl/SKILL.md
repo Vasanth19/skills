@@ -11,7 +11,7 @@ produces:
   format: 16:9 video
   duration: 5-20 min
 inputs: [script]
-dependsOn: [c-script, t-heygen, c-broll, c-html-gfx, c-audio, c-production, c-ffmpeg, c-ai-media]
+dependsOn: [c-script, c-heygen, c-broll, c-html-gfx, c-audio, c-production, c-ffmpeg, c-ai-media]
 ---
 
 # p-vsl — VSL Longform Production
@@ -70,7 +70,7 @@ If `.txt` TTS-clean already: skip approval, confirm word count and estimated dur
 
 If `source_video` provided: skip to Step 3.
 
-→ Skill: `t-heygen` → browser render path
+→ Skill: `c-heygen` → browser render path
 → Script: full TTS-clean script, one render
 → Background: `#00FF00` solid
 
@@ -80,7 +80,7 @@ If `source_video` provided: skip to Step 3.
 
 ## Step 3 — Poll & Download
 
-→ Skill: `t-heygen` → poll via Floe API (60s interval)
+→ Skill: `c-heygen` → poll via Floe API (60s interval)
 → Download to: `interim/video/base/{name}-green-screen.mp4`
 → Verify green screen quality
 

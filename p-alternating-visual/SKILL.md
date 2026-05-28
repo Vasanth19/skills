@@ -8,7 +8,7 @@ produces:
   format: 9:16 vertical video
   duration: 30-40s
 inputs: [script]
-dependsOn: [t-heygen, f-remotion, c-ai-media, c-ffmpeg]
+dependsOn: [c-heygen, f-remotion, c-ai-media, c-ffmpeg]
 ---
 
 # p-alternating-visual

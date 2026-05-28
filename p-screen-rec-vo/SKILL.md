@@ -8,7 +8,7 @@ produces:
   format: 9:16 vertical video
   duration: 35-50s
 inputs: [script]
-dependsOn: [t-heygen, f-remotion, c-ffmpeg]
+dependsOn: [c-heygen, f-remotion, c-ffmpeg]
 ---
 
 # p-screen-rec-vo

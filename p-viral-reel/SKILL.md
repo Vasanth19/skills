@@ -11,7 +11,7 @@ produces:
   format: 9:16 vertical video
   duration: 30-60s
 inputs: [source_url]
-dependsOn: [c-script, t-heygen, c-html-gfx, c-audio, c-production, c-ffmpeg, c-ai-media]
+dependsOn: [c-script, c-heygen, c-html-gfx, c-audio, c-production, c-ffmpeg, c-ai-media]
 ---
 
 # p-viral-reel — Viral Reel Recreation
@@ -80,7 +80,7 @@ Replacement plan options per segment:
 
 **If `--style avatar`:**
 
-→ Skill: `t-heygen` → browser render or human delegation
+→ Skill: `c-heygen` → browser render or human delegation
 → Script: adapted `.txt`, background: `#00FF00` solid
 
 → Skill: `c-production` → circle PIP detection

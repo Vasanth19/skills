@@ -15,7 +15,7 @@ produces:
   format: 9:16 vertical video
   duration: 20s
 inputs: [script]
-dependsOn: [t-heygen, c-broll, c-ffmpeg]
+dependsOn: [c-heygen, c-broll, c-ffmpeg]
 ---
 
 # p-growthguide-avatar-broll

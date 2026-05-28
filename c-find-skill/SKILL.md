@@ -21,7 +21,7 @@ Every skill gets a prefix based on what it does:
 | `t-` | Third-party platform | External API wrapper (auth/cost/rate-limits) |
 | `x-` | Experimental | WIP or unstable |
 
-Pick the prefix before naming the skill. The full slug is `<prefix>-<name>` (e.g. `c-ffmpeg`, `t-heygen`, `f-gsap`).
+Pick the prefix before naming the skill. The full slug is `<prefix>-<name>` (e.g. `c-ffmpeg`, `c-heygen`, `f-gsap`).
 
 ## Install location — read this carefully
 

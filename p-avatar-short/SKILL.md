@@ -11,7 +11,7 @@ produces:
   format: 9:16 vertical video
   duration: 30-60s
 inputs: [script, avatar_source]
-dependsOn: [c-script, t-heygen, c-broll, c-html-gfx, c-audio, c-production, c-ffmpeg, c-ai-media]
+dependsOn: [c-script, c-heygen, c-broll, c-html-gfx, c-audio, c-production, c-ffmpeg, c-ai-media]
 ---
 
 # pipeline-avatar-short — Avatar Short (9:16)
@@ -52,11 +52,11 @@ Produces a 9:16 portrait short with chroma-keyed avatar composite.
 
 ### Step 2 — Avatar Render ⛔ CHECKPOINT
 If `source_video` provided: skip.
-→ Skill: `t-heygen` → browser render, `#00FF00` background
+→ Skill: `c-heygen` → browser render, `#00FF00` background
 **Gate: User triggers render, provides job ID.**
 
 ### Step 3 — Poll & Download
-→ Skill: `t-heygen` → Floe API poll (60s)
+→ Skill: `c-heygen` → Floe API poll (60s)
 → Download → `interim/video/base/{name}-green-screen.mp4`
 → Verify green screen
 → If `speed` set: apply speed adjust
@@ -121,19 +121,19 @@ Verify total word count and estimated duration:
 → Verify: no markdown, no stage directions, no abbreviations, clean sentences
 
 ### Step 3 — HeyGen Render ⛔ CHECKPOINT
-→ Skill: `t-heygen` → browser render path
+→ Skill: `c-heygen` → browser render path
 → Background: `#00FF00` solid
 → Submit combined-tts.txt as ONE render
 
 **Gate: User manually triggers render and confirms job ID.**
 
 ### Step 4 — Poll & Download
-→ Skill: `t-heygen` → Floe API poll (60s, up to 30 attempts — long renders take 15-20 min)
+→ Skill: `c-heygen` → Floe API poll (60s, up to 30 attempts — long renders take 15-20 min)
 → Download → `interim/video/base/shared-render-green-screen.mp4`
 → Verify output (dimensions, codec, duration)
 
 ### Step 5 — Green Screen Verify
-→ Skill: `t-heygen` → verify green screen quality
+→ Skill: `c-heygen` → verify green screen quality
 → Confirm `#00FF00` background throughout
 → Generate contextual background for avatar segments
 

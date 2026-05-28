@@ -1,5 +1,5 @@
 ---
-name: t-kie-ai
+name: c-kie-ai
 description: AI image and video generation via kie.ai and fal.ai. Use for FLUX image gen, Hailuo i2v, Sora-2, Kling, WAN, Seedance, Veo-3, GPT Image, Imagen 4, Z-Image, Grok-imagine, InfiniTalk, MiniMax video. Direct API calls — replaces FloeAPI as primary i2v provider.
 when_to_use: Trigger on kie.ai, KIE_AI_API_KEY, Hailuo video, hailuo i2v, Sora-2 video, Kling avatar, InfiniTalk, WAN video kie, Seedance kie, GPT image kie, Imagen 4 kie, Z-image, grok-imagine, image-to-video production, fal.ai, FAL_KEY, FLUX image, fal queue.
 allowed-tools: Bash
