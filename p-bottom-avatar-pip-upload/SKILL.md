@@ -44,6 +44,17 @@ cfw-bottom-avatar-pip-upload --upload "<local path or URL of the uploaded video>
 
 It transcribes → beat-plans → sources b-roll stills → assembles the background → composites the avatar PIP → uploads to R2, and **prints the final R2 URL on the last stdout line**. Reply to the user with that URL. It reads `$BRAND_ID` for the output path and runs fully autonomously — you do NOT orchestrate the stages yourself or ask the user anything. The stage-by-stage breakdown below is reference for maintainers; the command above is the execution path.
 
+### Live progress (auto, no work on your part)
+
+The `cfw-bottom-avatar-pip-upload` helper already emits progress ticks via the
+`cfw-progress` helper at every stage (download → transcribe → beat-plan → source
+b-roll → assemble → composite → upload). When invoked from the production-worker
+those ticks flow into `media_jobs.progress`, and `/status <taskId>` renders them
+as plain-English lines (e.g. "📊 ffmpeg compositing PIP — 70%"). When invoked
+manually from a shell (`CFW_PROGRESS_URL` unset) the ticks no-op silently. Add
+`cfw-progress "<step>" --pct <0-100>` calls in any new orchestrator helper you
+write — see `src/lib/progress-helper.ts` for the relay design.
+
 ## Inputs
 
 | Parameter | Required | Default | Description |
