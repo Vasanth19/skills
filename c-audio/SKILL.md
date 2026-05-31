@@ -76,16 +76,21 @@ curl -s -X POST "https://api.elevenlabs.io/v1/text-to-speech/$VOICE_ID" \
   }" --output "$OUTPUT_PATH"
 ```
 
-## MLX Whisper Transcription
+<!-- 05-STT removed: see cfw-transcribe -->
+## Transcription — `cfw-transcribe` (Gemini cloud, MLX fast-path on macOS)
+
+Runs Gemini 2.5-flash in the Linux container; auto-prefers `mlx_whisper` on
+macOS when it's on PATH. Output is identical across providers — callers don't
+branch on host.
 
 ```bash
-mlx_whisper \
-  --model mlx-community/whisper-large-v3-turbo \
-  --output-format all \
-  --output-dir "$OUTPUT_DIR" \
-  "$INPUT_AUDIO"
+# Transcribe — Gemini in container, MLX fast-path on macOS
+cfw-transcribe --input "$INPUT_AUDIO" --out "$OUTPUT_DIR/vo.srt" --format srt
+cfw-transcribe --input "$INPUT_AUDIO" --format text > "$OUTPUT_DIR/vo.txt"
 ```
-SRT is ground truth — always use SRT timecodes for b-roll plans.
+
+SRT is ground truth for beat windows. Gemini segment timings are ±1s; for
+word-level accuracy use ElevenLabs Scribe (`$ELEVENLABS_API_KEY`).
 
 ## Audio Chunk Split (Speed Adjustment)
 

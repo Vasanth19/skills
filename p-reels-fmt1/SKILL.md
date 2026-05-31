@@ -163,15 +163,18 @@ ffmpeg -y -i "$MAIN" -t 60 -af volumedetect -f null - 2>&1 | grep -E "mean_volum
 `max_volume` near 0 dB / `mean_volume` around -20 dB indicates real speech. A silent track is
 ~ -90 dB → STOP and pick another source, or report there is no narration.
 
-Pick a coherent ~40s span (for a preview). Extract 16 kHz mono WAV and transcribe with MLX Whisper
-(local, Apple Silicon, no cost) per `c-audio/SKILL.md`:
+Pick a coherent ~40s span (for a preview). Extract 16 kHz mono WAV and transcribe with
+`cfw-transcribe` (Gemini in the container; MLX fast-path on macOS — see `c-audio/SKILL.md`):
 ```bash
 ffmpeg -y -i "$MAIN" -ss "$START" -t "$LEN" -vn -acodec pcm_s16le -ar 16000 -ac 1 main.wav
-mlx_whisper --model mlx-community/whisper-large-v3-turbo --output-format srt --output-dir . main.wav
+# Transcribe — Gemini in container, MLX fast-path on macOS
+cfw-transcribe --input main.wav --out main.srt --format srt
 ```
-**SRT is ground truth** — its timecodes are the line boundaries you place against. Whisper can
-loop/hallucinate on long or low-content audio; read the SRT and trim your excerpt to the clean,
-coherent span before planning.
+<!-- 05-STT removed: mlx_whisper direct call — see cfw-transcribe -->
+**SRT is ground truth** — its timecodes are the line boundaries you place against. Gemini segment
+timings are ±1s (fine for beat windows); for word-level accuracy use ElevenLabs Scribe
+(`$ELEVENLABS_API_KEY`). The transcriber can also loop/hallucinate on long or low-content audio;
+read the SRT and trim your excerpt to the clean, coherent span before planning.
 
 ### 2. Parse transcript → choose ONE background-graphic per beat (BY CONTENT)
 Read the SRT. Identify ~5–6 lines that each carry a concrete, illustratable idea, and decide what

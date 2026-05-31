@@ -124,7 +124,7 @@ Full list with placeholders is in `mcp.md` §6. Short recap of what each tests:
 | `result.isError: true, "Error: unknown_brand"` | `brandId` doesn't exist in your local Postgres | `psql cfw_social_dev -c "SELECT id, slug FROM brands LIMIT 10;"` and pick a real one |
 | `result.isError: true, "Error: invalid_api_key"` | The `x-api-key` header value doesn't match any active `api_keys` row for that brand | Check the brand has at least one active key: `psql cfw_social_dev -c "SELECT prefix, name, active FROM api_keys WHERE brand_id='<brandId>';"` — if empty or inactive, generate a new key from the API Keys settings page and update the MCP registration |
 | `cfw-agent-local` not visible in fresh Claude Code window | Window was open before registration | Close and reopen Claude Code (user-scope MCPs are loaded at startup) |
-| Skill subprocess fails with `mlx_whisper: command not found` | You're running cfw-agent in Linux/Docker; the audio skill is Mac-only today | Skip use case #8 in container; runs fine on host. Groq Whisper swap is planned. |
+| Skill subprocess fails with `mlx_whisper: command not found` | Stale skill file — predates the `cfw-transcribe` swap (05-STT, 2026-05-31) | Re-pull `/Users/vasanth/Code/skills/`; use case #8 should now pass via Gemini (`cfw-transcribe` helper) in container and via the MLX fast-path on macOS. <!-- 05-STT: cloud STT replaces Mac-only mlx_whisper --> |
 | `c-studio-audio` works locally but skill needs a voice_id | Skill reads from `brand-ref.md`; that brand's file may be missing or empty | Check `/Users/vasanth/Code/cfw/cfw-social/creatives/brand-guidelines/<slug>/brand-ref.md` |
 
 ---

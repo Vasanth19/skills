@@ -192,7 +192,7 @@ Each prompt is paste-ready into a fresh Claude Code session with `cfw-agent-loca
    "Use cfw_run via p-gfx-short to turn this 30-second script into a 9:16 faceless GFX reel with animated HTML overlays and an ElevenLabs voiceover. Script: \"<paste>\". Return the R2 URL."
 
 8. **Audio file → transcript + captions.**
-   "Use cfw_run to transcribe this audio file `<R2_URL>` and return both the plain transcript and a `.srt` captions file." ⚠️ Today the audio skill uses `mlx_whisper` — Mac-only. Will fail in a Linux container until the Groq Whisper swap lands. Use this to confirm the failure mode is graceful before relying on it.
+   "Use cfw_run to transcribe this audio file `<R2_URL>` and return both the plain transcript and a `.srt` captions file." ✅ Transcribes via `cfw-transcribe` (Gemini 2.5-flash default; MLX fast-path on macOS). Validates the Linux container transcription path is healthy. <!-- 05-STT: previously gated on mlx_whisper — see cfw-transcribe -->
 
 9. **Distribution: existing video → Post for Me publish.**
    "Use cfw_run to take this video R2 URL `<URL>` and publish it via Post for Me to LinkedIn + Instagram + X with caption \"<text>\". Return the post IDs."
@@ -212,7 +212,7 @@ Each prompt is paste-ready into a fresh Claude Code session with `cfw-agent-loca
 | `result.isError: true, content="Error: invalid_api_key"` | `x-api-key` bcrypt-verification failed for the brand's api_keys row | 401-ish tool error; no LLM call burned |
 | JSON-RPC `-32602` "prompt is required" / "brandId is required" | Missing required arg | Tool-call rejected before reaching the agent |
 | JSON-RPC `-32602` "Unknown tool: …" | Wrong tool name | Tool-call rejected |
-| `result.isError: true` with skill-subprocess output | The agent picked a skill but it crashed (missing `yt-dlp`, `chromium`, `mlx_whisper` on Linux, missing brand-ref.md field, etc.) | Look at the surrounding `stages` + `toolCalls` and tail the cfw-agent log |
+| `result.isError: true` with skill-subprocess output | The agent picked a skill but it crashed (missing `yt-dlp`, `chromium`, missing brand-ref.md field, etc.) | Look at the surrounding `stages` + `toolCalls` and tail the cfw-agent log |
 | Empty / very short `reply` with `outputs: []` | The agent gave up early. Usually means brand context is missing or the prompt is ambiguous | Re-prompt with more specifics or a `agentId` hint |
 
 Cost guardrail: every result includes `tokensIn`, `tokensOut`, `costUsd`. With Kimi K2.6 as the default LLM, a typical short-prompt round-trip is **~$0.02–0.03** (brand context dominates input tokens). Video-pipeline runs add **~$1–5** in ElevenLabs / HeyGen / Replicate credits — those are charged to *their* providers, not visible in `costUsd`.

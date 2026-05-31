@@ -68,7 +68,7 @@ revealed at t=5.0s) — finite PSNR ~25–29 dB between the pairs, not `inf` (wh
 ## Tooling (verified available)
 
 - **TTS:** ElevenLabs direct API (`eleven_turbo_v2_5`) — key `ELEVENLABS_API_KEY` in `~/.gsai/secrets.env`.
-- **Timings:** `mlx_whisper` (`whisper-large-v3-turbo`) → SRT. SRT timecodes are ground truth for beat windows.
+- **Timings:** `cfw-transcribe` (Gemini cloud default; MLX fast-path on macOS) → SRT. SRT timecodes are ground truth for beat windows. <!-- 05-STT removed: mlx_whisper direct call — see cfw-transcribe -->
 - **Graphics (PRIMARY):** HyperFrames CLI (`npx hyperframes`, v0.6.52+) — `init` / `lint` / `render`.
   Renders a 1080×1920 GSAP composition to MP4 in seconds (a ~5s beat renders in 3–6s at `--quality high`
   on a 14-core Mac). The compiler embeds Google Fonts automatically (see the font gotcha below).
@@ -93,9 +93,12 @@ Verify it's a real MP3 (`file vo.mp3`) and check duration fits `$TARGET`.
 
 ### 3 — Transcribe for beat timing (c-audio)
 ```bash
-mlx_whisper --model mlx-community/whisper-large-v3-turbo --output-format srt \
-  --output-dir "$WORK" "$WORK/vo.mp3"
+# Transcribe — Gemini in container, MLX fast-path on macOS
+cfw-transcribe --input "$WORK/vo.mp3" --out "$WORK/vo.srt" --format srt
 ```
+<!-- 05-STT removed: mlx_whisper direct call — see cfw-transcribe -->
+SRT ground truth for beat windows. Gemini segment timings ±1s; for word-level accuracy use
+ElevenLabs Scribe (`$ELEVENLABS_API_KEY`).
 Read `vo.srt`. Map each beat (hook, #1, #2 …) to its `[start → end]` window. The **duration of
 each beat's composition = the span of its VO lines** — the animated graphic for beat N plays
 exactly while its VO line is spoken. Set each composition's `data-duration` to that span so the
@@ -249,11 +252,13 @@ no static stills.
 
 ## Verified render (v4 — 2026-05-27)
 
-Rendered end-to-end (ffmpeg 8.1 / ffmpeg-full, mlx_whisper whisper-large-v3-turbo, hyperframes 0.6.52):
+Rendered end-to-end (ffmpeg 8.1 / ffmpeg-full, cfw-transcribe via MLX fast-path on macOS, hyperframes 0.6.52):
+<!-- 05-STT removed: mlx_whisper direct reference — see cfw-transcribe -->
 
 - **Script:** `creatives/scripts/vas-419-top-20-claude-code-skills.md` (HOOK + #1–#6).
-- **VO:** ElevenLabs `eleven_turbo_v2_5` (39.15s), timed with MLX Whisper → SRT; each beat's
-  `data-duration` set to its SRT span so graphics play during their spoken line (one continuous VO bed).
+- **VO:** ElevenLabs `eleven_turbo_v2_5` (39.15s), timed with `cfw-transcribe --format srt`
+  (Gemini in container, MLX fast-path on macOS) → SRT; each beat's `data-duration` set to its
+  SRT span so graphics play during their spoken line (one continuous VO bed).
 - **Graphics (PRIMARY path — 7 HyperFrames compositions, all `hyperframes lint` 0 errors, rendered
   `npx hyperframes render --quality high`):**
   - HOOK (3.8s) — big "20" + "Skills Most Devs Never Use", glow/grid/ghost + staggered entrances
