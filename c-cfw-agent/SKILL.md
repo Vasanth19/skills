@@ -27,7 +27,7 @@ How to talk to the **cfw-agent** orchestrator — the service that runs the AI l
 
 ## What is cfw-agent?
 
-- A Hono-based HTTP service (port 8081 local, Railway in prod)
+- A Hono-based HTTP service (port 8081 local, Fly.io + VPS hybrid in prod — `agent.cfw.social`)
 - Receives `POST /chat/stream` calls from cfw-social
 - Runs a Claude Sonnet / Kimi K2.6 agent loop
 - Spawns `claude --print` subprocesses to execute file-system skills

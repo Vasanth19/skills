@@ -47,7 +47,7 @@ claude mcp add cfw-agent-local http://localhost:8081/mcp \
   -H "x-api-key: <BRAND_API_KEY_PLAINTEXT>"
 ```
 
-### Production (Railway, when deployed)
+### Production (Fly.io — `agent.cfw.social`)
 
 ```bash
 claude mcp add cfw-agent https://agent.cfw.social/mcp \
@@ -68,6 +68,8 @@ Verify with `claude mcp list` — the entry should show `✓ Connected`. If it s
 ## 3. Get your brand's api key
 
 The `x-api-key` header value is a **brand-scoped api_keys row plaintext** — a key that lives in cfw-social's `api_keys` table and is bcrypt-verified on each request.
+
+> **Bearer alias (added 2026-06-01):** `Authorization: Bearer <same-plaintext>` is accepted as an equivalent of `x-api-key` on `/chat`, `/chat/stream`, and `/mcp` — for MCP clients that can only send Bearer auth (e.g. Codex CLI's `bearer_token_env_var`). When both headers are present, `x-api-key` wins. Helper: `cfw-agent/src/lib/extract-api-key.ts`. Customer-facing setup doc: `cfw-agent/docs/customer-mcp-setup.md`.
 
 How auth works (Phase 3 model, shipped 2026-05-18):
 
@@ -223,12 +225,12 @@ Cost guardrail: every result includes `tokensIn`, `tokensOut`, `costUsd`. With K
 
 | Concern | Local (`http://localhost:8081/mcp`) | Prod (`https://agent.cfw.social/mcp`) |
 |---|---|---|
-| Server runtime | host `pnpm tsx` or `docker compose` | Railway |
+| Server runtime | host `pnpm tsx` or `docker compose` | Fly.io (HTTP server) + Hostinger VPS `hst` (worker) |
 | Postgres | local `:5432/cfw_social_dev` | Neon (us-east-1) |
-| `LLM_MODEL` | whatever your `.env` has | set in Railway env |
+| `LLM_MODEL` | whatever your `.env` has | set in Fly secrets (`fly secrets set`) |
 | Skill mount | `SKILLS_DIR=/Users/vasanth/Code/skills` | container `/home/node/.claude/skills` (synced at startup) |
 | Brand keys | seeded by your local cfw-social dev | provisioned per-tenant |
-| Cost ceiling | your local API budget | Railway-side limits + provider quotas |
+| Cost ceiling | your local API budget | Fly-side limits + provider quotas |
 
 For dev work, register `cfw-agent-local` first and shake out the prompts. For shareable demos / non-engineering teammates, point at `cfw-agent` (prod) with a brand key issued to them.
 
