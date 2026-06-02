@@ -9,6 +9,7 @@ p-ai-image-posts
 p-linkedin-carousel
 p-gfx-short
 p-thumbnail
+p-voiceover
 c-ffmpeg
 c-ai-media
 c-html-gfx
