@@ -121,6 +121,38 @@ Author ONE 1080×1920 standalone `index.html` (`data-composition-id` directly in
 `<template>` wrapper for the root) with `data-duration` = the VO length. Follow
 `f-hyperframes/SKILL.md` + `house-style.md` + `references/motion-principles.md`:
 
+### Scene sequencing — MANDATORY (one beat visible at a time)
+
+> **Failure mode this prevents:** a live render once stacked EVERY text beat on screen at
+> once — "YOU ARE ALREADY MOVING" jumbled on top of "YOUR COMPETITION SKIPPED THIS" — because
+> the scenes had no explicit timing and all rendered simultaneously. The rules below make that
+> impossible.
+
+- **Every text beat is its OWN scene/clip with EXPLICIT timing.** Use the real HyperFrames clip
+  timing mechanism: each scene is a clip with `data-start="<seconds>"` and
+  `data-duration="<seconds>"` (per `f-hyperframes/SKILL.md` § "Data Attributes"). Do NOT lump
+  multiple beats into one always-on div with no timing — that is exactly what caused the overlap.
+- **HARD RULE — exactly ONE scene's text visible at any single timestamp. Scenes NEVER overlap in
+  time.** Put consecutive text scenes on the **same `data-track-index`** so the framework enforces
+  non-overlap (same-track clips cannot overlap — see § "Data Attributes"). A scene's
+  `[data-start, data-start + data-duration)` window must not intersect the next scene's window.
+  (Background/decorative tracks and b-roll live on OTHER track indices — the no-overlap rule is
+  about the *text* beats colliding.)
+- **Initial state of every scene except the first = HIDDEN.** Beats that start later than t=0 do
+  not exist in the DOM at page load, so `gsap.set()` on them is banned. Drive their visibility from
+  the GSAP timeline instead: author the scene fully hidden (`autoAlpha: 0` via
+  `tl.set(selector, { autoAlpha: 0 }, 0)` at the timeline head, or CSS `opacity: 0; visibility:
+  hidden` as the static start state) and reveal it with its entrance `gsap.from()` landing ON its
+  VO phrase timecode. Never let a beat appear fully-formed at t=0.
+- **Map each scene window to its VO phrase timestamps** from the SRT generated in Step 1. Scene N's
+  `data-start` = the start timecode of the VO phrase it illustrates; its `data-duration` = up to
+  the next phrase's start. The SRT is ground truth — do not eyeball the windows.
+- After authoring, run the **Animation Map** (`f-hyperframes/SKILL.md` § "Animation Map") and check
+  the `collision` flag is clear — a reported collision between two text beats is the overlap bug.
+
+Use `data-duration` (NOT `data-end`) and `data-track-index` (NOT `data-layer`) — those aliases are
+banned by the framework.
+
 - **Text beats synced to VO phrases.** Read the SRT; for each phrase/idea, author a scene (or a
   beat within a scene) whose entrance lands ON that phrase's timecode. The on-screen text is
   CLEAN/derived display copy (headline, stat, eyebrow) — never a verbatim caption dump of the VO.
@@ -133,12 +165,44 @@ Author ONE 1080×1920 standalone `index.html` (`data-composition-id` directly in
 - **Palette = the identity resolved in Step 0** (dark-premium unless brand style says otherwise).
   Charts/diagrams hand-built with GSAP+CSS/SVG — never a chart library. `hyperframes add data-chart`
   installs a ready animated-chart block if you'd rather wire one in.
-- **Optional b-roll accent inserts (1–2s).** If the user supplied `broll_clips`, weave each in as a
-  `<video muted playsinline>` element INSIDE the composition for a short 1–2s accent cut on the beat
-  it illustrates (HyperFrames plays video elements — `data-start`, `data-duration` ≈ 1–2s,
-  `data-track-index`, trim with `data-media-start`; audio of the b-roll is irrelevant — the VO is a
-  separate audio bed muxed in Step 4). These are accents, not the spine: the motion graphics carry
-  the reel; clips punctuate it.
+### B-roll handling — MANDATORY (download local, never reference remote URLs)
+
+> **Failure mode this prevents:** a live render supplied 2 b-roll URLs and they NEVER appeared —
+> the composition referenced the remote URLs directly, which do NOT load inside the headless
+> browser render. Always localize the clips first.
+
+If the user supplied `broll_clips`:
+
+1. **BEFORE authoring any HTML, download every b-roll URL to a local file in the work dir** and
+   probe it to confirm it's a playable video and capture its real duration:
+
+   ```bash
+   # for each clip URL (N = 1,2,…):
+   curl -L -o broll_N.mp4 "<broll_url_N>"
+   ffprobe -v error -show_entries format=duration -show_entries stream=codec_type \
+     -of default=noprint_wrappers=1 broll_N.mp4   # must show codec_type=video + a duration
+   ```
+
+   If a download fails or ffprobe shows no video stream, STOP and report it — do not silently skip
+   the clip or fall back to the remote URL.
+
+2. **Reference ONLY the local relative path** in the composition's `<video>` element —
+   `<video src="broll_N.mp4" muted playsinline>`. **NEVER put a remote `http(s)://` URL in a
+   `<video src>`** — remote URLs do not load in the headless render and the clip will be blank.
+
+3. **B-roll scene = full-bleed video background + dark overlay.** Lay the `<video>` as a full-bleed
+   background (`width:100%; height:100%; object-fit:cover`) on its own `data-track-index` BELOW the
+   text track, and put a dark overlay div `rgba(15,23,42,0.55)` between the video and any text so
+   the on-top text stays legible. Video must be `muted playsinline` (framework rule); its audio is
+   irrelevant — the VO is a separate bed muxed in Step 4.
+
+4. **If a clip is shorter than its scene window, TRIM THE SCENE WINDOW to the clip duration —
+   never freeze-frame.** Set the b-roll scene's `data-duration` ≤ the ffprobed clip duration (and
+   trim into the source with `data-media-start` if you want a specific segment). Do not let a scene
+   outrun its footage and hold a frozen last frame.
+
+These remain accents, not the spine: the motion graphics carry the reel; the localized clips
+punctuate it on the beats they illustrate.
 
 ```bash
 npx hyperframes init hf-reel --non-interactive   # scaffold; then author index.html (1080x1920)
@@ -191,27 +255,55 @@ to -26 LUFS) — never overpower it.
 
 ---
 
-## Step 5 — QA checklist (BEFORE upload)
+## Step 5 — Visual QA Gate (MANDATORY — uses your vision)
 
-Do NOT upload until every box passes. Pull frames + ffprobe to verify:
+> A render that was never looked at is NOT done. The two failures that broke a live reel
+> (every text beat stacked on screen at once; b-roll clips that never appeared) are both
+> INVISIBLE to ffprobe — they only show up when you actually LOOK at the frames. This gate
+> is non-negotiable.
+
+First, the mechanical checks (decode + container):
 
 ```bash
 ffprobe -v error -show_entries format=duration -show_entries stream=codec_type,width,height,r_frame_rate -of default=noprint_wrappers=1 interim/render/reel.mp4
 ffmpeg -v error -i interim/render/reel.mp4 -f null -            # empty output = clean decode
-ffmpeg -y -ss 3  -i interim/render/reel.mp4 -frames:v 1 qa-3s.png
-ffmpeg -y -ss 15 -i interim/render/reel.mp4 -frames:v 1 qa-15s.png
 ```
 
-- [ ] **Duration matches the VO** (reel length ≈ VO length; visuals don't run long or get cut short).
-- [ ] **1080×1920, 30fps, video + audio both present, clean decode.**
-- [ ] **No static-only stretches > 3s** — every >3s window has motion (entrance, ambient, or
-      transition). A frozen frame for >3s means a missing animation; fix the composition.
-- [ ] **Text legible at mobile size** — 60px+ headlines, 20px+ body, AA contrast clear (re-run
+Then extract **6 sample frames spread across the duration** (at 5%, 20%, 40%, 60%, 80%, 95% of the
+reel length — compute each `<t>` from the ffprobed duration, e.g. `<t> = 0.40 * DURATION`):
+
+```bash
+# DURATION = ffprobed reel length in seconds; compute t at 5/20/40/60/80/95%
+ffmpeg -y -ss <t_05> -i interim/render/reel.mp4 -frames:v 1 qa_frame_1.png
+ffmpeg -y -ss <t_20> -i interim/render/reel.mp4 -frames:v 1 qa_frame_2.png
+ffmpeg -y -ss <t_40> -i interim/render/reel.mp4 -frames:v 1 qa_frame_3.png
+ffmpeg -y -ss <t_60> -i interim/render/reel.mp4 -frames:v 1 qa_frame_4.png
+ffmpeg -y -ss <t_80> -i interim/render/reel.mp4 -frames:v 1 qa_frame_5.png
+ffmpeg -y -ss <t_95> -i interim/render/reel.mp4 -frames:v 1 qa_frame_6.png
+```
+
+**READ each `qa_frame_N.png` — you (the executing agent) have vision. Actually open and look at
+every frame.** For each frame, CHECK:
+
+- [ ] **(a) No overlapping / jumbled text** — every visible word belongs to exactly ONE beat. If
+      two beats' text are stacked on top of each other (e.g. one headline bleeding through another),
+      the scene-sequencing failed → go fix the clip timing in Step 2 and re-render.
+- [ ] **(b) B-roll footage is actually visible** in the frames that fall inside a b-roll scene. A
+      dark/blank rectangle where footage should be = the clip didn't load (almost always a remote
+      URL that wasn't localized) → fix per Step 2 b-roll handling and re-render.
+- [ ] **(c) Text legible at mobile size** — 60px+ headlines, 20px+ body, AA contrast clear (re-run
       `hyperframes validate` if unsure).
-- [ ] **Audio levels** — VO is the clear foreground (~ -14 LUFS); any music bed sits well under it;
-      no clipping.
-- [ ] **B-roll inserts (if any) are short accents (1–2s)** on the right beat — not dominating the
-      reel, not silent dead frames.
+- [ ] **(d) Brand colors correct** — the palette matches the Step 0 identity; not washed out, not
+      defaulted to white-on-black.
+
+Also confirm the mechanical basics: **duration ≈ VO length**, **1080×1920 / 30fps**, **video +
+audio both present, clean decode**, **VO is the clear foreground** (~ -14 LUFS, music bed well
+under, no clipping), and **no static-only stretch > 3s** (every >3s window has entrance, ambient,
+or transition motion).
+
+**If ANY check on ANY frame fails: fix the composition and RE-RENDER. Re-extract the 6 frames and
+look again. Repeat until all 6 frames pass every check. NEVER upload a reel that fails the visual
+gate.**
 
 ---
 
@@ -249,6 +341,16 @@ as the result — the result is the freshly rendered, uploaded reel.
   `p-reels-fmt1`.)
 - **NEVER paste the raw VO transcript as on-screen captions.** On-screen text is clean/derived
   display copy synced to the VO phrases, not a verbatim dump.
+- **NEVER let text beats overlap in time.** Each beat is its own timed scene (`data-start` +
+  `data-duration`, consecutive beats on the same `data-track-index`); exactly one beat's text is
+  visible at any timestamp. Multiple beats stacked on screen at once is the broken render that
+  triggered these rules.
+- **NEVER reference remote media URLs inside a composition — always local files.** Download every
+  b-roll clip with `curl -L -o broll_N.mp4` and reference the local relative path in
+  `<video src>`. Remote URLs do not load in the headless render and the clip comes out blank.
+- **NEVER skip the Visual QA Gate — a render that was never looked at is not done.** Extract the 6
+  sample frames and actually read them with your vision before uploading. ffprobe passing is not
+  the same as the reel looking right.
 
 ---
 
