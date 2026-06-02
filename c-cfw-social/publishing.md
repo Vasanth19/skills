@@ -303,6 +303,33 @@ For each target platform:
 
 ---
 
+## Quick Publish (`POST /api/v1/posts/quick`)
+
+One call → one `Post` per platform, scheduled or drafted. **Brand-key enabled since PR #49 (2026-06-02)** — `requireApiBrand`, so external agents can publish headlessly.
+
+```jsonc
+// Request
+{
+  "platforms": ["instagram", "linkedin"],
+  "captionsByPlatform": { "instagram": "IG caption", "linkedin": "LI caption" },
+  "mediaUrls": ["https://r2.../image.png"],
+  "kind": "image",            // "image" | "video" | "carousel" | ...
+  "saveAsDraft": false        // optional; true = skip scheduling entirely
+}
+// Response
+{ "count": 2, "scheduled": 1, "drafted": 1, "failed": 0,
+  "posts": [{ "id": "...", "platform": "instagram", "status": "scheduled", "scheduledAt": "..." }] }
+```
+
+Per-platform behavior:
+- Active `PlatformConnection` + active `PostTiming` rules → **scheduled** (next slot via `getNextSlotForBrand`, queued through PFM)
+- Connected but no timings, OR not connected, OR `saveAsDraft: true` → **draft** (never silently skipped)
+- PFM call fails → that post is marked **failed** with `errorMessage`; remaining platforms continue
+
+PFM media field gotcha (2026-06-02): the request to PFM must use `media: [{ url }]` objects — `media_urls` is silently ignored.
+
+---
+
 ## Publishing via PostForMe
 
 ### Flow

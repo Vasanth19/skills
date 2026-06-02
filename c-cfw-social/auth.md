@@ -104,40 +104,67 @@ Return { brand, role, userId }
 
 ## Middleware Allowlist (proxy.ts)
 
-`src/proxy.ts` is the Next.js 16 middleware. It has `ALWAYS_OPEN_PREFIXES` and `ALWAYS_OPEN_REGEXES` that bypass the session-cookie check.
+`src/proxy.ts` is the Next.js 16 middleware. It has three allowlist structures that bypass the session-cookie check: `ALWAYS_OPEN_PREFIXES` (startsWith match), `ALWAYS_OPEN_EXACT` (exact path match), and `ALWAYS_OPEN_REGEXES`.
 
-### Current allowlist (v3 of routes.json)
+### Current allowlist (as of 2026-06-02 — PR #49)
 
-**Prefix allowlist:**
-- `/api/v1/mcp`
-- `/api/v1/audit-log`
-- `/api/v1/captures*`
-- `/api/v1/dev/*`
-- `/api/v1/social/callback/*`
+**Prefix allowlist (`ALWAYS_OPEN_PREFIXES`):**
+- `/api/auth` — better-auth handler
+- `/api/v1/webhooks` — provider webhooks (self-signed)
+- `/api/webhooks/stripe` — Stripe-Signature auth
+- `/api/v1/telegram/webhook` — Telegram path-token auth
+- `/api/v1/slack/events`, `/api/v1/discord/interactions` — channel webhooks
+- `/api/v1/mcp` — OpenClaw MCP endpoint (requireApiBrand in handler)
+- `/api/v1/audit-log` — agent audit sink
+- `/api/v1/skills` — catalog sync (x-admin-key)
+- `/api/v1/api-keys` — [AB-KEYMINT] mint/list/revoke via key auth
+- `/api/v1/ops-prescriptions`
+- `/api/health`, `/api/v2/` — Hono catch-all (requireApiBrand per-route)
+- `/api/v1/social/callback`, `/api/v1/captures`, `/api/v1/media/upload-url`, `/api/v1/dev/`
+- `/privacy`, `/terms`, `/c/`, `/a/`
 
-**Regex allowlist:**
-- `/api/v1/brand/{id}/context`
-- `/api/v1/brand/{id}/captures`
+**Exact allowlist (`ALWAYS_OPEN_EXACT`):**
+- `/api/v1/compositions` (POST — Engine creates dish)
+- `/api/v1/runs` — [AB-KEYMINT] start a run via key auth
+- `/api/v1/agents` — **PR #49**: external brand-key agents create their roster. EXACT on purpose: `/api/v1/agents/rig-up` stays session-gated
+- `/api/v1/inbox/approve|reject|regenerate|conversation` — token-as-credential
+- `/manifest.json`
+
+**Regex allowlist (`ALWAYS_OPEN_REGEXES`):**
+- `/api/v1/brand/{id}/context|recent-compositions|captures`
+- `/api/v1/compositions/{id}/...` (approve/reject/regenerate/events/outputs/sources/complete/…)
+- `/api/v1/compositions/{id}` (DELETE)
+- `/api/v1/approval/{token}/caption|chat`
+- `/api/v1/posts`, `/api/v1/posts/{id}` — **also matches `/api/v1/posts/quick`** (PR #49 quick publish needed no proxy change)
 - `/api/v1/brand/dna`
-- `/api/v1/brands/{id}/insights`
-- `/api/v1/brands/{id}/insights/{insightId}`
-- `/api/v1/posts/{id}` (DELETE only)
-
-**Webhook routes (all bypass session):**
-- `/api/webhooks/stripe`
-- `/api/v1/telegram/webhook/*`
-- `/api/v1/slack/events`
-- `/api/v1/discord/interactions`
-- `/api/v1/webhooks/*`
+- `/api/v1/brands/{id}/insights(/{insightId})`
+- `/api/v1/workspaces/{id}/compositions`
+- `/api/v1/agents/{id}/skills`, `/api/v1/agents/{id}/discovery` — [AB-KEYMINT]
+- `/api/v1/runs/{id}/events` — [AB-KEYMINT]
+- `/api/v1/brand-secrets`, `/api/v1/brand-secrets/{provider}` — **PR #49**: provider vault
+- `/api/v1/skill-executions(/{id})`, `/api/v1/media/{id}/confirm`
 
 ### Important note
 
-A route that imports `requireApiBrand` but is NOT in the allowlist will be blocked by the middleware with a `307 → /login` **before the handler ever runs**. The `session` tag in `routes.json` reflects this.
+A route that imports `requireApiBrand` but is NOT in the allowlist will be blocked by the middleware with a `307 → /login` **before the handler ever runs**. The `session` tag in `routes.json` reflects this. **The proxy allowlist is the REAL gate** — handler-level auth is inert until the path is allowlisted.
 
-To make a session-protected route reachable by master key:
-1. Add its path/regex to `src/proxy.ts`
+To make a session-protected route reachable by API key:
+1. Add its path/regex to `src/proxy.ts` (prefer EXACT/regex over prefix to avoid opening adjacent routes)
 2. Re-tag it `api-or-session` in `routes.json`
 3. Bump `_version`
+4. Add a lock-in check to `cfw-social/test/api-auth-allowlist.test.ts`
+
+### Vault authorization (`authorizeVault`)
+
+`src/lib/auth/vault-access.ts` adds a second gate on top of `requireApiBrand` for the provider-key vault (`/api/v1/brand-secrets*`):
+
+| Caller mode | Result |
+|---|---|
+| `brand-key` | ✅ pass — the brand key IS brand authority (owner decision 2026-06-02) |
+| `master-key` | ✅ pass |
+| `session` | only `role === "owner"` passes; others get `403 owner_only` |
+
+Accepted risk: a leaked brand key can read/write/delete stored provider keys (and read **plaintext** via MCP `get_brand_secrets`). Planned mitigation: `secret_access_log`.
 
 ---
 
@@ -247,6 +274,7 @@ HTTP/1.1 503 Service Unavailable
 
 | Field | Algorithm | Key |
 |---|---|---|
+| `BrandSecret.encryptedValue` (provider vault: HeyGen/ElevenLabs/etc. keys) | AES-256-GCM | `ENCRYPTION_KEY` env |
 | `Brand.pfmProjectApiKey` | AES-256-GCM | `ENCRYPTION_KEY` env |
 | `Brand.pfmProjectWebhookSecret` | AES-256-GCM | `ENCRYPTION_KEY` env |
 | `PlatformConnection.accessTokenEnc` | AES-256-GCM | `ENCRYPTION_KEY` env |

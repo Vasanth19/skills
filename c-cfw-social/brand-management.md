@@ -163,6 +163,63 @@ Brands connect to social platforms via `PlatformConnection` rows.
 
 ---
 
+## Provider Key Vault (brand-secrets)
+
+Each brand has an encrypted vault of third-party provider API keys (`BrandSecret` rows, AES-256-GCM via `ENCRYPTION_KEY`). cfw-agent's skill-runner injects these as env vars when running skills for the brand (e.g. a brand's own HeyGen key powers its avatar videos).
+
+### Known providers (canonical env-var mapping)
+
+| Provider | Env var | Powers |
+|---|---|---|
+| `heygen` | `HEYGEN_API_KEY` | Avatar videos |
+| `elevenlabs` | `ELEVENLABS_API_KEY` | Voiceovers |
+| `kie` | `KIE_AI_API_KEY` | Image generation |
+| `perplexity` | `PERPLEXITY_API_KEY` | Research |
+| `replicate` | `REPLICATE_API_TOKEN` | AI models |
+| `gemini` | `GEMINI_API_KEY` | Image & media generation |
+| `fal` | `FAL_KEY` | AI media models |
+
+**Custom providers** are allowed: any kebab-case name derives `<NAME>_API_KEY`, except deny-listed names and reserved env prefixes (`R2_`, `LLM_`, `ANTHROPIC_`, `CFW_`).
+
+### Endpoints (PR #49, 2026-06-02 — brand-key enabled)
+
+| Method | Path | Behavior |
+|---|---|---|
+| `GET` | `/api/v1/brand-secrets` | List `{ provider, envVar, known, maskedHint, createdAt, lastUsedAt }` — **never plaintext** |
+| `PUT` | `/api/v1/brand-secrets` | Upsert `{ provider, value }` (value 8–500 chars, encrypted at rest) |
+| `DELETE` | `/api/v1/brand-secrets/{provider}` | Remove one provider key |
+
+Auth: `requireApiBrand` + `authorizeVault` — brand-key and master-key callers get **full read+write+delete**; browser-session callers must be `role = owner` (403 `owner_only` otherwise).
+
+### MCP tools (registered in ALL auth modes since 2026-06-02)
+
+- `get_brand_secrets` — returns **decrypted plaintext** keys (used by cfw-agent's skill-runner)
+- `set_brand_secret` — encrypt + upsert
+
+⚠️ A leaked brand key can exfiltrate stored provider keys via MCP. Accepted risk (owner decision 2026-06-02); `secret_access_log` is the planned mitigation. UI surface: **Settings → Provider Keys** (`/settings/vault`).
+
+---
+
+## Agent Provisioning via API (PR #49, 2026-06-02)
+
+An external agent holding a brand key can build the brand's roster headlessly:
+
+```
+POST /api/v1/agents
+x-api-key: cfw_xxx
+{ "name": "VSL Writer", "skillNames": ["p-vsl"], "persona": "...", "allowDiscovery": false }
+→ 201 { "agentId": "ag_..." }
+```
+
+- `skillNames` are validated against the synced skill catalog; binding is idempotent (`attachAgentSkills`).
+- `persona` becomes `Agent.systemPromptOverride`.
+- `allowDiscovery` defaults: `true` for skill-less agents, `false` when skills given.
+- `/api/v1/agents/rig-up` (standard crew: Aria/Cody/Remy/Kyle/Quinn) stays **session-only**.
+
+Curation endpoints (also brand-key enabled, AB-KEYMINT): `POST/DELETE /api/v1/agents/{id}/skills`, `PUT /api/v1/agents/{id}/discovery`.
+
+---
+
 ## API Key Provisioning
 
 Brands can create scoped API keys for server-to-server access.

@@ -41,12 +41,14 @@ CFW Social is the main application — a Next.js 16 app with a Prisma/PostgreSQL
 | `README.md` | This file — quick start |
 | `data-model.md` | Entity definitions, relationships, indexes |
 | `lifecycle.md` | Run → output → approval → post flow |
-| `brand-management.md` | Onboarding, DNA, insights, connections, keys |
+| `brand-management.md` | Onboarding, DNA, insights, connections, keys, provider-key vault, headless agent provisioning |
 | `workspace-operations.md` | CRUD, sources, assets, runs/outputs/posts |
 | `approval-workflow.md` | send-for-approval, signed tokens, inbox |
-| `publishing.md` | Posts, scheduling, calendar, platform constraints |
+| `publishing.md` | Posts, scheduling, quick publish, calendar, platform constraints |
+| `composition-authoring.md` | Per-platform media specs + caption rules for building dishes |
 | `media-capture.md` | Presigned uploads, capture events, linking |
-| `auth.md` | Auth cascade, middleware, HMAC, encryption |
+| `auth.md` | Auth cascade, middleware allowlist, vault authorization, HMAC, encryption |
+| `external-agent-api.md` | External agents managing a brand via API key — content workflow (v2) + full brand management (allowlisted v1: create agents, quick publish, provider vault) |
 | `local-dev.md` | Base URL + working curl per auth mode + SSE consumption + dev-brand bootstrap (localhost:3000) |
 | `prod.md` | Production API quickstart — `app.cfw.social`, Vercel key pull, brand ID lookup, security notes on dev endpoints |
 | `integrations.md` | Telegram, Discord, Slack, Stripe, PostForMe setup |

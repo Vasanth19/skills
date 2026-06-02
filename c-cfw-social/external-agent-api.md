@@ -4,18 +4,21 @@ How to call the CFW Social API from an **external agent, script, or automation**
 
 ---
 
-## The Right Surface: `/api/v2/` (Hono)
+## The Right Surface: `/api/v2/` (Hono) + allowlisted `/api/v1/` routes
 
-> **Use `/api/v2/*` for all external/programmatic calls.**
+> **Use `/api/v2/*` for the content workflow (workspaces → runs → outputs → posts).**
+> **Use the allowlisted `/api/v1/*` routes for brand management** (agent provisioning, quick publish, provider vault, API-key minting) — these have no v2 equivalent.
 
-`/api/v1/*` routes are blocked by the Next.js middleware for non-session traffic (307 → /login).
+Most `/api/v1/*` routes are blocked by the Next.js middleware for non-session traffic (307 → /login), **but a specific allowlist of brand-management routes accepts `x-api-key` auth** (see "Full Brand Management" below). Since 2026-06-02 (PR #49), an external agent holding a brand key can **fully provision and operate a brand headlessly** — only billing, `/agents/rig-up`, and account deletion remain session-only.
+
 `/api/v2/*` is a Hono catch-all tagged `api-or-session` — all routes accept `x-api-key` auth.
 
 | Surface | Auth | When to use |
 |---|---|---|
-| `https://app.cfw.social/api/v2/*` | `x-api-key: cfw_xxx` | External agents, scripts, automation |
+| `https://app.cfw.social/api/v2/*` | `x-api-key: cfw_xxx` | Content workflow: workspaces, runs, outputs, posts |
+| `https://app.cfw.social/api/v1/*` (allowlisted) | `x-api-key: cfw_xxx` | Brand management: create agents, quick publish, provider vault, mint keys |
 | `https://app.cfw.social/api/v1/mcp` | `x-api-key: cfw_xxx` | MCP protocol clients (cfw-agent, Claude Desktop) |
-| `https://app.cfw.social/api/v1/*` | Session cookie only | Browser UI |
+| `https://app.cfw.social/api/v1/*` (everything else) | Session cookie only | Browser UI |
 
 ---
 
@@ -226,6 +229,114 @@ curl -s https://app.cfw.social/api/v2/agents/$AGENT_ID/instructions -H "x-api-ke
 - Cross-brand or unknown `agentId` → `404 { "error": "Agent not found" }`
   (existence is never leaked across tenants).
 
+---
+
+## Full Brand Management (v1 surface — brand-key enabled 2026-06-02)
+
+These routes live on **`/api/v1/`** (not v2) but are proxy-allowlisted and handler-authenticated
+via `requireApiBrand`, so a brand key (`x-api-key` / `Authorization: Bearer`) works headlessly.
+With these + the v2 content routes, an external agent can **fully provision and operate a brand**.
+
+### Create an agent (specialist roster)
+
+```bash
+curl -s -X POST https://app.cfw.social/api/v1/agents \
+  -H "x-api-key: $BRAND_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "VSL Writer",
+    "skillNames": ["p-vsl", "r-cfw-publisher"],
+    "persona": "You write punchy VSL scripts in the brand voice.",
+    "allowDiscovery": false
+  }'
+# 201 { "agentId": "ag_..." }
+```
+
+Body: `name?`, `skillNames[]` (validated against the synced skill catalog; idempotent binding),
+`persona?` (becomes `systemPromptOverride`), `allowDiscovery?` (defaults: `true` when no skills,
+`false` when skills given), `workspaceId?`.
+
+> ⚠️ `/api/v1/agents/rig-up` (standard-crew rig-up) remains **session-only** by design.
+
+### Quick publish (multi-platform, one call)
+
+```bash
+curl -s -X POST https://app.cfw.social/api/v1/posts/quick \
+  -H "x-api-key: $BRAND_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "platforms": ["instagram", "linkedin"],
+    "captionsByPlatform": { "instagram": "IG caption ✨", "linkedin": "LI caption" },
+    "mediaUrls": ["https://r2.../image.png"],
+    "kind": "image",
+    "saveAsDraft": false
+  }'
+# { "count": 2, "scheduled": 2, "drafted": 0, "failed": 0,
+#   "posts": [{ "id": "post_...", "platform": "instagram", "status": "scheduled", "scheduledAt": "..." }, ...] }
+```
+
+Behavior: each platform gets its own `Post` row. Platforms with an active `PlatformConnection` +
+PostTiming rules are **scheduled** via Post for Me; platforms without a connection (or with
+`saveAsDraft: true`) are saved as **drafts** — nothing is ever silently skipped. Per-platform PFM
+failures mark that post `failed` and continue with the rest.
+
+### Provider key vault (brand-secrets)
+
+The vault stores per-brand provider API keys (HeyGen, ElevenLabs, etc.), AES-256-GCM encrypted.
+Brand-key callers get **full read + write + delete** (owner decision 2026-06-02 — the brand key IS
+brand authority). In session mode, only `role = owner` may touch the vault.
+
+```bash
+# List (masked hints only — never plaintext over REST)
+curl -s https://app.cfw.social/api/v1/brand-secrets -H "x-api-key: $BRAND_KEY"
+# { "secrets": [{ "provider": "heygen", "envVar": "HEYGEN_API_KEY", "known": true,
+#                 "maskedHint": "••••a1b2", "createdAt": "...", "lastUsedAt": "..." }] }
+
+# Upsert one provider key
+curl -s -X PUT https://app.cfw.social/api/v1/brand-secrets \
+  -H "x-api-key: $BRAND_KEY" -H "Content-Type: application/json" \
+  -d '{ "provider": "heygen", "value": "hg_xxxxxxxxxxxxxxxx" }'
+# { "ok": true, "provider": "heygen" }
+
+# Delete one provider
+curl -s -X DELETE https://app.cfw.social/api/v1/brand-secrets/heygen \
+  -H "x-api-key: $BRAND_KEY"
+```
+
+**Known providers** (canonical env-var mapping): `heygen` → `HEYGEN_API_KEY`, `elevenlabs` →
+`ELEVENLABS_API_KEY`, `kie` → `KIE_AI_API_KEY`, `perplexity` → `PERPLEXITY_API_KEY`, `replicate` →
+`REPLICATE_API_TOKEN`, `gemini` → `GEMINI_API_KEY`, `fal` → `FAL_KEY`. **Custom providers** are
+allowed (kebab-case name → derived `<NAME>_API_KEY`), except deny-listed names/prefixes that would
+collide with CFW infrastructure (`R2_`, `LLM_`, `ANTHROPIC_`, `CFW_`).
+
+**MCP equivalents** (via `/api/v1/mcp`, registered in ALL auth modes since 2026-06-02):
+- `get_brand_secrets` — returns **decrypted plaintext** keys (MCP only; REST never returns plaintext)
+- `set_brand_secret` — encrypt + upsert
+
+> ⚠️ Security note: a leaked brand key can exfiltrate stored provider keys via MCP
+> `get_brand_secrets`. This is an accepted, documented risk; `secret_access_log` is the planned
+> mitigation. Treat brand keys with the same care as the provider keys themselves.
+
+### Mint / revoke API keys
+
+```bash
+# Mint a brand key using the master key
+curl -s -X POST https://app.cfw.social/api/v1/api-keys \
+  -H "cfw-api-key: $CFW_MASTER_API_KEY" -H "x-cfw-brand: $BRAND_ID" \
+  -H "Content-Type: application/json" -d '{"name":"my-agent"}'
+# GET /api/v1/api-keys (list) and DELETE /api/v1/api-keys/{id} (revoke) also accept key auth
+```
+
+### What stays session-only (intentionally)
+
+| Route | Why |
+|---|---|
+| `POST /api/v1/billing/checkout`, `/billing/portal` | A leaked brand key must not change the plan |
+| `POST /api/v1/agents/rig-up` | Standard-crew rig-up is an owner UI action |
+| `POST /api/v1/me/delete-account` | Account deletion requires a logged-in human |
+
+---
+
 ### Posts
 
 | Method | Path | Purpose |
@@ -324,10 +435,13 @@ for await (const chunk of readableStream(reader)) {
 
 | Error | Cause | Fix |
 |---|---|---|
-| `307 → /login` | Using `/api/v1/*` with API key | Switch to `/api/v2/*` equivalent |
+| `307 → /login` | Using a NON-allowlisted `/api/v1/*` route with API key | Use the `/api/v2/*` equivalent, or one of the allowlisted v1 brand-management routes above |
+| `401 Not authenticated` | Missing/wrong key on an allowlisted route | Check the `x-api-key` header value |
 | `401 invalid_api_key` | Wrong key or key revoked | Re-mint from Settings → API Keys |
+| `403 owner_only` | Session (browser) caller without owner role hitting the vault | Vault via UI requires `role = owner`; brand-key callers are not affected |
 | `403 Forbidden` | workspaceId/agentId belongs to different brand | Confirm IDs are for this brand's key |
-| `404 Agent not found` | Wrong `agentId` | Use `GET /api/v2/workspaces/:id/runs` to find agents |
+| `404 Agent not found` | Wrong `agentId` | Use `GET /api/v2/agents` to list this brand's agents |
+| `400 invalid_provider` | Vault PUT with deny-listed or malformed provider name | Use a known provider or valid kebab-case custom name |
 | SSE stream hangs | curl buffering | Use `curl -N -s` (no-buffer) |
 
 ---

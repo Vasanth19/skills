@@ -485,6 +485,27 @@ ApiKey
   Indexes: [brandId], [prefix]
 ```
 
+### BrandSecret (provider-key vault)
+
+```
+BrandSecret                          @@map("brand_secrets")
+  id             String    @id @default(cuid())
+  brandId        String    @map("brand_id")
+  provider       String    // heygen | elevenlabs | kie | perplexity | replicate | gemini | fal | <custom kebab-case>
+  encryptedValue String    @map("encrypted_value")  // AES-256-GCM via ENCRYPTION_KEY
+  createdAt      DateTime  @default(now())
+  lastUsedAt     DateTime?
+
+  Relation: brand Brand (onDelete: Cascade)
+
+  @@unique([brandId, provider])
+  Indexes: [brandId]
+```
+
+Per-brand third-party provider API keys, injected as env vars into cfw-agent skill runs.
+REST: `GET/PUT /api/v1/brand-secrets`, `DELETE /api/v1/brand-secrets/{provider}` (brand-key enabled, PR #49).
+MCP: `get_brand_secrets` (plaintext) / `set_brand_secret`. See `brand-management.md` § "Provider Key Vault".
+
 ### ChannelConnection
 
 ```
