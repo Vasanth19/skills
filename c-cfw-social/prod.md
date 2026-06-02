@@ -41,13 +41,28 @@ Key auto-resolves the brand — no need to pass `x-cfw-brand` separately when us
 
 ## Getting the production master key
 
-The production `CFW_MASTER_API_KEY` lives in Vercel — not in any local `.env` file. Pull it:
+> ⚠️ **GOTCHA (confirmed live 2026-06-02): `vercel env pull` returns an EMPTY value for `CFW_MASTER_API_KEY`** (and other vars on this project), even though `vercel env ls production` shows it exists. Do NOT rely on the pull below — verify the value is non-empty before using it, and never conclude a var is "missing from prod" based on a pull.
 
 ```bash
 cd /Users/vasanth/Code/cfw/cfw-social
 vercel env pull .env.production.local --environment=production
 MASTER="$(grep ^CFW_MASTER_API_KEY= .env.production.local | cut -d= -f2-)"
+[ -n "$MASTER" ] || echo "EMPTY — fall back to the brand-key mint flow below"
 ```
+
+**Working alternative — you usually don't need the master key at all.** Any existing brand key can mint additional keys for its own brand (`requireApiBrand` accepts brand-key auth on `/api/v1/api-keys`):
+
+```bash
+BRAND_KEY="$(grep ^CFW_SOCIAL_API_KEY= ~/.gsai/secrets/mgg-api-keys.env | cut -d= -f2-)"
+curl -s -X POST https://app.cfw.social/api/v1/api-keys \
+  -H "x-api-key: $BRAND_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"my-new-key"}'
+# 201 { "key": { "id": "...", "plain": "cfw_...", "prefix": "cfw_xxxxxxxx" } }
+# Revoke later: DELETE /api/v1/api-keys/{id} → 204
+```
+
+If you genuinely need the master key (e.g. operating a brand you hold no key for), read it from Fly.io instead — cfw-agent carries the identical value: `cd /Users/vasanth/Code/cfw/cfw-agent && fly ssh console -C "printenv CFW_MASTER_API_KEY"`.
 
 > **Security:** `.env.production.local` is gitignored. Never commit it. Delete it after use if you don't need it cached locally.
 
