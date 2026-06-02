@@ -121,7 +121,7 @@ Return { brand, role, userId }
 - `/api/v1/ops-prescriptions`
 - `/api/health`, `/api/v2/` — Hono catch-all (requireApiBrand per-route)
 - `/api/v1/social/callback`, `/api/v1/captures`, `/api/v1/media/upload-url`, `/api/v1/dev/`
-- `/privacy`, `/terms`, `/c/`, `/a/`
+- `/privacy`, `/terms`, `/c/`, `/a/`, `/s/` (token-as-credential page surfaces: capture / approval / script share — PR #52)
 
 **Exact allowlist (`ALWAYS_OPEN_EXACT`):**
 - `/api/v1/compositions` (POST — Engine creates dish)
