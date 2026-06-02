@@ -6,6 +6,7 @@ argument-hint: "[brand] [production-name] [source-video]"
 allowed-tools: Bash, Read, Write
 kind: pipeline
 visibility: catalog
+providers: kie
 produces:
   dish: Snap BG-Swap Reel
   format: 9:16 vertical video

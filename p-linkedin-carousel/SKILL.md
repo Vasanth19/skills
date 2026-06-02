@@ -6,6 +6,7 @@ argument-hint: "[brand] [production-name] [topic]"
 allowed-tools: Bash, Read, Write
 kind: pipeline
 visibility: catalog
+providers: kie
 produces:
   dish: LinkedIn Carousel
   format: PDF carousel

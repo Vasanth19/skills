@@ -5,6 +5,7 @@ when-to-use: Use when the user has a recorded main video WITH a narration/voice 
 version: 3.0.0
 kind: pipeline
 visibility: catalog
+providers: elevenlabs
 produces:
   dish: Footage Reel
   format: 9:16 vertical video

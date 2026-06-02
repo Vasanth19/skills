@@ -5,6 +5,7 @@ when_to_use: Trigger on TTS, voiceover, ElevenLabs, script-to-audio, SFX, sound 
 allowed-tools: Bash
 kind: component
 visibility: internal
+providers: elevenlabs
 ---
 
 # Studio Audio — TTS, SFX, Transcription

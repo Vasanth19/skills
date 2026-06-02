@@ -5,6 +5,7 @@ when-to-use: Use when the user wants a full-frame animated-graphics (or b-roll) 
 version: 1.2.0
 kind: pipeline
 visibility: catalog
+providers: heygen
 produces:
   dish: Avatar PIP Reel
   format: 9:16 vertical video

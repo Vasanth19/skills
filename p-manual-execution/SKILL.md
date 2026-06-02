@@ -4,6 +4,7 @@ description: Manual CFW execution recovery pipeline. Finds stuck CFW executions,
 disable-model-invocation: true
 argument-hint: "[execution-id?] [content-id?]"
 allowed-tools: Bash, Read, Write
+providers: heygen
 ---
 
 # pipeline-manual-execution — Recover Stuck CFW Executions

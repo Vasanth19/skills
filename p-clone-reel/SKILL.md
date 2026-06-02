@@ -6,6 +6,7 @@ argument-hint: "[brand] [production-name] [source-url] [--style avatar|ai-genera
 allowed-tools: Bash, Read, Write
 kind: pipeline
 visibility: catalog
+providers: heygen, elevenlabs, kie
 produces:
   dish: Viral Reel Recreation
   format: 9:16 vertical video

@@ -6,6 +6,7 @@ argument-hint: "[brand] [production-name] [story-concept] [--type human|plush]"
 allowed-tools: Bash, Read, Write
 kind: pipeline
 visibility: catalog
+providers: kie
 produces:
   dish: AI Character Short
   format: 9:16 vertical video

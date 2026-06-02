@@ -5,6 +5,7 @@ metadata:
   tags: remotion, video, react, animation, composition
 kind: framework
 visibility: internal
+providers: elevenlabs
 ---
 
 ## When to use

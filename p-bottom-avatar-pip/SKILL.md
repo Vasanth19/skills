@@ -3,6 +3,7 @@ name: p-bottom-avatar-pip
 description: "Produce one 9:16 YouTube Short: b-roll full-frame on dark-navy canvas, brand avatar chroma-keyed as a 540×540 rounded PIP pinned flush to the bottom. Default MGG Shorts recipe."
 kind: pipeline
 visibility: catalog
+providers: heygen
 produces:
   dish: Bottom-Avatar PIP Short
   format: 9:16 vertical video

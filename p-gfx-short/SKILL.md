@@ -6,6 +6,7 @@ argument-hint: "[brand] [production-name] [topic]"
 allowed-tools: Bash, Read, Write
 kind: pipeline
 visibility: catalog
+providers: elevenlabs
 produces:
   dish: Faceless GFX Short
   format: 9:16 vertical video

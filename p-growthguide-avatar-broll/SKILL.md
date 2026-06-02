@@ -10,6 +10,7 @@ revision_note: "v2.0 — Step 2 rewritten for human-in-loop HeyGen per brand.yam
 move-to: .claude/skills/p-growthguide-avatar-broll/
 kind: pipeline
 visibility: catalog
+providers: heygen
 produces:
   dish: GrowthGuide Avatar B-roll Short
   format: 9:16 vertical video

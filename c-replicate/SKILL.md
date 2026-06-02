@@ -5,6 +5,7 @@ when_to_use: Trigger on c-replicate, c-replicate.ai, REPLICATE_API_TOKEN, run mo
 allowed-tools: Bash
 kind: component
 visibility: internal
+providers: replicate
 ---
 
 # Replicate — Direct API

@@ -5,6 +5,7 @@ when-to-use: Use when the user wants ONE or a small batch of generated/AI images
 version: 0.1.0
 kind: pipeline
 visibility: catalog
+providers: kie, fal, replicate
 produces:
   dish: AI Image Post
   format: image (single or multi)

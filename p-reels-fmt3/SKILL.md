@@ -5,6 +5,7 @@ when-to-use: Use when the user gives a topic or script and wants a complete reel
 version: 0.4.0
 kind: pipeline
 visibility: catalog
+providers: heygen
 produces:
   dish: Avatar + Animation Reel
   format: 9:16 vertical video

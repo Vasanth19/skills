@@ -3,6 +3,7 @@ name: p-screen-rec-vo
 description: "Produce one 9:16 Short with full-frame Remotion screen-rec (no avatar PIP). Avatar is VO-only — HeyGen render's audio is extracted and used as the VO track. Sahil-format adaptation."
 kind: pipeline
 visibility: catalog
+providers: heygen
 produces:
   dish: Screen-Rec VO Short
   format: 9:16 vertical video

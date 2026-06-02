@@ -5,6 +5,7 @@ when_to_use: Trigger on kie.ai, KIE_AI_API_KEY, Hailuo video, hailuo i2v, Sora-2
 allowed-tools: Bash
 kind: component
 visibility: internal
+providers: fal, kie
 ---
 
 # AI Media Generation — kie.ai + fal.ai

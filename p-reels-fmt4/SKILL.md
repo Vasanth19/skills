@@ -5,6 +5,7 @@ when-to-use: Use when the user wants a faceless explainer reel — numbered/list
 version: 4.0.0
 kind: pipeline
 visibility: catalog
+providers: elevenlabs
 produces:
   dish: Faceless Explainer Reel
   format: 9:16 vertical video

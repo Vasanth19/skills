@@ -5,6 +5,7 @@ when_to_use: Trigger on AI image, generate image, create photo, photo post, GPT-
 allowed-tools: Bash
 kind: component
 visibility: internal
+providers: kie
 dependsOn: [c-kie-ai]
 ---
 

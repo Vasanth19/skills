@@ -5,6 +5,7 @@ when_to_use: Trigger on research, strategy research, Perplexity, sonar, web rese
 allowed-tools: Bash
 kind: component
 visibility: internal
+providers: perplexity
 ---
 
 # Studio Research — Dual-Provider Web Research

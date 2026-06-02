@@ -5,6 +5,7 @@ when-to-use: Use for any longform video (>2 min). Pass `format` to pick the stru
 version: 0.1.0
 kind: pipeline
 visibility: catalog
+providers: heygen, elevenlabs, kie
 produces:
   dish: Longform Video
   format: 16:9 video

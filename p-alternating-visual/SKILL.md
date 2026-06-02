@@ -3,6 +3,7 @@ name: p-alternating-visual
 description: "Produce one 9:16 Short with alternating segments: avatar talking → Remotion/NanoBanana visual → avatar → visual → avatar → outro. MGG tutorial/explainer recipe."
 kind: pipeline
 visibility: catalog
+providers: heygen, kie
 produces:
   dish: Alternating-Visual Short
   format: 9:16 vertical video

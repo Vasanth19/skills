@@ -6,6 +6,7 @@ argument-hint: "[brand] [production-name]"
 allowed-tools: Bash, Read, Write
 kind: pipeline
 visibility: catalog
+providers: heygen, elevenlabs, kie
 produces:
   dish: VSL
   format: 16:9 video

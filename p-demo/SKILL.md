@@ -9,6 +9,7 @@ metadata:
     - avatar
 kind: pipeline
 visibility: catalog
+providers: heygen, elevenlabs, kie
 produces:
   dish: Demo Video
   format: 9:16 or 16:9 video

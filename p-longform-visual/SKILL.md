@@ -6,6 +6,7 @@ argument-hint: "[brand] [production-name] [main-video]"
 allowed-tools: Bash, Read, Write
 kind: pipeline
 visibility: catalog
+providers: elevenlabs
 produces:
   dish: Longform Visual
   format: 16:9 video

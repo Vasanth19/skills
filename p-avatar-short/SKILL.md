@@ -6,6 +6,7 @@ argument-hint: "[brand] [production-name] [--shared-render scripts...] [--source
 allowed-tools: Bash, Read, Write
 kind: pipeline
 visibility: catalog
+providers: heygen, elevenlabs, kie
 produces:
   dish: Avatar Short
   format: 9:16 vertical video

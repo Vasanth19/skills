@@ -5,6 +5,7 @@ when_to_use: Trigger on HeyGen, avatar render, green screen render, talking head
 allowed-tools: Bash
 kind: component
 visibility: internal
+providers: heygen
 ---
 
 # HeyGen — Avatar Render System
