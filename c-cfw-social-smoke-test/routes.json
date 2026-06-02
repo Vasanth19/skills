@@ -1,15 +1,17 @@
 {
-  "_comment": "Manifest of every src/app/api/**/route.ts handler in cfw-social. The `auth` tag is the GATEWAY-level auth (what src/proxy.ts allows), NOT just what the handler imports. Many handlers call requireApiBrand but the middleware blocks unauthenticated traffic upstream, so the effective auth is `session`. Placeholders inside {...} must match a key in PLACEHOLDER inside smoke.mjs. Regenerate by hand; bump _version.",
-  "_version": "2026-05-18.1",
+  "_comment": "Manifest of every src/app/api/**/route.ts handler in cfw-social. The `auth` tag is the GATEWAY-level auth (what src/proxy.ts allows), NOT just what the handler imports. Many handlers call requireApiBrand but the middleware blocks unauthenticated traffic upstream, so the effective auth is `session`. Placeholders inside {...} must match a key in PLACEHOLDER inside smoke.mjs. SMOKE-SAFETY: api-or-session routes are called WITH master-key headers — data-creating routes (agents, api-keys, posts/quick, brand-secrets PUT) deliberately carry INVALID bodies so they 400 instead of creating/overwriting real rows. A doc-oriented sibling copy (realistic bodies) lives in the c-cfw-social skill — keep auth tags in sync. Regenerate by hand; bump _version.",
+  "_version": "2026-06-02.1",
   "routes": [
     { "path": "/api/health", "methods": ["GET"], "auth": "public" },
 
-    { "path": "/api/v1/agents", "methods": ["POST"], "auth": "session", "body": { "workspaceId": "$WORKSPACE_ID", "archetype": "free-form" } },
-    { "path": "/api/v1/agents/{agentId}/discovery", "methods": ["PUT"], "auth": "session", "body": { "allowDiscovery": true } },
-    { "path": "/api/v1/agents/{agentId}/skills", "methods": ["POST", "DELETE"], "auth": "session", "body": { "skillName": "c-broll" } },
+    { "path": "/api/v1/agents", "methods": ["POST"], "auth": "api-or-session", "_note": "PR #49: requireApiBrand + proxy ALWAYS_OPEN_EXACT. Body is DELIBERATELY invalid (skillNames must be array) so smoke never creates an agent row.", "body": { "skillNames": "not-an-array" } },
+    { "path": "/api/v1/agents/{agentId}", "methods": ["PATCH", "DELETE"], "auth": "session", "body": { "name": "updated" } },
+    { "path": "/api/v1/agents/{agentId}/discovery", "methods": ["PUT"], "auth": "api-or-session", "_note": "AB-KEYMINT: proxy ALWAYS_OPEN_REGEXES + requireApiBrand. Placeholder agentId → 404 (safe).", "body": { "allowDiscovery": true } },
+    { "path": "/api/v1/agents/{agentId}/skills", "methods": ["POST", "DELETE"], "auth": "api-or-session", "_note": "AB-KEYMINT: proxy ALWAYS_OPEN_REGEXES + requireApiBrand. Placeholder agentId → 404 (safe).", "body": { "skillName": "c-broll" } },
+    { "path": "/api/v1/agents/rig-up", "methods": ["POST"], "auth": "session", "_note": "Intentionally session-only (PR #49 left this gated).", "body": { "workspaceId": "$WORKSPACE_ID" } },
 
-    { "path": "/api/v1/api-keys", "methods": ["GET", "POST"], "auth": "session", "body": { "name": "smoke-test" } },
-    { "path": "/api/v1/api-keys/{apiKeyId}", "methods": ["DELETE"], "auth": "session" },
+    { "path": "/api/v1/api-keys", "methods": ["GET", "POST"], "auth": "api-or-session", "_note": "AB-KEYMINT: requireApiBrand. POST body is DELIBERATELY invalid (name missing) so smoke never mints a real key.", "body": {} },
+    { "path": "/api/v1/api-keys/{apiKeyId}", "methods": ["DELETE"], "auth": "api-or-session", "_note": "Placeholder apiKeyId → 404 (safe)." },
 
     { "path": "/api/v1/approval/{token}/chat", "methods": ["GET", "POST"], "auth": "signed-token" },
     { "path": "/api/v1/approval/{token}/runs", "methods": ["POST"], "auth": "signed-token" },
@@ -19,15 +21,20 @@
     { "path": "/api/v1/billing/checkout", "methods": ["POST"], "auth": "session", "body": { "plan": "creator", "brandId": "$BRAND_ID" } },
     { "path": "/api/v1/billing/portal", "methods": ["POST"], "auth": "session", "body": { "brandId": "$BRAND_ID" } },
 
+    { "path": "/api/v1/brand-secrets", "methods": ["GET", "PUT"], "auth": "api-or-session", "_note": "PR #49: provider-key vault, requireApiBrand + authorizeVault. GET is read-only (masked hints). PUT body is DELIBERATELY invalid (value < 8 chars) so smoke never overwrites a real provider key.", "body": { "provider": "heygen", "value": "x" } },
+    { "path": "/api/v1/brand-secrets/{provider}", "methods": ["DELETE"], "auth": "api-or-session", "_note": "PR #49. Placeholder provider 'smoke-nonexistent' → no-op delete (safe)." },
+
     { "path": "/api/v1/brand/{brandId}/captures", "methods": ["GET"], "auth": "signed-token" },
     { "path": "/api/v1/brand/{brandId}/context", "methods": ["GET"], "auth": "api-or-session" },
     { "path": "/api/v1/brand/dna", "methods": ["GET"], "auth": "api-or-session" },
     { "path": "/api/v1/brand/setup", "methods": ["POST"], "auth": "session", "body": {} },
 
-    { "path": "/api/v1/brands/{brandId}/insights", "methods": ["GET"], "auth": "api-or-session" },
+    { "path": "/api/v1/brands/{brandId}/insights", "methods": ["GET", "POST"], "auth": "api-or-session", "body": { "kind": "tone", "value": "playful" } },
     { "path": "/api/v1/brands/{brandId}/insights/{insightId}", "methods": ["PATCH", "DELETE"], "auth": "api-or-session", "body": { "alwaysOn": true } },
+    { "path": "/api/v1/brands/{brandId}/memory-settings", "methods": ["GET", "PATCH"], "auth": "api-or-session", "body": { "memoryEnabled": true } },
     { "path": "/api/v1/brands/channel-connections", "methods": ["GET", "POST"], "auth": "session", "body": {} },
     { "path": "/api/v1/brands/channel-connections/{channelConnectionId}", "methods": ["DELETE"], "auth": "session" },
+    { "path": "/api/v1/brands/director", "methods": ["PATCH"], "auth": "session", "body": { "agentId": "any" } },
     { "path": "/api/v1/brands/mine", "methods": ["GET"], "auth": "session" },
 
     { "path": "/api/v1/captures", "methods": ["POST"], "auth": "signed-token" },
@@ -45,10 +52,12 @@
     { "path": "/api/v1/chat/web", "methods": ["POST"], "auth": "session", "body": { "message": "smoke ping", "brandId": "$BRAND_ID" } },
     { "path": "/api/v1/chat/web/{conversationId}", "methods": ["GET"], "auth": "session" },
 
+    { "path": "/api/v1/compositions/{compositionId}", "methods": ["DELETE"], "auth": "api-or-session", "_note": "Proxy ALWAYS_OPEN_REGEXES since 2026-05-27. Placeholder compositionId → 404 (safe)." },
     { "path": "/api/v1/compositions/{compositionId}/send-for-approval", "methods": ["POST"], "auth": "session", "body": {} },
 
     { "path": "/api/v1/dev/brands", "methods": ["GET", "POST", "PATCH"], "auth": "public", "body": {} },
     { "path": "/api/v1/dev/media/{mediaPath}", "methods": ["GET"], "auth": "public" },
+    { "path": "/api/v1/dev/r2-smoke", "methods": ["GET"], "auth": "api-or-session" },
     { "path": "/api/v1/dev/telegram-bot", "methods": ["POST"], "auth": "public", "body": {} },
     { "path": "/api/v1/dev/telegram-rewire", "methods": ["POST"], "auth": "webhook", "body": {} },
     { "path": "/api/v1/dev/upload", "methods": ["PUT"], "auth": "public" },
@@ -59,6 +68,8 @@
     { "path": "/api/v1/image-templates", "methods": ["GET"], "auth": "session" },
 
     { "path": "/api/v1/inbox/approve", "methods": ["POST"], "auth": "signed-token" },
+    { "path": "/api/v1/inbox/conversation", "methods": ["GET"], "auth": "api-or-session" },
+    { "path": "/api/v1/inbox/regenerate", "methods": ["POST"], "auth": "signed-token" },
     { "path": "/api/v1/inbox/reject", "methods": ["POST"], "auth": "signed-token" },
     { "path": "/api/v1/inbox/revoke", "methods": ["POST"], "auth": "session", "body": {} },
 
@@ -66,14 +77,21 @@
 
     { "path": "/api/v1/me/delete-account", "methods": ["POST"], "auth": "session", "body": {} },
 
+    { "path": "/api/v1/media/upload", "methods": ["POST"], "auth": "session", "body": {} },
+
     { "path": "/api/v1/music-tracks", "methods": ["GET"], "auth": "session" },
 
     { "path": "/api/v1/openclaw/webhook", "methods": ["POST"], "auth": "session", "body": {} },
 
+    { "path": "/api/v1/ops-prescriptions", "methods": ["GET"], "auth": "api-or-session" },
+    { "path": "/api/v1/ops-prescriptions/admin", "methods": ["GET"], "auth": "webhook", "_note": "operator-only surface: uses Better-Auth session + User.role='admin', returns 404 (not 403) by design. Skipped by smoke runner — not reachable via master-key auth." },
+
     { "path": "/api/v1/posts/calendar", "methods": ["GET"], "auth": "session" },
     { "path": "/api/v1/posts/count", "methods": ["GET"], "auth": "session" },
     { "path": "/api/v1/posts/list", "methods": ["GET"], "auth": "session" },
-    { "path": "/api/v1/posts/{postId}", "methods": ["DELETE"], "auth": "api-or-session" },
+    { "path": "/api/v1/posts/quick", "methods": ["POST"], "auth": "api-or-session", "_note": "PR #49: requireApiBrand (matched by existing posts/{id} proxy regex). Body is DELIBERATELY invalid (platforms missing) so smoke never creates a Post row.", "body": {} },
+    { "path": "/api/v1/posts/quick/generate-captions", "methods": ["POST"], "auth": "session", "body": { "compositionBody": "test" } },
+    { "path": "/api/v1/posts/{postId}", "methods": ["PATCH", "DELETE"], "auth": "api-or-session", "body": { "status": "draft" } },
 
     { "path": "/api/v1/recipes/run", "methods": ["POST"], "auth": "session", "body": {} },
 
@@ -87,8 +105,8 @@
 
     { "path": "/api/v1/research/run", "methods": ["POST"], "auth": "session", "body": {} },
 
-    { "path": "/api/v1/runs", "methods": ["POST"], "auth": "session", "body": {} },
-    { "path": "/api/v1/runs/{runId}/events", "methods": ["GET"], "auth": "session" },
+    { "path": "/api/v1/runs", "methods": ["POST"], "auth": "api-or-session", "_note": "AB-KEYMINT: proxy ALWAYS_OPEN_EXACT + requireApiBrand. Empty body → 400 (workspaceId/agentId/prompt required), so smoke never starts a real run.", "body": {} },
+    { "path": "/api/v1/runs/{runId}/events", "methods": ["GET"], "auth": "api-or-session", "_note": "AB-KEYMINT: proxy ALWAYS_OPEN_REGEXES. Placeholder runId → 404 (safe)." },
 
     { "path": "/api/v1/skills", "methods": ["GET", "POST"], "auth": "session", "body": {} },
 
@@ -107,13 +125,17 @@
     { "path": "/api/v1/webhooks/postforme/events", "methods": ["POST"], "auth": "webhook" },
 
     { "path": "/api/v1/workspaces/list", "methods": ["GET"], "auth": "session" },
-    { "path": "/api/v1/workspaces/{workspaceId}", "methods": ["PATCH"], "auth": "session", "body": { "name": "smoke-rename" } },
+    { "path": "/api/v1/workspaces/{workspaceId}", "methods": ["PATCH", "DELETE"], "auth": "session", "body": { "name": "smoke-rename" } },
     { "path": "/api/v1/workspaces/{workspaceId}/assets", "methods": ["GET", "POST"], "auth": "session", "body": {} },
+    { "path": "/api/v1/workspaces/{workspaceId}/compositions", "methods": ["GET", "POST"], "auth": "api-or-session", "_note": "Proxy ALWAYS_OPEN_REGEXES since 2026-05-27. POST body is DELIBERATELY invalid (format/platforms missing) so smoke never creates a dish.", "body": { "type": "post" } },
     { "path": "/api/v1/workspaces/{workspaceId}/outputs", "methods": ["GET"], "auth": "session" },
     { "path": "/api/v1/workspaces/{workspaceId}/posts", "methods": ["GET"], "auth": "session" },
     { "path": "/api/v1/workspaces/{workspaceId}/runs", "methods": ["GET"], "auth": "session" },
     { "path": "/api/v1/workspaces/{workspaceId}/sources", "methods": ["GET", "POST", "DELETE"], "auth": "session", "body": { "kind": "url", "url": "https://example.com", "name": "smoke" } },
 
-    { "path": "/api/webhooks/stripe", "methods": ["POST"], "auth": "webhook" }
+    { "path": "/api/webhooks/stripe", "methods": ["POST"], "auth": "webhook" },
+
+    { "path": "/api/auth/smoke-skip", "methods": ["GET"], "auth": "webhook" },
+    { "path": "/api/v2/smoke-skip", "methods": ["GET"], "auth": "webhook" }
   ]
 }

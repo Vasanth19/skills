@@ -88,6 +88,7 @@ const PLACEHOLDER = {
   botToken: "fake-bot-token",
   mediaPath: "smoke/none.txt",
   token: "smoke-token",
+  provider: "smoke-nonexistent", // brand-secrets/{provider} — deleting a provider that was never stored is a no-op
 };
 
 // Try to discover a real workspaceId if the caller didn't supply one.
