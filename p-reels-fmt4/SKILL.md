@@ -2,7 +2,7 @@
 name: p-reels-fmt4
 description: Turn a script into a fully rendered explainer reel with no talking head — one REAL animated HyperFrames motion-graphics composition per beat (charts that draw/count on, terminals that type, diagrams that flow, checklists that check off) plus voiceover. NO stock/AI b-roll, NO static stills. Trigger on "make an explainer reel from this script", "faceless animated short with VO", "no-avatar explainer video", "script to animated reel with voiceover".
 when-to-use: Use when the user wants a faceless explainer reel — numbered/listicle or beat-by-beat brand motion-graphics with a voiceover, NO talking-head avatar and NO random b-roll. Every beat's visual is a genuinely animated HyperFrames composition, not a still card.
-version: 4.3.0
+version: 4.4.0
 kind: pipeline
 visibility: catalog
 providers: elevenlabs
@@ -103,7 +103,7 @@ revealed at t=5.0s) — finite PSNR ~25–29 dB between the pairs, not `inf` (wh
 | `$OUT_DIR` | Yes | — | Output folder (mkdir -p). |
 | `$VOICE_ID` | No | `$ELEVENLABS_DEFAULT_VOICE_ID` | ElevenLabs voice (c-audio presets). |
 | `$PALETTE` | No | from Visual Identity Gate | Brand palette for the graphics — resolved via the Visual Identity Gate (Brand Brief → DESIGN.md → named style → dark-premium). Never hard-code. |
-| `$OUTRO` | No | brand outro 5s | Appended tail clip (must be 1080×1920 w/ audio). |
+| `$OUTRO` | No | generated brand card | OPTIONAL override clip (1080×1920 w/ audio). If omitted, the recipe GENERATES a brand-card outro beat (Step 7) — the reel always ends on the brand. |
 | `$TARGET` | No | 30–45s | Reel length; pick beat count to fit. |
 
 ## Tooling (verified available)
@@ -312,8 +312,32 @@ $FF -y -i body-video.mp4 -i vo.mp3 \
   -map 0:v -map 1:a -c:v copy -c:a aac -b:a 192k -ar 48000 -ac 2 -shortest body.mp4
 ```
 
-### 7 — Append outro + final encode (c-ffmpeg)
-Outro fps/sample-rate usually differ (25fps / 48k mono) — normalize via filter concat:
+### 7 — Outro + final encode (c-ffmpeg)
+
+**Every reel MUST end with a brand outro — MANDATORY.** Default = a GENERATED brand-card outro beat
+(no external asset needed); an optional supplied `$OUTRO` clip overrides it.
+
+**Default path — generated brand-card outro beat (do this unless `$OUTRO` is supplied):**
+Author ONE final HyperFrames composition (same 1080×1920 pipeline as every other beat, Step 4) as the
+closing card, sequenced AFTER the last content beat in the body concat (Step 5). It is a real animated
+beat — same HERO rule, `gsap.from()` entrances, ambient motion, SVG-only icons, brand palette — pulled
+from the brand identity (Brand Brief / `brand_dna`):
+
+- **Brand name** as the hero headline (e.g. "Mr. Growth Guide").
+- **Brand tagline / one-line value prop** below it (from the Brand Brief; e.g. "Growth strategies that
+  actually move the needle").
+- **A "Follow for more" CTA chip** (or the brand's standard CTA) + the **@handle** if the brand has one.
+- ~3–4s, same ghost/grid/glow background system, brand colors. Animate the name + CTA in with
+  `gsap.from()`. No tofu (SVG/CSS only), no placeholder text.
+
+Render it like any beat (`npx hyperframes render --quality high`) and append its segment to `seglist.txt`
+LAST in Step 5 so the VO bed + outro flow as one continuous body. The VO simply ends before the outro
+card (the closing card can sit over the tail of the VO or a beat of silence) — do NOT fabricate extra
+narration for it.
+
+**Override path — a supplied `$OUTRO` clip** (only when the brief provides one). Localize + ffprobe it
+first (Local-media gate), then concat after the body. Its fps/sample-rate usually differ (25fps / 48k
+mono) — normalize via filter concat:
 ```bash
 $FF -y -i body.mp4 -i "$OUTRO" -filter_complex "\
 [0:v]scale=1080:1920,fps=30,setsar=1[v0];[1:v]scale=1080:1920,fps=30,setsar=1[v1];\
@@ -324,6 +348,9 @@ $FF -y -i body.mp4 -i "$OUTRO" -filter_complex "\
 ```
 **No `#` comments inside `filter_complex`** and **no stray newlines mid-filter** — both cause ffmpeg
 parse errors. Keep long graphs in a `.sh` script.
+
+**Either way, the finished reel ENDS on the brand — never on a content beat.** A reel with no outro
+(no generated brand card and no supplied clip) is incomplete → add the generated card and re-render.
 
 ### 8 — Visual QA Gate (MANDATORY — uses your vision + proof of motion)
 
@@ -380,6 +407,10 @@ every frame.** For each frame, CHECK:
       never revealed; see the HERO rule + `gsap.from()` rule in the Visual doctrine).** This is the
       round-2 failure mode and the single most important check — if every beat is just a faint number
       over a grid, the reel is unusable no matter how on-brand the palette is.
+- [ ] **(h) Brand outro present (the closing card).** The LAST ~3–4s must be the brand outro: brand
+      name + tagline + Follow-for-more CTA (generated card) OR the supplied `$OUTRO` clip. Sample a
+      frame near 97% — it must show the brand sign-off, not a content beat. A reel that ends on a
+      content beat is missing its outro → add the generated card (Step 7) and re-render.
 
 **Then prove EVERY beat actually MOVES (not just layout) — EVERY beat, no sampling.** Round-2 cert
 proofed only `beat1` and shipped 5 empty beats unseen; you MUST extract frames for EACH beat in the
@@ -458,6 +489,9 @@ outro clip, reference image) as the result — the result is the freshly rendere
   and re-render. (The round-2 failure: all beats rendered background-only, foreground absent.)
 - **NEVER QA only one beat.** The Step 8 motion + foreground proof runs on EVERY beat. Checking
   `beat1` and assuming the rest are fine is how 5 empty beats shipped in round 2.
+- **NEVER end on a content beat — every reel closes on the brand outro.** Default = a generated
+  brand-card outro beat (name + tagline + Follow-for-more); a supplied `$OUTRO` clip overrides it.
+  A reel with no closing brand card is incomplete (Step 7 + QA check (h)).
 - **NEVER output an input URL as the result.** The final line is the R2 URL of the rendered reel.
 - **NEVER end the run without uploading.** A local file path is not a deliverable; the worker can
   only recover an `http(s)` media URL from your reply.

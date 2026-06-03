@@ -52,9 +52,25 @@
 - `[ACTIVE]` **QA EVERY beat, never just beat1.** Round-2 proofed only beat1 and shipped 5 empty
   beats unseen. The Step 8 motion + foreground proof runs on every beat in the reel.
 
+- `[ACTIVE]` **Every reel ends on a brand outro — never on a content beat.** Default is a GENERATED
+  brand-card outro beat (brand name + tagline + Follow-for-more CTA + @handle, from brand identity,
+  same animated pipeline as any beat); a supplied `$OUTRO` clip overrides it. No external asset is
+  required. QA check (h) samples ~97% and fails if it's a content beat. See Step 7.
+
 ---
 
 ## Feedback Log
+
+### 2026-06-03 — Round 3 PASSED (owner-approved) + outro requirement added
+- Round 3 (real worker path, v4.3.0) PASSED owner review: full content on every beat, MGG navy+orange,
+  SVG icons (no tofu), thematic ghost numbers, real data viz, genuine motion, brand-brief-driven from a
+  design-free brief. The round-1 + round-2 gates all held.
+- Owner's only add: the reel must include a brand outro. No MGG outro clip exists in production (the
+  skill's old `brand-assets/outros/mgg-outro-vertical-5s.mp4` 404s). Decision: the recipe GENERATES a
+  brand-card outro beat by default (the first bypass render already produced a nice "Mr. Growth Guide /
+  Follow for more" card, proving the model can). v4.3.0 → v4.4.0: mandatory generated outro beat (Step
+  7), `$OUTRO` clip demoted to optional override, QA check (h), anti-pattern. Re-rendering for final
+  sign-off.
 
 ### 2026-06-03 — Round 2 certification render (real worker path: k2.6 + MGG brand brief)
 - First render through the REAL production path (Remy on kimi-k2.6 → run_skill → worker-appended MGG
