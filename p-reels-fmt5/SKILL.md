@@ -140,9 +140,42 @@ $FF -ss <clip_in> -to <clip_out> -i "$W/src/<clip>" \
 > If the cue window is shorter than the beat, loop/slow-mo or extend with the next-best section to
 > cover the beat; if longer, trim to the cue's tightest relevant span. Never pad to black.
 
+### 3.5 — Build all per-beat backgrounds IN PARALLEL (bounded to cores)
+
+The per-beat background builds are **independent** — beat 1's b-roll cut/render does not depend on
+beat 2's. Build them **concurrently** to cut wall-clock (a serial build of 5 beats is the slow path
+that flirts with the runtime cap). Launch each beat's build (the Step-3 cover-cut, or the HyperFrames
+render) as a background subprocess, bounded to the worker's core count (the VPS has 4 cores → cap at
+3–4 in flight), then `wait` for all:
+
+```bash
+NPROC=$(nproc 2>/dev/null || echo 4); MAXJOBS=$(( NPROC > 1 ? NPROC - 1 : 1 ))
+build_beat() {                  # $1 = beat index; resolves to a b-roll cut OR a graphics render
+  case "${BG_KIND[$1]}" in
+    broll)    $FF -ss "${CLIP_IN[$1]}" -to "${CLIP_OUT[$1]}" -i "${CLIP_SRC[$1]}" \
+                -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,format=yuv420p" \
+                -an -c:v libx264 -preset medium -crf 20 -y "$W/bg_beat$1.mp4" ;;
+    graphics) ( cd "$W/gfx_beat$1" && npx hyperframes render --output "$W/bg_beat$1.mp4" --quality high --fps 30 ) ;;
+  esac
+}
+for i in "${!BG_KIND[@]}"; do
+  build_beat "$i" &                                   # background subprocess per beat
+  while [ "$(jobs -r | wc -l)" -ge "$MAXJOBS" ]; do wait -n; done   # throttle to MAXJOBS in flight
+done
+wait                                                   # barrier: all beats built
+```
+
+> **Concurrency notes.** ffmpeg is itself multi-threaded, so cap at `cores-1` to avoid thrash — more
+> parallel encodes than cores is slower, not faster. Transcribing several b-roll clips' own audio
+> (Step 3) is also independent → run those `c-audio` calls in the same bounded-parallel pattern. The
+> HyperFrames/chromium renders are the heavy pole; if there are several graphics beats, parallelizing
+> them is the biggest win. (A heavier alternative — fan the beats out to parallel CFW **sub-agents**
+> via `consult_specialist` — exists, but for deterministic ffmpeg/render steps this in-skill shell
+> parallelism is simpler, cheaper, and has no extra LLM cost.)
+
 ### 4 — Build + VERIFY the background track (before any compositing)
 
-Concat the per-beat background segments into one full-frame track that covers the whole VO:
+Concat the per-beat background segments (now all built) into one full-frame track that covers the whole VO:
 ```bash
 # normalize every bg_beatN.mp4 to 1080x1920/30fps/yuv420p first, then concat via filter (not -c copy
 # unless codecs/timebase already match). Result: $W/bg-all.mp4
