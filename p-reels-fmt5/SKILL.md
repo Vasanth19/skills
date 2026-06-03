@@ -104,93 +104,114 @@ ffprobe `$TH` for `width,height,duration` — `duration` is the **master reel le
 driver, and the background-coverage target. A clip that fails to probe is unusable — fail loudly,
 don't substitute black.
 
-### 2 — Transcribe the talking head → beat timeline (c-audio)
+### 2 — Transcribe everything (talking head + b-roll cues) — feeds the plan
 
-Transcribe `$TH`'s audio to word/segment timestamps (`c-audio` → MLX Whisper / whisper). From the
-transcript, segment the VO into **3–6 beats** by sentence/topic boundary. Each beat = `{start, end,
-text}`. This timeline drives BOTH the background selection (Step 3) and any on-screen text. Re-use the
-real timestamps — never guess beat boundaries.
+Transcribe `$TH`'s audio to word/segment timestamps (`c-audio` → whisper) → write `$W/th_transcript.json`
+(`[{start,end,text}]`). **Beat segmentation is NOT done here — Opus does it in Step 3** from this
+transcript (don't guess boundaries).
 
-### 3 — Assign a background to each beat — GRAPHICS-FORWARD with a b-roll COVERAGE BUDGET
+Also build the **b-roll cue index** so Opus can match footage to the wording: for each uploaded clip
+that carries audio, transcribe it too (run these in parallel — independent) and write
+`$W/broll_cues.json` = `[{ "clip":"<filename>", "cues":[{start,end,text}] }]`. Silent clips get an
+entry with `cues:[]` (Opus then matches them by filename/label only). No b-roll supplied → write `[]`.
 
-The background is **motion-graphics-forward**. The split between uploaded b-roll and authored graphics
-is governed by a **coverage budget**, not a clip count:
+### 3 — PLAN the reel with OPUS (the brain — curated per-beat specs; kimi fallback)
 
-- **DEFAULT: `broll_coverage = 0.30`** → uploaded b-roll fills ≈ **30%** of the total reel duration
-  (the single most-appropriate moments); the other ≈ **70%** is authored Remotion/HyperFrames graphics.
-- **The Creative Director overrides the default in the brief** — "more coverage", "less", or an
-  explicit percentage. Honor whatever the CD specifies; otherwise use 0.30.
-- **Force `broll_coverage = 0` (100% graphics) when EITHER:**
-  - **no b-roll is supplied**, OR
-  - **the brief/CD says no b-roll** ("no b-roll, just create the graphics", "all motion graphics",
-    "0% coverage", "graphics only"). Ignore any clips and build the whole reel from graphics.
+This is the BRAIN step (plan-on-Opus, execute-on-Ollama — see
+`.claude/knowledge/decisions/plan-opus-execute-ollama-render-architecture.md`). A capable model
+(**Opus**, via the owner's Claude Max OAuth token = flat cost) reads the transcript + brand + the
+b-roll's own cues and writes a CURATED plan, so the cheap executor never invents anything. This skill
+subprocess runs on Ollama kimi; spawn a NESTED `claude --print` that UNSETS the Ollama routing so it
+reaches Opus on the OAuth token:
 
-Compute the budget ONCE: `broll_seconds = round(broll_coverage × total_duration)`. Then per beat,
-choose the background:
-
-1. **Generated motion graphic — THE DEFAULT (≈70%+ of the reel).** Author an animated HyperFrames
-   composition (or Remotion scene) **appropriate to that line** — a counter, a key-phrase callout, a
-   diagram, brand ambient/VFX — at native 1080×1920, matching the Visual Identity Gate palette/type.
-   This is Kyle's HyperFrames/Remotion path (see `f-hyperframes` / `f-remotion` and fmt2 Step 2; font
-   gotcha: never put `var(--font-*)` in `font-family`). Render to MP4 ≥ the beat length.
-2. **Uploaded b-roll — only up to the `broll_seconds` budget, trimmed tight.** Spend the budget on the
-   beat(s) where uploaded footage genuinely fits the wording AND beats a graphic. **Stop once the
-   budget is spent** — never exceed the coverage target (unless the CD raised it), never a full-length
-   clip, never a montage of all clips. Trim each TIGHT:
-   - If the clip carries its own audio, transcribe it (`c-audio`) and trim to the cue window where its
-     audio lines up with the talking-head's words (`clip_in`→`clip_out`).
-   - If silent, match by `c-broll` visual/label metadata and cut a SHORT relevant window (≈ the beat
-     length — a few seconds, not the whole file).
-   - Scale-to-COVER into 9:16; drop the clip's audio (`-an`) — the talking head's VO is the only voice.
-
-**Doctrine: the background is RICH MOTION GRAPHICS governed by the coverage budget — NOT a reel of raw
-clips.** Stringing together the user's entire b-roll videos is WRONG (the fmt5 v1 failure). At the 0.30
-default, ~⅓ of the reel is trimmed b-roll moments and ~⅔ is authored graphics; with no clips or a
-no-b-roll instruction it is **100% graphics**. The ONLY hard rule remains: **every beat has a real,
-non-black background.**
-
-Per-beat b-roll cover-cut (for the budgeted b-roll beat(s) only — `clip_in`/`clip_out` = the cue window
-from the clip's own transcript when it has audio, else a short matched visual window → 9:16, audio stripped):
 ```bash
-$FF -ss <clip_in> -to <clip_out> -i "$W/src/<clip>" \
-  -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,format=yuv420p" \
-  -an -c:v libx264 -preset medium -crf 20 -y "$W/bg_beatN.mp4"
+# Build a b-roll cue index (each clip's own transcript) so Opus can match footage to the wording.
+# (Transcribe clips that have audio in Step 2; write {clip,cues:[{in,out,text}]} into broll_cues.json.)
+COVERAGE=0.30   # default; override from the brief (CD "more"/"less"/explicit %); 0 if no clips or "no b-roll"/"graphics only"
+PLAN_PROMPT="You are planning a 9:16 vertical talking-head PIP reel. Output STRICT JSON ONLY (an array, no prose).
+Talking-head transcript (timestamps): $(cat "$W/th_transcript.json")
+Brand palette/type: <from brief; default MGG slate #0F172A + orange #F97316, Barlow Condensed 900 titles, JetBrains Mono eyebrows>.
+Available b-roll + their own cues: $(cat "$W/broll_cues.json" 2>/dev/null || echo '[]')
+broll_coverage=$COVERAGE (fraction of total seconds that may be b-roll; the REST is graphics).
+Segment the VO into 3-6 beats covering the FULL duration. Each beat object:
+{ \"start\":<s>, \"end\":<s>, \"kind\":\"graphics\"|\"broll\",
+  \"eyebrow\":\"<short UPPERCASE mono label>\",
+  \"ghost\":\"<ONE huge faint background word>\",
+  \"title_html\":\"<punchy UPPERCASE headline; wrap the KEY word in <span class=accent>WORD</span>>\",
+  \"broll\": {\"clip\":\"<filename>\",\"in\":<s>,\"out\":<s>} or null }
+RULES: MOST beats are graphics. Total b-roll seconds <= broll_coverage*total_duration (0 => all graphics).
+For a broll beat, pick the clip+window whose OWN cue text matches that line. Keep titles short."
+
+# Opus via OAuth — unset the Ollama routing for THIS call only.
+PLAN_JSON=$(env -u ANTHROPIC_BASE_URL -u ANTHROPIC_AUTH_TOKEN -u ANTHROPIC_API_KEY \
+  -u ANTHROPIC_DEFAULT_OPUS_MODEL -u ANTHROPIC_DEFAULT_SONNET_MODEL -u ANTHROPIC_DEFAULT_HAIKU_MODEL \
+  -u CLAUDE_CODE_SUBAGENT_MODEL \
+  timeout 180 claude --print "$PLAN_PROMPT" --dangerously-skip-permissions 2>/dev/null \
+  | python3 -c "import sys,re,json; m=re.search(r'\[.*\]', sys.stdin.read(), re.S); print(m.group(0) if m else '')")
+
+# FALLBACK: Opus unavailable (OAuth fail / rate-limit / empty JSON) → plan on kimi (this subprocess's
+# own model). Degraded but the render still completes; the job was never lost (Redis stream PEL).
+if ! echo "$PLAN_JSON" | python3 -c 'import json,sys; json.load(sys.stdin)' 2>/dev/null; then
+  echo "[fmt5] Opus planning unavailable — falling back to kimi planning"
+  PLAN_JSON=$(claude --print "$PLAN_PROMPT" --dangerously-skip-permissions 2>/dev/null \
+    | python3 -c "import sys,re; m=re.search(r'\[.*\]', sys.stdin.read(), __import__('re').S); print(m.group(0) if m else '')")
+fi
+echo "$PLAN_JSON" > "$W/plan.json"
+python3 -c "import json; assert len(json.load(open('$W/plan.json')))>=1" || { echo "PLAN FAILED — no beats"; exit 1; }
 ```
-> If the cue window is shorter than the beat, loop/slow-mo or extend with the next-best section to
-> cover the beat; if longer, trim to the cue's tightest relevant span. Never pad to black.
+The plan enforces the **coverage budget**: most beats `kind:"graphics"`; b-roll only up to
+`broll_coverage × total_duration` (default 0.30; **0** → 100% graphics when no clips or a no-b-roll
+instruction). Opus writes the exact graphics text per beat and picks the b-roll moment whose own cue
+matches the line — so the executor never decides what to show.
 
-### 3.5 — Build all per-beat backgrounds IN PARALLEL (bounded to cores)
+### 3.5 — EXECUTE every beat IN PARALLEL on kimi (FILL the template / CUT the clip — never author)
 
-The per-beat background builds are **independent** — beat 1's b-roll cut/render does not depend on
-beat 2's. Build them **concurrently** to cut wall-clock (a serial build of 5 beats is the slow path
-that flirts with the runtime cap). Launch each beat's build (the Step-3 cover-cut, or the HyperFrames
-render) as a background subprocess, bounded to the worker's core count (the VPS has 4 cores → cap at
-3–4 in flight), then `wait` for all:
+Each beat is now FULLY SPECIFIED by `plan.json`. Render them concurrently (cores-1). A `graphics`
+beat = **fill the shipped motion-card template** (zero authoring); a `broll` beat = cut the planned
+cue window. Because every value is in the plan, the cheap executor **cannot** shortcut a graphics beat
+into "just use the b-roll" or fabricate a URL — it has one mechanical job per beat:
 
 ```bash
+SKILL_DIR=$(find "$HOME/.claude/skills" -maxdepth 2 -type d -name p-reels-fmt5 2>/dev/null | head -1)
+TPL="$SKILL_DIR/templates/motion-card.html"     # the parameterized card this skill ships
 NPROC=$(nproc 2>/dev/null || echo 4); MAXJOBS=$(( NPROC > 1 ? NPROC - 1 : 1 ))
-build_beat() {                  # $1 = beat index; resolves to a b-roll cut OR a graphics render
-  case "${BG_KIND[$1]}" in
-    broll)    $FF -ss "${CLIP_IN[$1]}" -to "${CLIP_OUT[$1]}" -i "${CLIP_SRC[$1]}" \
-                -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,format=yuv420p" \
-                -an -c:v libx264 -preset medium -crf 20 -y "$W/bg_beat$1.mp4" ;;
-    graphics) ( cd "$W/gfx_beat$1" && npx hyperframes render --output "$W/bg_beat$1.mp4" --quality high --fps 30 ) ;;
-  esac
-}
-for i in "${!BG_KIND[@]}"; do
-  build_beat "$i" &                                   # background subprocess per beat
-  while [ "$(jobs -r | wc -l)" -ge "$MAXJOBS" ]; do wait -n; done   # throttle to MAXJOBS in flight
-done
-wait                                                   # barrier: all beats built
-```
 
-> **Concurrency notes.** ffmpeg is itself multi-threaded, so cap at `cores-1` to avoid thrash — more
-> parallel encodes than cores is slower, not faster. Transcribing several b-roll clips' own audio
-> (Step 3) is also independent → run those `c-audio` calls in the same bounded-parallel pattern. The
-> HyperFrames/chromium renders are the heavy pole; if there are several graphics beats, parallelizing
-> them is the biggest win. (A heavier alternative — fan the beats out to parallel CFW **sub-agents**
-> via `consult_specialist` — exists, but for deterministic ffmpeg/render steps this in-skill shell
-> parallelism is simpler, cheaper, and has no extra LLM cost.)
+build_beat() {   # $1 = beat index
+  python3 - "$1" "$W/plan.json" "$TPL" "$W" "$FF" <<'PY'
+import json,sys,os,subprocess,html
+i=int(sys.argv[1]); beat=json.load(open(sys.argv[2]))[i]; tpl=sys.argv[3]; W=sys.argv[4]; FF=sys.argv[5]
+dur=round(float(beat["end"])-float(beat["start"]),2); out=f"{W}/bg_beat{i}.mp4"
+if beat["kind"]=="broll" and beat.get("broll"):
+    b=beat["broll"]
+    subprocess.run([FF,"-ss",str(b["in"]),"-to",str(b["out"]),"-i",f'{W}/src/{b["clip"]}',
+      "-vf","scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,format=yuv420p",
+      "-an","-c:v","libx264","-preset","medium","-crf","20","-y",out],check=True)
+else:
+    gdir=f"{W}/gfx_beat{i}"; os.makedirs(gdir,exist_ok=True)
+    h=(open(tpl).read().replace("{{DURATION}}",str(dur))
+       .replace("{{EYEBROW}}",html.escape(beat.get("eyebrow","")))
+       .replace("{{GHOST}}",html.escape(beat.get("ghost","")))
+       .replace("{{TITLE_HTML}}",beat.get("title_html","")))   # title_html raw — carries the <span class=accent>
+    open(f"{gdir}/index.html","w").write(h)
+    subprocess.run("npx hyperframes lint >/dev/null 2>&1; npx hyperframes render --output "+out+" --quality high --fps 30",
+                   shell=True,cwd=gdir,check=True)
+PY
+}
+
+N=$(python3 -c "import json;print(len(json.load(open('$W/plan.json'))))")
+for i in $(seq 0 $((N-1))); do
+  build_beat "$i" &
+  while [ "$(jobs -r | wc -l)" -ge "$MAXJOBS" ]; do wait -n; done
+done
+wait     # barrier: every beat built
+# sanity: every bg_beatN.mp4 exists + is non-trivial
+for i in $(seq 0 $((N-1))); do [ -s "$W/bg_beat$i.mp4" ] || { echo "beat $i did not render"; exit 1; }; done
+```
+> **This is the whole point.** The model NEVER authors HTML or decides a background at runtime — Opus
+> wrote the curated spec, the template carries the creative, kimi just fills + renders. A graphics beat
+> can't silently become "use the clip instead," and a code model can't fabricate a URL — each beat is a
+> mechanical fill-or-cut. Parallelized to cores-1 (HyperFrames/chromium is the heavy pole). For the
+> b-roll beats, the planned window is the cue where the clip's own audio matched the words.
 
 ### 4 — Build + VERIFY the background track (before any compositing)
 
