@@ -42,9 +42,34 @@
   yoyo/breathe/drift that runs the full `data-duration`; stagger entrances later into the window. The
   Step 8 motion proof now FAILS a beat at ≥50 dB, not just `inf`. See AMBIENT MOTION rule.
 
+- `[ACTIVE]` **The foreground content is the HERO — a beat that renders as only the ghost number is
+  EMPTY.** Round-2 cert (real worker path, brand brief appended) shipped a reel where all 8 beats were
+  nothing but the dim ghost number over the grid — no headlines, no diagrams — while the VO narrated
+  into a blank screen. The Brand Brief styles the FRAME; it does not replace per-beat content. Author
+  every foreground element with `gsap.from()` (ends visible), NEVER `set(hidden)`+`.to(reveal)` which
+  leaves content invisible if the reveal mis-fires. QA check (g) fails any ghost-only frame. See the
+  Visual doctrine HERO rule.
+- `[ACTIVE]` **QA EVERY beat, never just beat1.** Round-2 proofed only beat1 and shipped 5 empty
+  beats unseen. The Step 8 motion + foreground proof runs on every beat in the reel.
+
 ---
 
 ## Feedback Log
+
+### 2026-06-03 — Round 2 certification render (real worker path: k2.6 + MGG brand brief)
+- First render through the REAL production path (Remy on kimi-k2.6 → run_skill → worker-appended MGG
+  Brand Brief). Confirmed working: brand fidelity (reel came out in MGG navy + orange/slate, proving
+  the design-free-brief → on-brand requirement), thematic ghost numbers (5/01–05/3+, no "CTA"), no
+  tofu boxes, real R2 upload that passes the new worker URL-validation.
+- CRITICAL REGRESSION: **all beats rendered as background only** — the dim ghost number + grid + glow,
+  zero foreground content (no headline/chart/card/checklist) for the entire 34.8s. Work-dir forensics:
+  VO correct, body 34.8s, but only `beat1` was motion-proofed (the model's self-QA checked one beat
+  and shipped the rest empty). Likely cause: the brand-brief background system was built and the
+  per-beat foreground hero was never authored/revealed.
+- Fixes (v4.2.0 → v4.3.0): HERO rule (foreground dominant, ghost subordinate; a ghost-only beat =
+  hard fail), `gsap.from()`-ends-visible rule (no hide-then-reveal), QA check (g) fails ghost-only
+  frames, Step 8 now requires proofing EVERY beat not one, two anti-patterns. NOT yet certified —
+  round 3 pending.
 
 ### 2026-06-03 — Round 1 certification render (Script A: "5 Signs You Should Fire Your Marketing Agency")
 - First real render produced via direct skill invocation on kimi-k2.6 (38.8s, 1080×1920, 8 animated

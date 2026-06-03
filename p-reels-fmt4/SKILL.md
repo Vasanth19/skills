@@ -2,7 +2,7 @@
 name: p-reels-fmt4
 description: Turn a script into a fully rendered explainer reel with no talking head — one REAL animated HyperFrames motion-graphics composition per beat (charts that draw/count on, terminals that type, diagrams that flow, checklists that check off) plus voiceover. NO stock/AI b-roll, NO static stills. Trigger on "make an explainer reel from this script", "faceless animated short with VO", "no-avatar explainer video", "script to animated reel with voiceover".
 when-to-use: Use when the user wants a faceless explainer reel — numbered/listicle or beat-by-beat brand motion-graphics with a voiceover, NO talking-head avatar and NO random b-roll. Every beat's visual is a genuinely animated HyperFrames composition, not a still card.
-version: 4.2.0
+version: 4.3.0
 kind: pipeline
 visibility: catalog
 providers: elevenlabs
@@ -50,6 +50,23 @@ revealed at t=5.0s) — finite PSNR ~25–29 dB between the pairs, not `inf` (wh
 
 ## Visual doctrine (the load-bearing rule)
 
+- **THE FOREGROUND CONTENT IS THE HERO — MANDATORY (the load-bearing rule of round 2).** Each beat's
+  composition MUST have a bright, dominant FOREGROUND: the beat's headline + its data-viz/diagram
+  (chart, terminal, card, checklist) rendered in full on-brand color. The ghost number + grid + glow
+  are SUBORDINATE background decoration (low opacity, behind everything). **A beat whose rendered
+  frame shows ONLY the faint ghost number / grid / glow — with no bright headline or diagram — is
+  EMPTY and is a HARD FAILURE.** (Round-2 certification shipped exactly this: all 8 beats rendered as
+  nothing but the dim ghost number `01`/`02`/… over the grid, no content, while the VO narrated into
+  a blank screen.) The Brand Brief styles the FRAME (palette, fonts, the ghost/grid/glow system) — it
+  does NOT replace the per-beat content. If you build the brand background and stop, the beat is unbuilt.
+- **Author the foreground with `gsap.from()` so it ENDS VISIBLE — never hide-then-reveal.** Every
+  foreground element animates IN via `gsap.from({opacity:0, y:…})`, whose END state is the element's
+  natural visible state. **NEVER** author foreground as `gsap.set(el,{opacity:0})` / `tl.set(el,
+  {autoAlpha:0})` and rely on a later `.to(opacity:1)` to reveal it — if that reveal tween mis-fires
+  or the timeline math is off, the element stays invisible for the whole beat (the suspected
+  round-2 mechanism: only the always-on background showed). `gsap.from()` is self-healing: even if the
+  timeline never advances, the element sits at its visible end state. (Hiding an element is allowed
+  ONLY to sequence OTHER beats inside a multi-beat composition — never a beat's own hero content.)
 - **One REAL animated composition per beat**, driven by the script line + its whisper-timed window.
   Every element must animate IN (`gsap.from(...)`); charts/bars/counters must visibly change over
   the beat's duration. A frozen card with a zoom is a FAILURE of this format.
@@ -356,10 +373,20 @@ every frame.** For each frame, CHECK:
 - [ ] **(f) No placeholder ghost text** — the giant background ghost glyph is a thematic number/letter
       (`01`, `5`), never a layout/dev word like "CTA", "HEADER", "TITLE". A word-shaped ghost = a
       placeholder that leaked → fix in Step 4 and re-render.
+- [ ] **(g) FOREGROUND PRESENT (the round-2 gate) — every beat shows its hero content, not just the
+      ghost.** On each beat's sampled frame, the beat's headline + diagram/chart/card must be the
+      bright, dominant element. **A frame showing ONLY the dim ghost number + grid + glow (no bright
+      foreground) means that beat rendered EMPTY → rebuild it (the foreground was never authored or
+      never revealed; see the HERO rule + `gsap.from()` rule in the Visual doctrine).** This is the
+      round-2 failure mode and the single most important check — if every beat is just a faint number
+      over a grid, the reel is unusable no matter how on-brand the palette is.
 
-**Then prove EVERY beat actually MOVES (not just layout)** — for each beat, extract two frames at
-different timestamps WITHIN that beat's window and confirm they differ (a still would be identical
-→ `inf` PSNR):
+**Then prove EVERY beat actually MOVES (not just layout) — EVERY beat, no sampling.** Round-2 cert
+proofed only `beat1` and shipped 5 empty beats unseen; you MUST extract frames for EACH beat in the
+reel (a reel with 8 beats = 8 beat checks), not a representative one. For each beat, extract two
+frames at different timestamps WITHIN that beat's window and confirm they differ (a still would be
+identical → `inf` PSNR). While you have each beat's frame open, also apply QA check (g) above —
+confirm the beat's HERO content is actually visible, not just the ghost:
 
 ```bash
 # for each beat N with window [start, end): pick t_early = start + 25% span, t_late = start + 75% span
@@ -425,6 +452,12 @@ outro clip, reference image) as the result — the result is the freshly rendere
   template.
 - **NEVER let a beat pop in and then freeze.** Every beat carries continuous ambient motion for its
   whole window; two frames ≥1s apart inside a beat must visibly differ (Step 8 motion proof).
+- **NEVER ship a beat that is only background.** The ghost number + grid + glow are decoration; each
+  beat's bright foreground hero (headline + diagram) must dominate the frame. A beat that renders as
+  just a faint number over a grid is UNBUILT — author its content with `gsap.from()` (ends visible)
+  and re-render. (The round-2 failure: all beats rendered background-only, foreground absent.)
+- **NEVER QA only one beat.** The Step 8 motion + foreground proof runs on EVERY beat. Checking
+  `beat1` and assuming the rest are fine is how 5 empty beats shipped in round 2.
 - **NEVER output an input URL as the result.** The final line is the R2 URL of the rendered reel.
 - **NEVER end the run without uploading.** A local file path is not a deliverable; the worker can
   only recover an `http(s)` media URL from your reply.
