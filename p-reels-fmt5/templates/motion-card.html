@@ -78,8 +78,11 @@
     [data-composition-id="motion-card"] .content {
       position: absolute;
       left: 0; right: 0;
-      top: 30%;
+      /* Top half ONLY — the PIP lives in the bottom ~40%, so text/graphics never
+         sit behind it. (Owner: "the PIP blocks all the important stuff.") */
+      top: 7%;
       padding: 0 72px;
+      max-height: 52%;
     }
     [data-composition-id="motion-card"] .eyebrow {
       font-family: 'JetBrains Mono', monospace;
@@ -103,8 +106,8 @@
     [data-composition-id="motion-card"] .title {
       font-family: 'Oswald', sans-serif;
       font-weight: 900;
-      font-size: 150px;
-      line-height: 0.9;
+      font-size: 112px;
+      line-height: 0.92;
       letter-spacing: -0.02em;
       text-transform: uppercase;
       color: var(--fg);

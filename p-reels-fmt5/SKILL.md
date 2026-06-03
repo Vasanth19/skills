@@ -238,27 +238,33 @@ composite. Black `bg-all.mp4` is the root cause of "only the PIP shows."
 > flush at the very bottom edge → buried/clipped. **The fix: scale-to-FIT (never crop the face) +
 > overlay with a margin (never flush).**
 
-**Scale-to-FIT the talking head into a portrait card — the WHOLE face shows, no crop.** ffprobe `$TH`
-`w,h`. Then fit it inside a card box (`force_original_aspect_ratio=decrease` → preserves aspect, fits
-entirely, nothing cropped), and overlay bottom-center leaving a margin so the **entire card is
-on-screen**. Uploaded clips are opaque → NO chroma-key:
+**Scale-to-FIT into a SMALL card; position by the upload's aspect.** ffprobe `$TH` `w,h`. Fit it into
+a small card box (`force_original_aspect_ratio=decrease` → whole face, never cropped), then place it:
+- **Portrait upload (h > w)** → **bottom-LEFT** (out of the way of the top-half text/graphics).
+- **Square or landscape upload (w ≥ h)** → **bottom-CENTER**.
+
+Uploaded clips are opaque → NO chroma-key. The template already keeps all text/graphics in the TOP
+~52% so the PIP never blocks them:
 ```bash
-CARD_W=560; CARD_H=760; MARGIN=110   # card box (portrait) + bottom/side safe margin
+read TW TH_H < <(ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0:s=' ' "$TH")
+CARD_W=400; CARD_H=540; MARGIN=80     # SMALL card (owner: "make the PIP smaller")
+if [ "$TH_H" -gt "$TW" ]; then XPOS="$MARGIN"; else XPOS="(W-w)/2"; fi   # portrait→left, else→center
 $FF -i "$W/bg-all.mp4" -i "$TH" \
   -filter_complex "\
 [1:v]scale=${CARD_W}:${CARD_H}:force_original_aspect_ratio=decrease,setsar=1[thfit]; \
 [0:v]format=yuv420p[bg]; \
-[bg][thfit]overlay=(W-w)/2:(H-h-${MARGIN}):format=auto:shortest=1[v]" \
+[bg][thfit]overlay=${XPOS}:(H-h-${MARGIN}):format=auto:shortest=1[v]" \
   -map "[v]" -map "1:a" \
   -c:v libx264 -preset medium -crf 19 -pix_fmt yuv420p -r 30 \
   -c:a aac -b:a 192k -ar 48000 -ac 2 \
   -movflags +faststart -y "$W/composed.mp4"
 ```
-- `force_original_aspect_ratio=decrease` GUARANTEES the entire face is visible (the talking head is
-  scaled down to fit the card, never cropped). For a portrait phone source the card ends up tall and
-  narrow (e.g. 428×760); for a landscape source, short and wide — either way nothing is cut.
-- `overlay=(W-w)/2:(H-h-110)` centers horizontally and leaves a **110px bottom margin** → the full PIP
-  is on-screen, not buried at the edge.
+- `force_original_aspect_ratio=decrease` GUARANTEES the whole face is visible (scaled to fit, never
+  cropped). A portrait phone clip fits to ~304×540; a landscape clip to ~400×225.
+- Portrait → `overlay=80:(H-h-80)` (bottom-left); square/landscape → `overlay=(W-w)/2:(H-h-80)`
+  (bottom-center). 80px margins so it's fully on-screen, never flush.
+- Because the card is small + low and the text lives in the top ~52% (template `.content` top:7%,
+  max-height:52%), **the PIP no longer blocks the words/graphics.**
 - **Rounded corners (optional):** if a rounded look is wanted, generate a mask at the SCALED `[thfit]`
   dimensions (PIL rounded rect) and `alphamerge` it before the overlay — NOT the fixed 540² mask
   (the card is no longer square). Sharp corners are acceptable; full face + margin are the hard reqs.
