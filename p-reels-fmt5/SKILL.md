@@ -45,12 +45,16 @@ reads sample frames and **rejects any frame whose background zone is black**. ff
 - `talking_head_video` (REQUIRED) — the user's uploaded talking-head clip. Real face + real voice.
   This is BOTH the PIP foreground AND the audio + duration master. **Never** replace it with a HeyGen
   avatar or TTS — it is the owner's actual voice.
-- `broll_media[]` (optional) — the user's uploaded b-roll clips, used as a **sparing supplement only:
-  at most 1–2 across the whole reel, trimmed tight** to where they genuinely fit the wording. The
-  background is graphics-forward (Remotion/HyperFrames); b-roll is the exception, not the bed. **Clips
-  that carry their own audio are transcribed too** — their cue timeline confirms the match and drives
-  the trim window (cut to the moment the clip's audio lines up with the talking-head's words). NEVER
-  concatenate the full clips as the background.
+- `broll_media[]` (optional) — the user's uploaded b-roll clips, used only up to the **coverage
+  budget** (`broll_coverage`, default 0.30 of the reel — see Step 3), trimmed tight to where they
+  genuinely fit the wording. The background is graphics-forward (Remotion/HyperFrames); b-roll is the
+  supplement, not the bed. **Clips with their own audio are transcribed too** — the cue timeline
+  confirms the match and drives the trim window. NEVER concatenate full clips as the background.
+  **When none are supplied, the reel is 100% graphics (0% coverage) — that is a valid, complete
+  output, not a degraded one.**
+- `broll_coverage` (optional, default **0.30**) — fraction of the reel filled by uploaded b-roll; the
+  rest is authored graphics. The Creative Director sets this in the brief (more/less/explicit %).
+  **Forced to 0** when no clips are supplied OR the brief says no b-roll ("graphics only", etc.).
 - `brand` — palette + typography for the generated-graphics beats (resolve via the Visual Identity
   Gate: Brand Brief → DESIGN.md → named style → dark-premium. Never hard-code).
 - `music_bed` (optional) — dark/moody instrumental under the VO at ≈ −18 LUFS; master to −14 LUFS.
@@ -62,7 +66,8 @@ reads sample frames and **rejects any frame whose background zone is black**. ff
 |---|---|---|
 | Canvas | 1080×1920, 30 fps | 9:16 portrait |
 | Canvas color | `#0F172A` | Only ever visible where a source has letterbox gaps — which the cover-crop removes |
-| ★ Background source | **GRAPHICS-FORWARD** (Remotion/HyperFrames primary) | Most beats = authored motion graphics. Uploaded b-roll only as a SPARING supplement: **1–2 clips MAX**, trimmed tight — never all the clips, never full-length, never a montage of raw videos. Never a bare black canvas. |
+| ★ Background source | **GRAPHICS-FORWARD** (Remotion/HyperFrames primary) | Most of the reel = authored motion graphics. Uploaded b-roll only fills the coverage budget below, trimmed tight — never all the clips, never full-length, never a montage. Never a bare black canvas. |
+| ★ B-roll coverage | **`broll_coverage` = 0.30** (CD-overridable; **0** when no clips / no-b-roll instruction) | Fraction of total reel duration filled by uploaded b-roll; the rest is graphics. `broll_seconds = round(broll_coverage × total_duration)`. CD brief overrides ("more"/"less"/explicit %). 0% → 100% graphics. |
 | Background fit | scale-to-COVER + center crop | `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920` — fills the full frame, no pillarbox, no stretch. **Never `pad`/letterbox, never a distorting bare `scale=1080:1920`.** |
 | ★ PIP source | **uploaded talking-head video** | NOT HeyGen. Opaque by default → no chroma-key. |
 | ★ PIP fit | **scale-to-FIT — NEVER crop the face** | `scale=CARD_W:CARD_H:force_original_aspect_ratio=decrease` → the COMPLETE face shows, scaled down to fit. **Never** square-crop the face off (fmt5 v1 cut the chin). ffprobe the upload first. |
@@ -106,34 +111,46 @@ transcript, segment the VO into **3–6 beats** by sentence/topic boundary. Each
 text}`. This timeline drives BOTH the background selection (Step 3) and any on-screen text. Re-use the
 real timestamps — never guess beat boundaries.
 
-### 3 — Assign a background to each beat — GRAPHICS-FORWARD (Remotion/HyperFrames primary; 1–2 trimmed b-rolls MAX)
+### 3 — Assign a background to each beat — GRAPHICS-FORWARD with a b-roll COVERAGE BUDGET
 
-The background is **motion-graphics-forward**, exactly like fmt2 — NOT a montage of the user's raw
-clips. **Most beats are authored graphics.** Per beat, choose the background in this priority order:
+The background is **motion-graphics-forward**. The split between uploaded b-roll and authored graphics
+is governed by a **coverage budget**, not a clip count:
 
-1. **Generated motion graphic — THE DEFAULT for most beats.** Author an animated HyperFrames
+- **DEFAULT: `broll_coverage = 0.30`** → uploaded b-roll fills ≈ **30%** of the total reel duration
+  (the single most-appropriate moments); the other ≈ **70%** is authored Remotion/HyperFrames graphics.
+- **The Creative Director overrides the default in the brief** — "more coverage", "less", or an
+  explicit percentage. Honor whatever the CD specifies; otherwise use 0.30.
+- **Force `broll_coverage = 0` (100% graphics) when EITHER:**
+  - **no b-roll is supplied**, OR
+  - **the brief/CD says no b-roll** ("no b-roll, just create the graphics", "all motion graphics",
+    "0% coverage", "graphics only"). Ignore any clips and build the whole reel from graphics.
+
+Compute the budget ONCE: `broll_seconds = round(broll_coverage × total_duration)`. Then per beat,
+choose the background:
+
+1. **Generated motion graphic — THE DEFAULT (≈70%+ of the reel).** Author an animated HyperFrames
    composition (or Remotion scene) **appropriate to that line** — a counter, a key-phrase callout, a
    diagram, brand ambient/VFX — at native 1080×1920, matching the Visual Identity Gate palette/type.
    This is Kyle's HyperFrames/Remotion path (see `f-hyperframes` / `f-remotion` and fmt2 Step 2; font
    gotcha: never put `var(--font-*)` in `font-family`). Render to MP4 ≥ the beat length.
-2. **A matching uploaded b-roll — SPARING: at most 1–2 across the WHOLE reel, TRIMMED.** Use an
-   uploaded clip for a beat ONLY when it genuinely fits the wording (the footage literally shows what
-   that line is about) AND it beats what a graphic would do. **Hard cap: 1–2 b-roll beats in the
-   entire reel — never all the clips, never the whole bed, never a full-length clip.** Trim it TIGHT:
+2. **Uploaded b-roll — only up to the `broll_seconds` budget, trimmed tight.** Spend the budget on the
+   beat(s) where uploaded footage genuinely fits the wording AND beats a graphic. **Stop once the
+   budget is spent** — never exceed the coverage target (unless the CD raised it), never a full-length
+   clip, never a montage of all clips. Trim each TIGHT:
    - If the clip carries its own audio, transcribe it (`c-audio`) and trim to the cue window where its
      audio lines up with the talking-head's words (`clip_in`→`clip_out`).
    - If silent, match by `c-broll` visual/label metadata and cut a SHORT relevant window (≈ the beat
      length — a few seconds, not the whole file).
    - Scale-to-COVER into 9:16; drop the clip's audio (`-an`) — the talking head's VO is the only voice.
 
-**Doctrine (inherited from fmt2): the background is RICH MOTION GRAPHICS, not a reel of raw clips.**
-Stringing together the user's entire b-roll videos is WRONG — that was the fmt5 v1 failure the owner
-flagged. Default to authored Remotion/HyperFrames graphics; reach for an uploaded clip only 1–2 times,
-trimmed, and only when it's the clearly better visual for that line. The ONLY hard rule remains:
-**every beat has a real, non-black background.**
+**Doctrine: the background is RICH MOTION GRAPHICS governed by the coverage budget — NOT a reel of raw
+clips.** Stringing together the user's entire b-roll videos is WRONG (the fmt5 v1 failure). At the 0.30
+default, ~⅓ of the reel is trimmed b-roll moments and ~⅔ is authored graphics; with no clips or a
+no-b-roll instruction it is **100% graphics**. The ONLY hard rule remains: **every beat has a real,
+non-black background.**
 
-Per-beat b-roll cover-cut (for the 1–2 b-roll beats only — `clip_in`/`clip_out` = the cue window from
-the clip's own transcript when it has audio, else a short matched visual window → 9:16, audio stripped):
+Per-beat b-roll cover-cut (for the budgeted b-roll beat(s) only — `clip_in`/`clip_out` = the cue window
+from the clip's own transcript when it has audio, else a short matched visual window → 9:16, audio stripped):
 ```bash
 $FF -ss <clip_in> -to <clip_out> -i "$W/src/<clip>" \
   -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,format=yuv420p" \
@@ -264,9 +281,10 @@ For each frame, CHECK:
       with a clear gap below it; it is NOT flush against / clipped by the bottom edge, NOT "buried."
       Flush/clipped = the margin was dropped → fix the `overlay=(W-w)/2:(H-h-110)` in Step 5. **(fmt5
       v1 bug — owner-flagged.)**
-- [ ] **(d) Background is GRAPHICS-FORWARD** — most beats are authored motion graphics, with at most
-      1–2 short b-roll moments. If the whole reel is just the user's raw clips strung together, the
-      background logic regressed → fix Step 3 (default to graphics; b-roll 1–2 trimmed max).
+- [ ] **(d) Background respects the coverage budget** — graphics-forward: at the 0.30 default, only
+      ~⅓ of the reel is trimmed b-roll and ~⅔ is authored graphics (or whatever % the CD set; **0%
+      b-roll → 100% graphics** when none supplied / no-b-roll instruction). If the whole reel is the
+      user's raw clips strung together, the background logic regressed → fix Step 3.
 - [ ] **(e) Background fills the full width** — no pillarbox bars, no letterbox, no distortion.
 - [ ] **(f) Brand colors correct** on the graphics beats — palette per the Visual Identity Gate, not
       washed out, not defaulted to white-on-black.
