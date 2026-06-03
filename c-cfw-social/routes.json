@@ -48,7 +48,9 @@
     { "path": "/api/v1/captures/{captureId}/link", "methods": ["POST"], "auth": "public", "body": { "workspaceId": "$WORKSPACE_ID" } },
     { "path": "/api/v1/captures/{captureId}/status", "methods": ["GET"], "auth": "signed-token" },
 
-    { "path": "/api/v1/channels/telegram/connect", "methods": ["POST"], "auth": "webhook", "body": {} },
+    { "path": "/api/v1/channels/telegram/auto-connect", "methods": ["POST"], "auth": "api-or-session", "_note": "PR #53 (05-TGDEEPLINK, 2026-06-02): Auto-mode connect. Claims a TelegramBotPool bot for the brand, sets webhook, mints owner verify token. Returns { botUsername, deepLink, qrCodeDataUrl, expiresAt }. 409 pool_exhausted when pool empty. If brand already has a bot, skips claiming and just mints a token.", "body": {} },
+    { "path": "/api/v1/channels/telegram/connect", "methods": ["POST"], "auth": "api-or-session", "_note": "Manual mode (PR #54 opened it for headless provisioning). Body: { botToken, allowedUserIds?[] }.", "body": {} },
+    { "path": "/api/v1/channels/telegram/verify-tokens", "methods": ["POST"], "auth": "api-or-session", "_note": "PR #53: mint a deep-link verify token (role owner|member) for the brand's existing bot. Tap t.me/<bot>?start=<token> → webhook auto-captures the user ID into the allowlist. Single-use, 15-min expiry.", "body": { "role": "member" } },
     { "path": "/api/v1/channels/telegram/{telegramChannelId}", "methods": ["DELETE"], "auth": "session" },
 
     { "path": "/api/v1/character-refs", "methods": ["GET"], "auth": "session" },
