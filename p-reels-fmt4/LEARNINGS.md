@@ -2,6 +2,11 @@
 
 > This file is the self-learning loop for `p-reels-fmt4`. Before executing this skill, the agent reads this file and applies all accumulated `Active Feedback`. After execution, the agent asks the user for feedback and appends it here.
 
+> **certified: 2026-06-03** — owner-approved on a design-free brief through the real VPS production
+> path (Remy → kimi-k2.6 → run_skill, MGG Brand Brief auto-appended). Certification took 4 rounds;
+> every defect became an `[ACTIVE]` gate below. The visual QA gates (no tofu, thematic ghost, ambient
+> motion, foreground-is-hero, per-beat QA, brand outro) keep it honest on every future run.
+
 ---
 
 ## Active Feedback (apply on every run)
