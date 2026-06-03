@@ -2,6 +2,7 @@ p-reels-fmt1
 p-reels-fmt2
 p-reels-fmt3
 p-reels-fmt4
+p-reels-fmt5
 p-hf-reel
 p-clone-reel
 p-ai-character
