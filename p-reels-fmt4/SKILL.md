@@ -2,7 +2,7 @@
 name: p-reels-fmt4
 description: Turn a script into a fully rendered explainer reel with no talking head — one REAL animated HyperFrames motion-graphics composition per beat (charts that draw/count on, terminals that type, diagrams that flow, checklists that check off) plus voiceover. NO stock/AI b-roll, NO static stills. Trigger on "make an explainer reel from this script", "faceless animated short with VO", "no-avatar explainer video", "script to animated reel with voiceover".
 when-to-use: Use when the user wants a faceless explainer reel — numbered/listicle or beat-by-beat brand motion-graphics with a voiceover, NO talking-head avatar and NO random b-roll. Every beat's visual is a genuinely animated HyperFrames composition, not a still card.
-version: 4.0.0
+version: 4.1.0
 kind: pipeline
 visibility: catalog
 providers: elevenlabs
@@ -11,10 +11,19 @@ produces:
   format: 9:16 vertical video
   duration: 30-60s
 inputs: [script]
-dependsOn: [c-audio, c-ffmpeg, f-hyperframes, f-hyperframes-cli]
+dependsOn: [c-audio, c-ffmpeg, f-hyperframes, f-hyperframes-cli, c-cloud-media]
 ---
 
 # p-reels-fmt4 — Script → Faceless Explainer Reel (No Talking Head)
+
+
+> **SELF-IMPROVEMENT RULE — READ FIRST:**
+> 1. Before executing ANY step in this skill, read `LEARNINGS.md` in this same folder.
+> 2. Apply every item under **Active Feedback** as if it were a non-negotiable rule.
+> 3. Only then proceed with the skill's normal instructions.
+> 4. After completing the task, ask the user: "How did this go? Any corrections or improvements for next time?"
+> 5. Summarize the feedback into 1–3 bullet points and append to `LEARNINGS.md` with today's date.
+> 6. If feedback is critical (affects correctness or quality), add it to the **Active Feedback** section so it applies on every future run.
 
 A 9:16 vertical reel built from a SCRIPT: voiceover (TTS) + **one genuinely-animated
 HyperFrames motion-graphics composition per beat** — charts that draw and count on,
@@ -44,16 +53,24 @@ revealed at t=5.0s) — finite PSNR ~25–29 dB between the pairs, not `inf` (wh
 - **One REAL animated composition per beat**, driven by the script line + its whisper-timed window.
   Every element must animate IN (`gsap.from(...)`); charts/bars/counters must visibly change over
   the beat's duration. A frozen card with a zoom is a FAILURE of this format.
-- **Brand graphics only** — author HyperFrames HTML compositions in the brand explainer style.
-  Palette (MGG): navy `#0f172a`, accent green `#22c55e`, light `#f1f5f9`. Glow + faint grid behind
-  the content so the navy never reads flat; a giant faint "ghost" number/glyph behind each card for
-  depth (the canonical MGG explainer look).
+- **Brand graphics only — visual identity resolves from the BRAND, never hard-coded in this skill
+  or in the brief (Visual Identity Gate — HARD GATE, resolve BEFORE writing any HTML).** Resolve in
+  this order (see `f-hyperframes/SKILL.md` § "Visual Identity Gate"):
+  1. **The Brand Brief** appended to the production brief (`brand_dna.guidelines` — colors, fonts,
+     patterns, reference renders). This is the normal production path: the worker appends it
+     automatically; use its exact palette + typography.
+  2. **A brand `DESIGN.md` / `visual-style.md`** if one is referenced.
+  3. **A user-named style** → `f-hyperframes/visual-styles.md` presets.
+  4. **None of the above** → dark-premium default (`f-hyperframes/palettes/dark-premium.md`).
+  Reaching for `#333`, `#3b82f6`, or `Roboto` = you skipped this gate. Glow + faint grid behind the
+  content so the background never reads flat; a giant faint "ghost" number/glyph behind each card
+  for depth.
 - **NEVER** drop random stock footage or AI-generated b-roll clips behind the cards. If a beat needs
   a visual you don't have, build the diagram — don't reach for a clip.
-- **Source the style** from the brand's existing HyperFrames productions, e.g. the promo at
-  `…/ord-20260511-001-mgg-4s-hf-promo/hyperframes/index.html` (GSAP timeline registered in
-  `window.__timelines[id]`, big numbers, staggered entrances) and the v4 sources in this skill's
-  verified-render section. Brand HTML style ref: `creatives/tests/explainer-style-template.html`.
+- **Font caveat:** if the brand's display font does not auto-resolve in the HyperFrames compiler
+  (e.g. Barlow Condensed — see the font gotcha in Step 4), substitute the closest auto-resolving
+  face (Oswald for condensed display) and note the substitution in your output. Never let a
+  non-resolving font silently fall back to a generic.
 
 ## Inputs / Params
 
@@ -62,7 +79,7 @@ revealed at t=5.0s) — finite PSNR ~25–29 dB between the pairs, not `inf` (wh
 | `$SCRIPT` | Yes | — | Path to the script (markdown). HOOK + listicle beats. |
 | `$OUT_DIR` | Yes | — | Output folder (mkdir -p). |
 | `$VOICE_ID` | No | `$ELEVENLABS_DEFAULT_VOICE_ID` | ElevenLabs voice (c-audio presets). |
-| `$PALETTE` | No | navy/green/light | Brand palette for the graphics (MGG: `#0f172a` / `#22c55e` / `#f1f5f9`). |
+| `$PALETTE` | No | from Visual Identity Gate | Brand palette for the graphics — resolved via the Visual Identity Gate (Brand Brief → DESIGN.md → named style → dark-premium). Never hard-code. |
 | `$OUTRO` | No | brand outro 5s | Appended tail clip (must be 1080×1920 w/ audio). |
 | `$TARGET` | No | 30–45s | Reel length; pick beat count to fit. |
 
@@ -180,6 +197,55 @@ npx hyperframes init beatN-<slug> --non-interactive    # scaffold (creates index
 - `npx hyperframes lint` MUST be 0 errors before render. `--quality high` for delivery, `--quality
   draft` while iterating. If render fails, run `npx hyperframes doctor` and report the exact error.
 
+### Scene sequencing — MANDATORY (one beat visible at a time)
+
+> **Failure mode this prevents (from the p-hf-reel certification):** a live render stacked EVERY
+> text beat on screen at once — headlines from different beats jumbled on top of each other —
+> because the scenes had no explicit timing and all rendered simultaneously. The rules below make
+> that impossible.
+
+- **The fmt4 default architecture already enforces this BETWEEN beats:** one composition per beat,
+  rendered separately and concatenated in Step 5 — two beats can never share a frame. Do NOT
+  "optimize" by lumping all beats into one big untimed composition; that is exactly the layout that
+  produced the overlap failure.
+- **If you ever do author a multi-beat composition** (e.g. a single composition spanning the whole
+  reel), every text beat MUST be its own clip with EXPLICIT timing: `data-start` +
+  `data-duration` (never `data-end`), consecutive text beats on the **same `data-track-index`** so
+  the framework itself forbids overlap (same-track clips cannot overlap — `f-hyperframes/SKILL.md`
+  § "Data Attributes"). Exactly ONE beat's text visible at any timestamp.
+- **WITHIN a single beat's composition:** any element that appears later than t=0 starts fully
+  hidden — CSS `opacity: 0; visibility: hidden` as the static state, or `tl.set(selector,
+  { autoAlpha: 0 }, 0)` at the timeline head — and is revealed by its entrance tween. Never
+  `gsap.set()` on clip elements from later scenes (they don't exist in the DOM at page load).
+  Never let an element that should animate in at t=2s sit fully-formed on screen from t=0.
+- **Map each beat's window to its VO phrase timestamps** from the SRT (Step 3). The SRT is ground
+  truth — do not eyeball the windows.
+
+### Local media — MANDATORY (download + ffprobe before authoring; never remote URLs)
+
+> **Failure mode this prevents (from the p-hf-reel certification):** a live render referenced
+> remote media URLs directly inside the composition and they NEVER appeared — remote `http(s)://`
+> URLs silently fail to load inside the headless browser render.
+
+- **BEFORE authoring any HTML**, download every media file the composition will reference (logo,
+  outro clip, any image/video the brief supplies) to a local file in the work dir and probe it:
+
+  ```bash
+  curl -L -o asset_N.<ext> "<asset_url_N>"
+  ffprobe -v error -show_entries format=duration -show_entries stream=codec_type \
+    -of default=noprint_wrappers=1 asset_N.<ext>     # videos: must show codec_type=video + duration
+  file asset_N.<ext>                                  # images/fonts: must show the real type
+  ```
+
+  If a download fails or the probe shows the wrong type, STOP and report it — do not silently skip
+  the asset or fall back to the remote URL.
+- **Reference ONLY local relative paths** inside compositions (`<img src="asset_1.png">`,
+  `<video src="asset_2.mp4" muted playsinline>`). **NEVER put a remote `http(s)://` URL in any
+  `src`** — it will not load in the headless render and the element comes out blank. (The only
+  exception: the GSAP CDN `<script>` tag, which the compiler handles.)
+- The `$OUTRO` clip is consumed by ffmpeg in Step 7, not inside a composition — but the same rule
+  applies: it must be a local file, downloaded + ffprobed first if the brief supplied it as a URL.
+
 ### 5 — Concat the animated beat segments (c-ffmpeg)
 Each rendered beat is already 1080×1920 MP4 with no audio. Normalize to a uniform encode (30fps,
 yuv420p) and concat in order (absolute paths in the list):
@@ -214,30 +280,114 @@ $FF -y -i body.mp4 -i "$OUTRO" -filter_complex "\
 **No `#` comments inside `filter_complex`** and **no stray newlines mid-filter** — both cause ffmpeg
 parse errors. Keep long graphs in a `.sh` script.
 
-### 8 — Verify (ffprobe + decode + PROOF OF MOTION)
+### 8 — Visual QA Gate (MANDATORY — uses your vision + proof of motion)
+
+> A render that was never looked at is NOT done. The failures that broke live reels (text beats
+> stacked on screen at once; media that never appeared; stills pretending to be animations) are
+> ALL invisible to ffprobe — they only show up when you actually LOOK at the frames. This gate is
+> non-negotiable.
+
+First, the mechanical checks (decode + container):
+
 ```bash
 ffprobe -v error -show_entries stream=codec_type,codec_name,width,height,r_frame_rate -show_entries format=duration -of default=nw=1 OUT.mp4
 $FF -v error -i OUT.mp4 -f null -                                  # clean decode = no output
 $FF -sseof -4 -i OUT.mp4 -af volumedetect -f null - 2>&1 | grep mean_volume   # outro tail has audio
 ```
-Assert 1080×1920 (9:16), both video+audio streams, duration in `$TARGET`, clean decode. Then
-**prove the graphics actually MOVE** — extract two frames at different timestamps WITHIN one beat
-and confirm they differ (a still would be identical → `inf` PSNR):
+
+Assert 1080×1920 (9:16), both video+audio streams, duration in `$TARGET`, clean decode.
+
+**Then extract 6 sample frames spread across the duration** (at 5%, 20%, 40%, 60%, 80%, 95% of the
+reel length — compute each `<t>` from the ffprobed duration, e.g. `<t> = 0.40 * DURATION`):
+
 ```bash
-$FF -y -ss <t_early> -i OUT.mp4 -frames:v 1 a.png
-$FF -y -ss <t_late>  -i OUT.mp4 -frames:v 1 b.png
-$FF -i a.png -i b.png -lavfi psnr -f null - 2>&1 | grep average   # finite dB (≈25–29) = motion; 'inf' = a frozen still (FAIL)
+# DURATION = ffprobed reel length in seconds; compute t at 5/20/40/60/80/95%
+for pct in 05 20 40 60 80 95; do
+  $FF -y -ss <t_pct> -i OUT.mp4 -frames:v 1 qa_frame_$pct.png
+done
 ```
-Eyeball a frame from each beat: it must be a brand graphic (navy/green diagram/terminal/chart),
-never a photo, and a mid-beat frame must show the animation partway (e.g. a bar half-grown, a
-command half-typed).
+
+**READ each `qa_frame_N.png` — you (the executing agent) have vision. Actually open and look at
+every frame.** For each frame, CHECK:
+
+- [ ] **(a) No overlapping / jumbled text** — every visible word belongs to exactly ONE beat. Two
+      beats' text stacked on top of each other = the scene sequencing failed → fix the beat
+      composition / clip timing in Step 4 and re-render.
+- [ ] **(b) The visual is a brand motion graphic** — a diagram/terminal/chart/checklist in the
+      brand palette, never a photo, never stock footage, never a blank/dark rectangle where an
+      asset should be (blank = a remote URL that wasn't localized → fix per the Local-media gate).
+- [ ] **(c) Text legible at mobile size** — 60px+ headlines, 20px+ body, AA contrast clear (re-run
+      `hyperframes validate` if unsure).
+- [ ] **(d) Brand colors correct** — the palette matches the Visual Identity Gate resolution (Brand
+      Brief first); not washed out, not defaulted to white-on-black, not this skill's old
+      hard-coded colors.
+
+**Then prove EVERY beat actually MOVES (not just layout)** — for each beat, extract two frames at
+different timestamps WITHIN that beat's window and confirm they differ (a still would be identical
+→ `inf` PSNR):
+
+```bash
+# for each beat N with window [start, end): pick t_early = start + 25% span, t_late = start + 75% span
+$FF -y -ss <t_early> -i OUT.mp4 -frames:v 1 beatN_a.png
+$FF -y -ss <t_late>  -i OUT.mp4 -frames:v 1 beatN_b.png
+$FF -i beatN_a.png -i beatN_b.png -lavfi psnr -f null - 2>&1 | grep average
+# finite dB (≈20–35) = motion; 'inf' = a frozen still → that beat FAILS, rebuild its animation
+```
+
+A mid-beat frame must show the animation partway (a bar half-grown, a command half-typed, a
+checklist mid-check). Also confirm: **VO is the clear foreground**, **no static-only stretch > 3s**.
+
+**If ANY check on ANY frame or ANY beat fails: fix the composition and RE-RENDER. Re-extract the
+frames and look again. Repeat until everything passes. NEVER upload a reel that fails this gate.**
+
+### 9 — Upload to R2 and print the URL (LAST LINE)
+
+The rendered file on local disk is NOT the deliverable — in production the worker recovers the
+result by scraping your reply for an R2/CDN media URL. No uploaded URL = the job reports
+"finished without producing an asset" and FAILS, even if the render was perfect.
+
+Upload the final reel via the `r2-upload` helper (`c-cloud-media`):
+
+```bash
+# → r2-upload (c-cloud-media). Returns the public CDN URL.
+bash _scripts/upload-to-recordings.sh "$OUT_DIR/faceless-explainer-reel.mp4"   # → https://media.cfw.social/.../<file>.mp4
+```
+
+Then clean up the per-run working dir (disk hygiene — the worker volume is small): once the URL is
+confirmed, `rm -rf` the interim gfx/audio working files.
+
+**Print the R2 public URL as the final line of output.** NEVER print an input URL (script source,
+outro clip, reference image) as the result — the result is the freshly rendered, uploaded reel.
+
+## Anti-patterns (NEVER do these)
+
+- **NEVER render a beat as a still + Ken Burns zoom.** That is the v3 failure this version exists
+  to fix. Every beat is a real GSAP-animated HyperFrames composition; the proof-of-motion PSNR
+  check in Step 8 must come back finite for every beat.
+- **NEVER skip the Visual Identity Gate.** No composition HTML before the palette + typography are
+  resolved from the Brand Brief / DESIGN.md / named style / dark-premium default. Reaching for
+  `#333`, `#3b82f6`, or `Roboto` means you skipped it.
+- **NEVER let text beats overlap in time.** One composition per beat (the default architecture), or
+  — in a multi-beat composition — explicitly timed clips on the same `data-track-index`. Multiple
+  beats' text stacked on screen at once is the broken render that triggered these rules.
+- **NEVER reference remote media URLs inside a composition — always local files.** Download +
+  ffprobe every asset first; reference only local relative paths. Remote URLs come out blank in
+  the headless render.
+- **NEVER skip the Visual QA Gate — a render that was never looked at is not done.** Extract the 6
+  sample frames, read them with your vision, and run the per-beat motion proof before uploading.
+  ffprobe passing is not the same as the reel looking right.
+- **NEVER drop stock footage or AI b-roll behind the cards.** Faceless explainer = brand motion
+  graphics only. If a beat needs a visual you don't have, build the diagram.
+- **NEVER output an input URL as the result.** The final line is the R2 URL of the rendered reel.
+- **NEVER end the run without uploading.** A local file path is not a deliverable; the worker can
+  only recover an `http(s)` media URL from your reply.
 
 ## Output
 
 One 9:16 (1080×1920) H.264+AAC MP4 faceless explainer reel: one genuinely-animated HyperFrames
 composition per beat (terminals that type, charts that grow, diagrams that draw on, checklists
 that check off) + generated voiceover + optional brand outro. No talking head, no stock/AI b-roll,
-no static stills.
+no static stills. Uploaded to R2; the **R2 public URL is the final line of output**.
 
 ## Fallbacks
 
