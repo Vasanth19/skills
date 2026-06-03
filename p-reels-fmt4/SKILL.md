@@ -2,7 +2,7 @@
 name: p-reels-fmt4
 description: Turn a script into a fully rendered explainer reel with no talking head — one REAL animated HyperFrames motion-graphics composition per beat (charts that draw/count on, terminals that type, diagrams that flow, checklists that check off) plus voiceover. NO stock/AI b-roll, NO static stills. Trigger on "make an explainer reel from this script", "faceless animated short with VO", "no-avatar explainer video", "script to animated reel with voiceover".
 when-to-use: Use when the user wants a faceless explainer reel — numbered/listicle or beat-by-beat brand motion-graphics with a voiceover, NO talking-head avatar and NO random b-roll. Every beat's visual is a genuinely animated HyperFrames composition, not a still card.
-version: 4.1.0
+version: 4.2.0
 kind: pipeline
 visibility: catalog
 providers: elevenlabs
@@ -65,6 +65,12 @@ revealed at t=5.0s) — finite PSNR ~25–29 dB between the pairs, not `inf` (wh
   Reaching for `#333`, `#3b82f6`, or `Roboto` = you skipped this gate. Glow + faint grid behind the
   content so the background never reads flat; a giant faint "ghost" number/glyph behind each card
   for depth.
+- **GHOST GLYPH — MANDATORY: the giant background ghost is a thematic number or single letter, never
+  a placeholder word.** Use the beat's index (`01`, `02`, …), the listicle total (`5`), or a single
+  on-theme initial — and a real value, never a layout/dev label. Round-1 certification shipped a beat
+  whose ghost literally spelled **"CTA"** (a placeholder label that bled through as the background
+  glyph) — that reads as an unfinished template. If the ghost text isn't a number or a deliberate
+  thematic letter you chose for THAT beat, it's wrong.
 - **NEVER** drop random stock footage or AI-generated b-roll clips behind the cards. If a beat needs
   a visual you don't have, build the diagram — don't reach for a clip.
 - **Font caveat:** if the brand's display font does not auto-resolve in the HyperFrames compiler
@@ -172,28 +178,50 @@ npx hyperframes init beatN-<slug> --non-interactive    # scaffold (creates index
 **Make it genuinely move — per-beat animation ideas (each verified in v4):**
 - **Terminal mockup** (`/terminal`): a window with traffic-light dots; type a command on char-by-char
   with `tl.call(() => el.textContent = cmd.slice(0,i), null, t0 + i*0.07)`, blink a `.cursor`, then
-  reveal `running…` and a green `✓ N passed` output line.
+  reveal `running…` and a green output line whose checkmark is an **inline SVG** (not a `✓` char).
 - **Before/after slide** (`/new`): an "old session" panel whose context bars `scaleX` in to fill
-  (clutter), a green arrow that pops + nudges, then a "clean" panel with ONE short bar + a badge.
+  (clutter), a green **SVG arrow** that pops + nudges, then a "clean" panel with ONE short bar + a badge.
 - **Drawing arrow + flow** (`Read → Edit`): two icon cards; the connecting SVG arrow draws on via
-  `strokeDasharray`/`strokeDashoffset` tweened to 0; a red `✕` row slams in.
+  `strokeDasharray`/`strokeDashoffset` tweened to 0; a red **SVG cross** row slams in.
 - **Growing bar chart** (`Parallel`): two `.fill` bars `scaleX` from 0→1 AT THE SAME TIME (parallel),
-  contrasted with a serial lane whose two bars grow ONE AFTER THE OTHER; a `2×` badge pops at the end.
+  contrasted with a serial lane whose two bars grow ONE AFTER THE OTHER; a `2x` badge pops at the end.
 - **Checklist that checks off** (`todo.md`): items `.add("done")` via `tl.call()` on a stagger, each
-  box punching scale 1→1.25→1, with strike-through; one item flips to an "▶ now" active state.
+  box punching scale 1→1.25→1, with strike-through; one item flips to an active state marked with an
+  **SVG triangle** (not a `▶` char).
 - **Diff highlight** (`Diff view`): a `-` red line and `+` green line slide in; flash their background
   with `fromTo(..., {backgroundColor}, {backgroundColor, yoyo:true, repeat:1})`; Approve/Reject chips pop.
+
+> Every icon above is a SHAPE you draw (SVG/CSS), not a character you type. See the ICONS rule below.
 
 **HyperFrames rules that matter here (from f-hyperframes house style):**
 - Register the timeline as `window.__timelines["<data-composition-id>"]`, `paused: true`.
 - `data-duration` is authoritative (not the GSAP timeline length) — set it to the beat's VO span.
 - Every element animates IN via `gsap.from()`; **no exit animations** except the final element fade.
 - Vary eases (use ≥3 different eases per beat); stagger entrances; keep ambient glow/grid alive.
+- **AMBIENT MOTION — MANDATORY: no beat may freeze.** A beat whose elements all pop in over the first
+  ~1s and then hold a static frame for the rest of its window reads as a slideshow card, not a motion
+  graphic (round-1 certification: a beat sat frame-identical for 2s after its entrance — PSNR ≈ 64dB
+  between two mid-beat frames). Give EVERY beat continuous low-amplitude motion that runs the whole
+  `data-duration`: a slow `yoyo`/`repeat:-1` drift or pulse on the glow/grid/ghost, a gentle scale or
+  opacity breathe on the focal element, a cursor blink, a counter still ticking, a bar still easing.
+  Stagger the entrances LATER into the window (don't cram them all into the first second) so the beat
+  keeps revealing through its duration. Target: pick any two frames ≥1s apart inside a beat and they
+  must visibly differ (the Step 8 motion proof enforces this).
 - **Font gotcha:** the compiler resolves `font-family` literally and auto-embeds the named Google
   Font. Use auto-resolved faces — **`Oswald`** (condensed display) + **`JetBrains Mono`** (code/data)
   are confirmed to resolve. Do NOT use `var(--font-*)` in `font-family` (falls back to a generic),
   and avoid Barlow Condensed (does not auto-resolve → wrong-font fallback). Inter also resolves but
   is house-style-discouraged; Oswald + JetBrains Mono is the proven pairing for this format.
+- **ICONS — MANDATORY: never use a unicode emoji or icon-font glyph as an icon.** The headless
+  render has **no emoji font installed**, so every emoji (📊 🏢 🔒 😐 ⚡ 🤖 …) and every
+  private-use icon-font codepoint renders as a **`□` "tofu" box** — a visible defect (round-1
+  certification: the AGENCY card and a "you vs them" circle both came out as empty boxes). Coverage
+  is roulette: one emoji may render while the next on the same beat does not, so "it worked once" is
+  not safe. Build EVERY icon/glyph as **inline SVG or CSS shapes** (an `<svg>` path, a styled `<div>`,
+  a CSS-drawn checkmark/arrow/lightning), never a character. The only safe text characters are plain
+  ASCII letters/digits/punctuation in the resolved Latin fonts (Oswald / JetBrains Mono) — and even
+  there, avoid decorative dingbats like `✓ ✕ → ▶ ⚡`; draw those as SVG too. If you catch yourself
+  typing an emoji into the HTML, that's the bug — replace it with an SVG before rendering.
 - `npx hyperframes lint` MUST be 0 errors before render. `--quality high` for delivery, `--quality
   draft` while iterating. If render fails, run `npx hyperframes doctor` and report the exact error.
 
@@ -321,6 +349,13 @@ every frame.** For each frame, CHECK:
 - [ ] **(d) Brand colors correct** — the palette matches the Visual Identity Gate resolution (Brand
       Brief first); not washed out, not defaulted to white-on-black, not this skill's old
       hard-coded colors.
+- [ ] **(e) No `□` tofu boxes / missing-glyph rectangles** — scan every frame for an empty box where
+      an icon should be. One `□` = a unicode emoji/icon-font glyph that didn't render → replace that
+      icon with inline SVG (per the ICONS rule, Step 4) and re-render. This is the single most common
+      round-1 defect; look for it specifically.
+- [ ] **(f) No placeholder ghost text** — the giant background ghost glyph is a thematic number/letter
+      (`01`, `5`), never a layout/dev word like "CTA", "HEADER", "TITLE". A word-shaped ghost = a
+      placeholder that leaked → fix in Step 4 and re-render.
 
 **Then prove EVERY beat actually MOVES (not just layout)** — for each beat, extract two frames at
 different timestamps WITHIN that beat's window and confirm they differ (a still would be identical
@@ -331,11 +366,16 @@ different timestamps WITHIN that beat's window and confirm they differ (a still 
 $FF -y -ss <t_early> -i OUT.mp4 -frames:v 1 beatN_a.png
 $FF -y -ss <t_late>  -i OUT.mp4 -frames:v 1 beatN_b.png
 $FF -i beatN_a.png -i beatN_b.png -lavfi psnr -f null - 2>&1 | grep average
-# finite dB (≈20–35) = motion; 'inf' = a frozen still → that beat FAILS, rebuild its animation
+# PASS: average PSNR ≤ 45 dB (frames visibly differ → real motion through the window).
+# FAIL: 'inf' (frozen still) OR ≥ 50 dB (near-identical → elements popped in then HELD static, the
+#       slideshow failure). A beat that fails = add continuous ambient motion (Step 4 "AMBIENT
+#       MOTION" rule) and re-render. Test BOTH the early-vs-mid AND mid-vs-late halves so a beat that
+#       moves only in its first second is caught.
 ```
 
 A mid-beat frame must show the animation partway (a bar half-grown, a command half-typed, a
-checklist mid-check). Also confirm: **VO is the clear foreground**, **no static-only stretch > 3s**.
+checklist mid-check). Also confirm: **VO is the clear foreground**, **no static-or-near-static stretch
+> 2s** (every >2s window must show visible change — ambient drift counts, a frozen card does not).
 
 **If ANY check on ANY frame or ANY beat fails: fix the composition and RE-RENDER. Re-extract the
 frames and look again. Repeat until everything passes. NEVER upload a reel that fails this gate.**
@@ -378,6 +418,13 @@ outro clip, reference image) as the result — the result is the freshly rendere
   ffprobe passing is not the same as the reel looking right.
 - **NEVER drop stock footage or AI b-roll behind the cards.** Faceless explainer = brand motion
   graphics only. If a beat needs a visual you don't have, build the diagram.
+- **NEVER use a unicode emoji or icon-font glyph as an icon.** The headless render has no emoji font
+  → every emoji becomes a `□` tofu box. Draw every icon as inline SVG / CSS shapes (Step 4 ICONS rule).
+- **NEVER use a placeholder word as the ghost glyph.** The giant background ghost is a thematic
+  number/letter (`01`, `5`), never "CTA"/"TITLE"/"HEADER" — a word-shaped ghost reads as an unfinished
+  template.
+- **NEVER let a beat pop in and then freeze.** Every beat carries continuous ambient motion for its
+  whole window; two frames ≥1s apart inside a beat must visibly differ (Step 8 motion proof).
 - **NEVER output an input URL as the result.** The final line is the R2 URL of the rendered reel.
 - **NEVER end the run without uploading.** A local file path is not a deliverable; the worker can
   only recover an `http(s)` media URL from your reply.
