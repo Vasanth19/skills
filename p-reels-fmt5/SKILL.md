@@ -1,6 +1,6 @@
 ---
 name: p-reels-fmt5
-description: Make a vertical reel from an UPLOADED talking-head video as a bottom picture-in-picture over a transcript-synced background — the background is built beat-by-beat from the speaker's own words: matching UPLOADED b-roll clips where they fit the wording, and generated HyperFrames/Remotion motion graphics where they don't. The talking head's own voice is the audio bed. Trigger on "make a reel from my talking-head video", "PIP reel from my uploaded video", "talking head over b-roll matched to what I say", "transcribe my video and cut b-roll to the words", "trim my b-rolls to the transcript cues", "my video as the PIP with b-roll background", "talking-head PIP with b-roll + graphics background", "uploaded talking head reel".
+description: Make a vertical reel from an UPLOADED talking-head video as a bottom picture-in-picture (the COMPLETE face shown, fitted into the layout — never cropped) over a GRAPHICS-FORWARD, transcript-synced background — built beat-by-beat from the speaker's own words, primarily as generated Remotion/HyperFrames motion graphics, with at most 1–2 of the user's uploaded b-roll clips trimmed in where they genuinely fit. The talking head's own voice is the audio bed. Trigger on "make a reel from my talking-head video", "PIP reel from my uploaded video", "talking head over motion graphics matched to what I say", "transcribe my video and build graphics to the words", "trim my b-rolls to the transcript cues", "my video as the PIP with a graphics background", "talking-head PIP with HyperFrames + b-roll background", "uploaded talking head reel".
 when-to-use: Use when the user UPLOADS their own talking-head clip (their real face + real voice — NOT a HeyGen avatar) and wants a 9:16 reel where that clip sits as a bottom PIP over a background that follows what they're saying: their uploaded b-roll where it matches the words, generated motion graphics where it doesn't. This is the "uploaded video, not generated avatar" sibling of p-reels-fmt2.
 version: 1.0.0
 kind: pipeline
@@ -45,11 +45,12 @@ reads sample frames and **rejects any frame whose background zone is black**. ff
 - `talking_head_video` (REQUIRED) — the user's uploaded talking-head clip. Real face + real voice.
   This is BOTH the PIP foreground AND the audio + duration master. **Never** replace it with a HeyGen
   avatar or TTS — it is the owner's actual voice.
-- `broll_media[]` (optional) — the user's uploaded b-roll clips. Matched to transcript beats by
-  wording (`c-broll` script-match). **Clips that carry their own audio are transcribed too** — their
-  cue timeline both confirms the content match and drives the trim window (the clip is cut to the
-  moment its audio lines up with the talking-head's words). Any beat with no matching clip falls back
-  to a generated graphic.
+- `broll_media[]` (optional) — the user's uploaded b-roll clips, used as a **sparing supplement only:
+  at most 1–2 across the whole reel, trimmed tight** to where they genuinely fit the wording. The
+  background is graphics-forward (Remotion/HyperFrames); b-roll is the exception, not the bed. **Clips
+  that carry their own audio are transcribed too** — their cue timeline confirms the match and drives
+  the trim window (cut to the moment the clip's audio lines up with the talking-head's words). NEVER
+  concatenate the full clips as the background.
 - `brand` — palette + typography for the generated-graphics beats (resolve via the Visual Identity
   Gate: Brand Brief → DESIGN.md → named style → dark-premium. Never hard-code).
 - `music_bed` (optional) — dark/moody instrumental under the VO at ≈ −18 LUFS; master to −14 LUFS.
@@ -61,23 +62,23 @@ reads sample frames and **rejects any frame whose background zone is black**. ff
 |---|---|---|
 | Canvas | 1080×1920, 30 fps | 9:16 portrait |
 | Canvas color | `#0F172A` | Only ever visible where a source has letterbox gaps — which the cover-crop removes |
-| ★ Background source | **transcript-synced hybrid** | Per beat: matching UPLOADED b-roll (scale-to-COVER) OR a generated HyperFrames/Remotion graphic. Never a bare black canvas. |
+| ★ Background source | **GRAPHICS-FORWARD** (Remotion/HyperFrames primary) | Most beats = authored motion graphics. Uploaded b-roll only as a SPARING supplement: **1–2 clips MAX**, trimmed tight — never all the clips, never full-length, never a montage of raw videos. Never a bare black canvas. |
 | Background fit | scale-to-COVER + center crop | `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920` — fills the full frame, no pillarbox, no stretch. **Never `pad`/letterbox, never a distorting bare `scale=1080:1920`.** |
-| ★ PIP source | **uploaded talking-head video** | NOT HeyGen. Opaque by default → no chroma-key. Run the white-band detect (fmt2 Step 3.5) only if the upload has bright studio side-margins. |
-| PIP crop | `crop=S:S:Xoff:0` | `S=min(w,h)`, `Xoff=(w-S)/2`, `Yoff=0` (top-anchored — never clip the head). ffprobe the upload first. |
-| PIP size | 540×540, rounded r=54 | Masked via reusable `pip-mask-540.png` (RGBA alpha) |
-| PIP position | `overlay=270:1380` | Bottom-center on 1080×1920 (proven). Keep all background "real content" in the top ~65% (above y≈1340). |
+| ★ PIP source | **uploaded talking-head video** | NOT HeyGen. Opaque by default → no chroma-key. |
+| ★ PIP fit | **scale-to-FIT — NEVER crop the face** | `scale=CARD_W:CARD_H:force_original_aspect_ratio=decrease` → the COMPLETE face shows, scaled down to fit. **Never** square-crop the face off (fmt5 v1 cut the chin). ffprobe the upload first. |
+| ★ PIP card | portrait box ≤ 560×760 | Sized to the talking head's aspect so the whole frame fits un-cropped. Rounded corners optional (mask at the scaled size, not a fixed 540²). |
+| ★ PIP position | bottom-center + **110px margin** | `overlay=(W-w)/2:(H-h-110)` — fully on-screen, NOT flush to the edge (fmt5 v1 buried it at y=1380 flush bottom). Keep background "real content" in the top ~60%. |
 | ★ Audio | **talking head's own track** (primary VO) | Optional music bed at −18 LUFS under it; master loudnorm −14 LUFS. NO TTS. |
 | Target duration | = talking-head length | The VO is the master; the background sequence is built to cover exactly it (`shortest=1`). |
 | Encode | H.264, yuv420p, CRF 19, `+faststart` | aac stereo 48k 192k |
 
-## PIP mask (reuse, don't regenerate)
+## PIP rounded corners (OPTIONAL — sized to the scaled card, not a fixed square)
 
-The 540×540 rounded-corner alpha mask is identical for every reel — reuse fmt2's:
-```bash
-find <brand>/creatives/productions -name "pip-mask-540.png" | head -1
-```
-If none exists, generate once with PIL (540×540 RGBA, white rounded rect r=54 on transparent).
+fmt5's PIP is scale-to-FIT (so the whole face shows) → the card is **portrait, not a 540² square**, so
+fmt2's fixed `pip-mask-540.png` does NOT apply. Rounded corners are optional; if wanted, generate a
+rounded-rect RGBA mask at the SCALED `[thfit]` dimensions (PIL, white rounded rect r≈40 on
+transparent) and `alphamerge` it in Step 5. Sharp corners are acceptable — the hard requirements are
+the **complete face** and the **on-screen margin**, not the corner radius.
 
 ## Steps
 
@@ -105,33 +106,34 @@ transcript, segment the VO into **3–6 beats** by sentence/topic boundary. Each
 text}`. This timeline drives BOTH the background selection (Step 3) and any on-screen text. Re-use the
 real timestamps — never guess beat boundaries.
 
-### 3 — Assign a background to each beat (uploaded b-roll match → graphics fallback)
+### 3 — Assign a background to each beat — GRAPHICS-FORWARD (Remotion/HyperFrames primary; 1–2 trimmed b-rolls MAX)
 
-For each beat, pick its full-frame background **in this priority order**:
+The background is **motion-graphics-forward**, exactly like fmt2 — NOT a montage of the user's raw
+clips. **Most beats are authored graphics.** Per beat, choose the background in this priority order:
 
-1. **Matching uploaded b-roll, trimmed to its cue** — run `c-broll` script-match against
-   `broll_media[]` for the beat's wording. Matching and trimming are **both transcript-cue-driven**:
-   - **If the b-roll clip carries its own audio**, transcribe it (`c-audio`, same as Step 2) to get
-     the clip's OWN cue timeline. Use that to (a) confirm the content match — the clip is talking
-     about / showing what this beat says — and (b) **trim the clip to the relevant cue window**
-     (`clip_in`→`clip_out` = the timestamps of the matching phrase inside the clip), not an arbitrary
-     window. This is the point: the b-roll is cut to the moment its own audio lines up with the
-     talking-head's words.
-   - **If the clip has no audio**, match by `c-broll`'s visual/label metadata and cut a window ≥ the
-     beat length from the most relevant section.
-   - Either way, the chosen `[clip_in, clip_out]` is then scale-to-COVERed into 9:16 (filter below).
-     The b-roll's own audio is **dropped** (`-an`) — the talking head's VO is the only voice (Step 5).
-2. **Generated motion graphic** — if NO uploaded clip matches the beat, author an animated
-   HyperFrames composition (or Remotion scene) **appropriate to that line** — a counter, a short
-   phrase callout, a diagram, brand ambient — at native 1080×1920, matching the Visual Identity Gate
-   palette/type. (This is Kyle's HyperFrames path; see `f-hyperframes` and fmt2 Step 2 + the font
-   gotcha: never put `var(--font-*)` in `font-family`.) Render to MP4 ≥ the beat length.
+1. **Generated motion graphic — THE DEFAULT for most beats.** Author an animated HyperFrames
+   composition (or Remotion scene) **appropriate to that line** — a counter, a key-phrase callout, a
+   diagram, brand ambient/VFX — at native 1080×1920, matching the Visual Identity Gate palette/type.
+   This is Kyle's HyperFrames/Remotion path (see `f-hyperframes` / `f-remotion` and fmt2 Step 2; font
+   gotcha: never put `var(--font-*)` in `font-family`). Render to MP4 ≥ the beat length.
+2. **A matching uploaded b-roll — SPARING: at most 1–2 across the WHOLE reel, TRIMMED.** Use an
+   uploaded clip for a beat ONLY when it genuinely fits the wording (the footage literally shows what
+   that line is about) AND it beats what a graphic would do. **Hard cap: 1–2 b-roll beats in the
+   entire reel — never all the clips, never the whole bed, never a full-length clip.** Trim it TIGHT:
+   - If the clip carries its own audio, transcribe it (`c-audio`) and trim to the cue window where its
+     audio lines up with the talking-head's words (`clip_in`→`clip_out`).
+   - If silent, match by `c-broll` visual/label metadata and cut a SHORT relevant window (≈ the beat
+     length — a few seconds, not the whole file).
+   - Scale-to-COVER into 9:16; drop the clip's audio (`-an`) — the talking head's VO is the only voice.
 
-A reel may freely **mix** uploaded-b-roll beats and generated-graphics beats — that is the expected,
-correct output. The ONLY hard rule: **every beat has a real, non-black background.**
+**Doctrine (inherited from fmt2): the background is RICH MOTION GRAPHICS, not a reel of raw clips.**
+Stringing together the user's entire b-roll videos is WRONG — that was the fmt5 v1 failure the owner
+flagged. Default to authored Remotion/HyperFrames graphics; reach for an uploaded clip only 1–2 times,
+trimmed, and only when it's the clearly better visual for that line. The ONLY hard rule remains:
+**every beat has a real, non-black background.**
 
-Per-beat b-roll cover-cut (`clip_in`/`clip_out` = the cue window from the clip's own transcript when
-it has audio, else the matched visual window → 9:16, audio stripped):
+Per-beat b-roll cover-cut (for the 1–2 b-roll beats only — `clip_in`/`clip_out` = the cue window from
+the clip's own transcript when it has audio, else a short matched visual window → 9:16, audio stripped):
 ```bash
 $FF -ss <clip_in> -to <clip_out> -i "$W/src/<clip>" \
   -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,format=yuv420p" \
@@ -191,25 +193,38 @@ done
 If any sample is ~0 (all black), the background build failed — fix Step 3/4, do NOT proceed to
 composite. Black `bg-all.mp4` is the root cause of "only the PIP shows."
 
-### 5 — Composite the uploaded talking-head PIP over the background (fmt2 path)
+### 5 — Composite the uploaded talking-head PIP over the background (FULL FACE, in-layout)
 
-Crop the talking head square (top-anchored), scale to 540×540, alphamerge the rounded mask, overlay
-bottom-center, map the **talking head's own audio**. Uploaded clips are opaque → NO chroma-key (only
-run fmt2 Step 3.5 white-band crop if the upload has bright studio side-margins):
+> **Two fmt5 v1 bugs this step fixes (owner-flagged):** (a) a top-anchored SQUARE crop
+> (`crop=S:S:Xoff:0`) cut the chin → the complete face didn't show; (b) `overlay=270:1380` put the PIP
+> flush at the very bottom edge → buried/clipped. **The fix: scale-to-FIT (never crop the face) +
+> overlay with a margin (never flush).**
+
+**Scale-to-FIT the talking head into a portrait card — the WHOLE face shows, no crop.** ffprobe `$TH`
+`w,h`. Then fit it inside a card box (`force_original_aspect_ratio=decrease` → preserves aspect, fits
+entirely, nothing cropped), and overlay bottom-center leaving a margin so the **entire card is
+on-screen**. Uploaded clips are opaque → NO chroma-key:
 ```bash
-$FF -i "$W/bg-all.mp4" -i "$TH" -i "$MASK" \
+CARD_W=560; CARD_H=760; MARGIN=110   # card box (portrait) + bottom/side safe margin
+$FF -i "$W/bg-all.mp4" -i "$TH" \
   -filter_complex "\
-[1:v]crop=S:S:Xoff:0,scale=540:540,setsar=1[avsq]; \
-[avsq][2:v]alphamerge[avpip]; \
+[1:v]scale=${CARD_W}:${CARD_H}:force_original_aspect_ratio=decrease,setsar=1[thfit]; \
 [0:v]format=yuv420p[bg]; \
-[bg][avpip]overlay=270:1380:format=auto:shortest=1[v]" \
+[bg][thfit]overlay=(W-w)/2:(H-h-${MARGIN}):format=auto:shortest=1[v]" \
   -map "[v]" -map "1:a" \
   -c:v libx264 -preset medium -crf 19 -pix_fmt yuv420p -r 30 \
   -c:a aac -b:a 192k -ar 48000 -ac 2 \
   -movflags +faststart -y "$W/composed.mp4"
 ```
-(Replace `S`/`Xoff` with the values ffprobed in Step 1. `shortest=1` clips to the talking head — the
-audio + duration master.)
+- `force_original_aspect_ratio=decrease` GUARANTEES the entire face is visible (the talking head is
+  scaled down to fit the card, never cropped). For a portrait phone source the card ends up tall and
+  narrow (e.g. 428×760); for a landscape source, short and wide — either way nothing is cut.
+- `overlay=(W-w)/2:(H-h-110)` centers horizontally and leaves a **110px bottom margin** → the full PIP
+  is on-screen, not buried at the edge.
+- **Rounded corners (optional):** if a rounded look is wanted, generate a mask at the SCALED `[thfit]`
+  dimensions (PIL rounded rect) and `alphamerge` it before the overlay — NOT the fixed 540² mask
+  (the card is no longer square). Sharp corners are acceptable; full face + margin are the hard reqs.
+- `shortest=1` clips to the talking head — the audio + duration master.
 
 ### 6 — Audio mix (optional music bed)
 
@@ -242,12 +257,19 @@ For each frame, CHECK:
 - [ ] **(a) The BACKGROUND IS NOT BLACK** — behind/around the bottom PIP there is real footage or a
       real motion graphic filling the full frame. A black/empty background = the build failed → fix
       Step 3/4 and re-render. **This is the primary check — the bug this recipe exists to kill.**
-- [ ] **(b) The talking-head PIP is present** bottom-center, rounded, the face intact (not clipped at
-      the top), not stretched.
-- [ ] **(c) Background fills the full width** — no pillarbox bars, no letterbox, no distortion
-      (scale-to-COVER working).
-- [ ] **(d) Brand colors correct** on any generated-graphics beats — palette per the Visual Identity
-      Gate, not washed out, not defaulted to white-on-black.
+- [ ] **(b) The COMPLETE face shows in the PIP** — the whole head is visible: forehead to chin, not
+      cropped at top OR bottom, not stretched. A cut-off chin/face = the scale-to-FIT failed (someone
+      reintroduced a square crop) → fix Step 5 and re-render. **(fmt5 v1 bug — owner-flagged.)**
+- [ ] **(c) The PIP is fully ON-SCREEN with a margin** — the entire PIP card sits inside the frame
+      with a clear gap below it; it is NOT flush against / clipped by the bottom edge, NOT "buried."
+      Flush/clipped = the margin was dropped → fix the `overlay=(W-w)/2:(H-h-110)` in Step 5. **(fmt5
+      v1 bug — owner-flagged.)**
+- [ ] **(d) Background is GRAPHICS-FORWARD** — most beats are authored motion graphics, with at most
+      1–2 short b-roll moments. If the whole reel is just the user's raw clips strung together, the
+      background logic regressed → fix Step 3 (default to graphics; b-roll 1–2 trimmed max).
+- [ ] **(e) Background fills the full width** — no pillarbox bars, no letterbox, no distortion.
+- [ ] **(f) Brand colors correct** on the graphics beats — palette per the Visual Identity Gate, not
+      washed out, not defaulted to white-on-black.
 
 Also confirm the **VO is the clear audio foreground** and **no static-only stretch > 3s**.
 
