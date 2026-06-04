@@ -2,6 +2,12 @@
 
 > This file is the self-learning loop for `p-hf-reel`. Before executing this skill, the agent reads this file and applies all accumulated `Active Feedback`. After execution, the agent asks the user for feedback and appends it here.
 
+> **certified: 2026-06-04** — owner-approved. This was the TEMPLATE cert (it established the
+> 05-CERT-PROTOCOL on 2026-06-02): round 1 surfaced the scene-overlap + missing-b-roll failures,
+> which became the scene-sequencing, local-media, and 6-frame Visual QA gates below. Owner signed off
+> after review. Also benefits from the two platform fixes shipped during the FMT4 cert (specialist
+> model → kimi-k2.6; worker validates the result URL resolves before marking a job done).
+
 ---
 
 ## Active Feedback (apply on every run)
