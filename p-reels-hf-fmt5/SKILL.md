@@ -1,5 +1,5 @@
 ---
-name: p-reels-fmt5
+name: p-reels-hf-fmt5
 description: Make a vertical reel from an UPLOADED talking-head video as a bottom picture-in-picture (the COMPLETE face shown, fitted into the layout — never cropped) over a GRAPHICS-FORWARD, transcript-synced background — built beat-by-beat from the speaker's own words, primarily as generated Remotion/HyperFrames motion graphics, with at most 1–2 of the user's uploaded b-roll clips trimmed in where they genuinely fit. The talking head's own voice is the audio bed. Trigger on "make a reel from my talking-head video", "PIP reel from my uploaded video", "talking head over motion graphics matched to what I say", "transcribe my video and build graphics to the words", "trim my b-rolls to the transcript cues", "my video as the PIP with a graphics background", "talking-head PIP with HyperFrames + b-roll background", "uploaded talking head reel".
 when-to-use: Use when the user UPLOADS their own talking-head clip (their real face + real voice — NOT a HeyGen avatar) and wants a 9:16 reel where that clip sits as a bottom PIP over a background that follows what they're saying: their uploaded b-roll where it matches the words, generated motion graphics where it doesn't. This is the "uploaded video, not generated avatar" sibling of p-reels-fmt2.
 version: 1.0.0
@@ -14,7 +14,7 @@ inputs: [talking_head_video, broll_media]
 dependsOn: [c-audio, c-broll, c-ffmpeg, f-hyperframes, c-cloud-media]
 ---
 
-# p-reels-fmt5 — Uploaded Talking-Head PIP over Transcript-Synced Background
+# p-reels-hf-fmt5 — Uploaded Talking-Head PIP over Transcript-Synced Background
 
 Produces one 9:16 (1080×1920) MP4 reel: the user's **own uploaded talking-head video** composited as a
 rounded-square picture-in-picture pinned bottom-center, over a **full-frame background that is built
@@ -172,7 +172,7 @@ cue window. Because every value is in the plan, the cheap executor **cannot** sh
 into "just use the b-roll" or fabricate a URL — it has one mechanical job per beat:
 
 ```bash
-SKILL_DIR=$(find "$HOME/.claude/skills" -maxdepth 2 -type d -name p-reels-fmt5 2>/dev/null | head -1)
+SKILL_DIR=$(find "$HOME/.claude/skills" -maxdepth 2 -type d -name p-reels-hf-fmt5 2>/dev/null | head -1)
 TPL="$SKILL_DIR/templates/motion-card.html"     # the parameterized card this skill ships
 NPROC=$(nproc 2>/dev/null || echo 4); MAXJOBS=$(( NPROC > 1 ? NPROC - 1 : 1 ))
 

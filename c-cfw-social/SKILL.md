@@ -56,6 +56,7 @@ This is the canonical skill for understanding, operating, and debugging the **CF
 | **API routes** | `routes.json` | Canonical manifest of every HTTP route + auth mode + sample body |
 | **Local dev API quickstart** | `local-dev.md` | Base URL + working curl per auth mode + SSE consumption + dev-brand bootstrap (localhost:3000) |
 | **Production API quickstart** | `prod.md` | Base URL (`app.cfw.social`), how to pull prod master key via Vercel, brand ID lookup, security notes on dev endpoints |
+| **New-brand onboarding** | `new-brand-onboarding.md` | Operational checklist to fully set up a brand in prod — 9-section brief template, logo/character R2 upload + DB wiring, API-key minting, local-content push, sanity-check SQL, gotchas |
 | **External agent API** | `external-agent-api.md` | How external agents/scripts call `app.cfw.social` via API key — `/api/v2/` route catalog, **full brand management via allowlisted `/api/v1/` routes** (create agents, quick publish, provider vault — PR #49, 2026-06-02), auth, SSE, Python + TS examples |
 | **Quick start** | `README.md` | First-time orientation for operators |
 

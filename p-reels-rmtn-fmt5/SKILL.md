@@ -1,7 +1,7 @@
 ---
 name: p-reels-rmtn-fmt5
-description: Make a vertical reel from an UPLOADED talking-head video as a small bottom PIP over an INTERACTIVE REMOTION background — the background is built beat-by-beat from the speaker's transcript as data-driven Remotion scenes (a typing UI/terminal card, hook title cards, etc. — the "day13" interactive look), with 1-2 uploaded b-roll moments where they fit. Opus plans the scenes + props (flat-cost Max OAuth), kimi just renders the shipped Remotion project from --props (no code authoring). The Remotion sibling of p-reels-fmt5 (which uses HyperFrames text cards). Trigger on "interactive remotion reel with my talking head", "typing/terminal UI reel from my video", "day13-style reel with avatar PIP", "remotion scenes + talking head PIP", "screen-rec style reel with my face".
-when-to-use: Use when the user wants the INTERACTIVE Remotion look (typing prompt reveals, terminal/UI mockups, animated React scenes — like the day13 cold-email reel) AND their own UPLOADED talking head as a small bottom PIP. Sibling of p-reels-fmt5 (HyperFrames text cards, cheaper/simpler) and p-screen-rec-vo (Remotion, but VO-only no PIP) and p-bottom-avatar-pip (HeyGen avatar PIP over b-roll).
+description: Make a vertical reel from an UPLOADED talking-head video as a small bottom PIP over an INTERACTIVE REMOTION background — the background is built beat-by-beat from the speaker's transcript as data-driven Remotion scenes (a typing UI/terminal card, hook title cards, etc. — the "day13" interactive look), with 1-2 uploaded b-roll moments where they fit. Opus plans the scenes + props (flat-cost Max OAuth), kimi just renders the shipped Remotion project from --props (no code authoring). The Remotion sibling of p-reels-hf-fmt5 (which uses HyperFrames text cards). Trigger on "interactive remotion reel with my talking head", "typing/terminal UI reel from my video", "day13-style reel with avatar PIP", "remotion scenes + talking head PIP", "screen-rec style reel with my face".
+when-to-use: Use when the user wants the INTERACTIVE Remotion look (typing prompt reveals, terminal/UI mockups, animated React scenes — like the day13 cold-email reel) AND their own UPLOADED talking head as a small bottom PIP. Sibling of p-reels-hf-fmt5 (HyperFrames text cards, cheaper/simpler) and p-screen-rec-vo (Remotion, but VO-only no PIP) and p-bottom-avatar-pip (HeyGen avatar PIP over b-roll).
 version: 1.0.0
 kind: pipeline
 visibility: catalog
@@ -16,11 +16,11 @@ dependsOn: [c-audio, c-broll, c-ffmpeg, f-remotion, c-cloud-media]
 
 # p-reels-rmtn-fmt5 — Uploaded Talking-Head PIP over an INTERACTIVE Remotion background
 
-The **Remotion sibling of `p-reels-fmt5`**. Same plan-on-Opus / execute-on-kimi architecture and the
+The **Remotion sibling of `p-reels-hf-fmt5`**. Same plan-on-Opus / execute-on-kimi architecture and the
 same uploaded-PIP composite — but the background beats are **data-driven Remotion scenes** (the
 interactive "day13" look: a `claude.ai`/terminal card that TYPES a prompt out char-by-char, hook
 title cards, etc.) instead of HyperFrames text cards. Read
-`.claude/knowledge/decisions/plan-opus-execute-ollama-render-architecture.md` and `p-reels-fmt5`
+`.claude/knowledge/decisions/plan-opus-execute-ollama-render-architecture.md` and `p-reels-hf-fmt5`
 first — the structure is identical; only the GRAPHICS-beat renderer differs.
 
 **The cheap executor never authors React.** The skill ships a parameterized, data-driven Remotion
@@ -41,7 +41,7 @@ All scenes keep content in the **top ~55%** so the bottom-left PIP never covers 
 
 ## Inputs / Params
 
-Same as `p-reels-fmt5`: `talking_head_video` (REQUIRED — the PIP + the only voice), `broll_media[]`
+Same as `p-reels-hf-fmt5`: `talking_head_video` (REQUIRED — the PIP + the only voice), `broll_media[]`
 (supplement, up to `broll_coverage` of the reel, trimmed to cue; default 0.30; **0** when none or a
 no-b-roll instruction), `brand`, optional `music_bed`. PIP = SMALL (400×540 box), **portrait →
 bottom-LEFT, square/landscape → bottom-CENTER** (identical to fmt5 Step 5).
@@ -50,7 +50,7 @@ bottom-LEFT, square/landscape → bottom-CENTER** (identical to fmt5 Step 5).
 
 `$TH` = talking-head upload, `$W` = scratch work dir, `$FF` = ffmpeg, `$OUT` = final.
 
-### 1-2 — Localize + transcribe (identical to p-reels-fmt5)
+### 1-2 — Localize + transcribe (identical to p-reels-hf-fmt5)
 Download + ffprobe `$TH` and each clip; transcribe `$TH` → `$W/th_transcript.json` and each audio-
 carrying clip → `$W/broll_cues.json`. (See fmt5 Steps 1-2.)
 
@@ -120,7 +120,7 @@ One 9:16 H.264 MP4: an interactive Remotion background (typing UI cards + hook b
 
 ## Notes
 - **Never authors React** — the Remotion project is shipped + data-driven; kimi only passes `--props`.
-- **Relationship:** `p-reels-fmt5` = HyperFrames text cards (cheaper, simpler). This = interactive
+- **Relationship:** `p-reels-hf-fmt5` = HyperFrames text cards (cheaper, simpler). This = interactive
   Remotion scenes (richer, the day13 look). `p-screen-rec-vo` = Remotion but VO-only (no PIP).
   `p-bottom-avatar-pip` = HeyGen avatar PIP over b-roll. This one = uploaded PIP + Remotion scenes.
 - **npm install per render** (~20s) — the project ships without node_modules. Cached work dir reuse is

@@ -1,11 +1,11 @@
 [
   {
-    "url": "https://media.cfw.social/skill-examples/p-reels-fmt5/how-it-works.png",
+    "url": "https://media.cfw.social/skill-examples/p-reels-hf-fmt5/how-it-works.png",
     "kind": "diagram",
     "caption": "How Uploaded Talking-Head PIP Reel works — transcribe the upload, match b-roll to the words (graphics fill the gaps), composite the clip as a bottom PIP."
   },
   {
-    "url": "https://media.cfw.social/skill-examples/p-reels-fmt5/uploaded-pip-reel-sample.mp4",
+    "url": "https://media.cfw.social/skill-examples/p-reels-hf-fmt5/uploaded-pip-reel-sample.mp4",
     "kind": "video",
     "caption": "Uploaded Talking-Head PIP Reel sample — the owner's uploaded clip as a rounded bottom PIP over a transcript-synced background (their b-roll on matching words, motion graphics elsewhere). 9:16."
   }

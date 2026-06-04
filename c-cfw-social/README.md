@@ -51,6 +51,7 @@ CFW Social is the main application — a Next.js 16 app with a Prisma/PostgreSQL
 | `external-agent-api.md` | External agents managing a brand via API key — content workflow (v2) + full brand management (allowlisted v1: create agents, quick publish, provider vault) |
 | `local-dev.md` | Base URL + working curl per auth mode + SSE consumption + dev-brand bootstrap (localhost:3000) |
 | `prod.md` | Production API quickstart — `app.cfw.social`, Vercel key pull, brand ID lookup, security notes on dev endpoints |
+| `new-brand-onboarding.md` | Operational checklist to fully set up a brand in prod — brief template, logo/character R2 upload, key minting, content push, sanity-check SQL |
 | `integrations.md` | Telegram, Discord, Slack, Stripe, PostForMe setup |
 | `admin-runbook.md` | Recovery, rotation, deletion, billing, tuning |
 | `routes.json` | Every HTTP route + auth mode + sample body |

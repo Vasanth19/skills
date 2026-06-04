@@ -20,11 +20,13 @@ All `/api/**` paths in `routes.json` are relative to this.
 
 ### Mr Growth Guide (MGG) — production
 
-```bash
-# Brand ID (cuid2, verified 2026-05-20)
-MGG_BRAND_ID="cmpda8nmp000004jssp8vno38"
+> ⚠️ **Brand migrated 2026-06-02.** The old MGG brand `cmpda8nmp000004jssp8vno38` was renamed **"Vasanth S"** in prod (it still exists with its 13 workspaces / 26 posts). The real Mr. Growth Guide brand is now the one below. The saved API key was rotated to match.
 
-# Brand-scoped API key
+```bash
+# Brand ID (cuid2, verified 2026-06-02) — slug vasanth-sek8tv, created 2026-05-31
+MGG_BRAND_ID="cmpt8h9bt000004gvjhe1bnms"
+
+# Brand-scoped API key (rotated 2026-06-02, prefix cfw_qpG3IPrk)
 BRAND_KEY="$(grep ^CFW_SOCIAL_API_KEY= ~/.gsai/secrets/mgg-api-keys.env | cut -d= -f2-)"
 
 # Example call
@@ -34,8 +36,8 @@ curl -s https://app.cfw.social/api/v1/brand/dna -H "x-api-key: $BRAND_KEY"
 Key auto-resolves the brand — no need to pass `x-cfw-brand` separately when using a brand-scoped key.
 
 **Workspaces:**
-- `cmpedqfar000004ld0d5hjwvf` — "Good Times"
-- `cmpdguuv2000004lbhgo60iws` — "AI Automation Sample" (default)
+- `cmpxg56o9000204l2k2gm13hx` — "May Production Backlog — Review" (default for local sync)
+- `cmpt9vqvc000004jp7u22c3hn` — (untitled, created with brand)
 
 ---
 
