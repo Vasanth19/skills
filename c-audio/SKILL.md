@@ -6,6 +6,7 @@ allowed-tools: Bash
 kind: component
 visibility: internal
 providers: elevenlabs
+requires: ffmpeg, python3
 ---
 
 # Studio Audio — TTS, SFX, Transcription

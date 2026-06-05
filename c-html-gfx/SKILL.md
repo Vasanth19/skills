@@ -6,6 +6,7 @@ allowed-tools: Bash
 kind: component
 visibility: internal
 dependsOn: [f-remotion]
+requires: ffmpeg, chromium
 ---
 
 # HTML GFX — Graphics for Video

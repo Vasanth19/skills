@@ -6,6 +6,7 @@ allowed-tools: Bash
 kind: component
 visibility: internal
 providers: heygen
+requires: python3
 ---
 
 # HeyGen — Avatar Render System

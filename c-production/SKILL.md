@@ -6,6 +6,7 @@ allowed-tools: Bash, Read, Write, Edit
 kind: component
 visibility: internal
 dependsOn: [c-broll, c-ffmpeg]
+requires: ffmpeg, python3
 ---
 
 # Studio Production — Folder, Delivery & Dashboard

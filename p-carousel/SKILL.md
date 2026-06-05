@@ -1,6 +1,6 @@
 ---
-name: p-linkedin-carousel
-description: LinkedIn carousel PDF pipeline. Writes slide content, generates AI images per slide, assembles into a PDF carousel, and drafts the LinkedIn caption copy.
+name: p-carousel
+description: Multi-slide carousel for any platform. Writes slide content, then builds each slide as an AI image (c-ai-media), an HTML-GFX card (c-html-gfx), or a HyperFrames composition (f-hyperframes) — or a mix — assembles into a carousel/PDF, and drafts the caption. Trigger on "make a carousel", "LinkedIn carousel", "Instagram carousel", "slide deck post", "multi-slide post".
 disable-model-invocation: true
 argument-hint: "[brand] [production-name] [topic]"
 allowed-tools: Bash, Read, Write
@@ -12,7 +12,7 @@ produces:
   format: PDF carousel
   duration: n/a
 inputs: [topic]
-dependsOn: [c-script, c-ai-media]
+dependsOn: [c-script, c-ai-media, c-html-gfx, f-hyperframes]
 ---
 
 # pipeline-linkedin-carousel — LinkedIn PDF Carousel

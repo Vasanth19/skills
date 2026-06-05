@@ -46,14 +46,26 @@ created before the fix:** `INSERT INTO user_brand_access (id,user_id,brand_id,ro
 ('c'||…, owner_id, brand_id, 'owner', now()) ON CONFLICT (user_id,brand_id) DO NOTHING`. (Doc note:
 `new-brand-onboarding.md` Path A's "creates EVERYTHING" predates this — it omitted UserBrandAccess.)
 
-## 2026-06-03 — Brand-level PFM project has no webhook endpoint by default
+## 2026-06-03 — Brand-level PFM webhook secret is DEAD CONFIG (verify path is global-only)
 
 When a brand uses its own PFM project (`pfm_project_api_key`), that project starts with **zero webhook endpoints**
 (`GET https://api.postforme.dev/v1/webhooks` → `{data:[], total:0}`). So real-time publish confirmations don't
 flow for that brand — status updates fall back to the reconcile cron (`postforme/reconcile.ts` + `sync-analytics`).
-To get real-time webhooks, register an endpoint in the brand's PFM project pointing at
-`https://app.cfw.social/api/v1/webhooks/postforme/events` and store the signing secret (encrypted) in
-`brands.pfm_project_webhook_secret`.
+
+**The trap:** you cannot fix this by setting `brands.pfm_project_webhook_secret`. The incoming-webhook verifier
+`PostForMeProvider.verifyWebhook()` calls **`getPfmConfigSync()`** (env-only — `getPfmConfigSync` just returns
+`getBasePfmConfig()`, NO brand override) and compares the `post-for-me-webhook-secret` header against the **global**
+`POSTFORME_WEBHOOK_SECRET`. The async `getPfmConfig(brandId)` DOES read `pfm_project_webhook_secret`, but it's only
+used for *outbound* `pfmFetch`, never for verifying *incoming* webhooks (at verify time the body isn't parsed yet,
+so the brand is unknown).
+
+**Consequence:** registering a webhook in a brand's separate PFM project returns a **PFM-generated** secret that
+won't match the global `POSTFORME_WEBHOOK_SECRET` → cfw-social rejects every delivery → PFM retries 8× over 24h
+(log noise, no benefit). Verified 2026-06-03 (created + immediately deleted a test webhook to confirm).
+
+**To actually get real-time webhooks per brand:** make `verifyWebhook` brand-aware — parse the body first
+(`pfmPostId` → `Post` → `brandId` → `getPfmConfig(brandId)`), then timing-safe-compare against the brand secret
+(falling back to global). Until that ships, leave brand PFM projects webhook-less and rely on the reconcile cron.
 
 ## Rescheduling a scheduled post = PFM delete + recreate (no native reschedule)
 

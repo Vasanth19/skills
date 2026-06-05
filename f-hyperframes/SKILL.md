@@ -4,6 +4,7 @@ description: Create video compositions, animations, title cards, overlays, capti
 kind: framework
 visibility: internal
 dependsOn: [f-gsap, f-hyperframes-cli]
+requires: node, chromium
 ---
 
 # HyperFrames

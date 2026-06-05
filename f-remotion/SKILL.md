@@ -6,6 +6,7 @@ metadata:
 kind: framework
 visibility: internal
 providers: elevenlabs
+requires: node, chromium
 ---
 
 ## When to use

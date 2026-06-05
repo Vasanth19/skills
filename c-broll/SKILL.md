@@ -6,6 +6,7 @@ allowed-tools: Bash, Read, Write, Edit
 kind: component
 visibility: internal
 dependsOn: [c-ffmpeg, c-cloud-media]
+requires: ffmpeg, node, chromium
 ---
 
 # B-Roll — Library, Capture, Placement & Embed System

@@ -5,6 +5,7 @@ when_to_use: Trigger on any mention of c-ffmpeg, video composite, green screen, 
 allowed-tools: Bash
 kind: component
 visibility: internal
+requires: ffmpeg
 ---
 
 # FFmpeg — Creative Studio Video Engine

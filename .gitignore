@@ -9,3 +9,4 @@ node_modules/
 # skills CLI artifacts
 skills-lock.json
 .claude/knowledge/_sessions/
+.DS_Store

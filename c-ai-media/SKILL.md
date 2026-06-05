@@ -7,6 +7,7 @@ kind: component
 visibility: internal
 providers: kie
 dependsOn: [c-kie-ai]
+requires: python3
 ---
 
 # AI Media Generation

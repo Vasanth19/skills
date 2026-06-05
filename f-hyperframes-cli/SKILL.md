@@ -4,6 +4,7 @@ description: HyperFrames CLI tool — hyperframes init, lint, preview, render, t
 kind: framework
 visibility: internal
 dependsOn: [f-hyperframes]
+requires: node, ffmpeg
 ---
 
 # HyperFrames CLI
