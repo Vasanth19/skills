@@ -1,4 +1,4 @@
-# Scene Bank — r-screen-rec-vo
+# Scene Bank — p-reels-fmt6
 
 7 reusable Remotion scenes. Lives in R3's `gfx/remotion/src/scenes/`. Copy and modify the copy — keep the animation rig.
 
@@ -50,7 +50,7 @@ Adjust `ScenePromptReveal` and/or `SceneResponseReveal` to hit the target total.
 
 ## First Run — Remotion Template
 
-Copy most recent order's `gfx/remotion/` as a starting scaffold. Then:
+Copy the most recent `p-reels-fmt6` order's `gfx/remotion/` as a starting scaffold. Then:
 
 ```bash
 cd <new-order>/gfx/remotion

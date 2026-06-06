@@ -1,8 +1,8 @@
-# Acceptance (Definition of Done) — r-screen-rec-vo
+# Acceptance (Definition of Done) — p-reels-fmt6
 
 - [ ] Single MP4 at `creatives/productions/MM.DD-<title>/final/short.mp4`
 - [ ] Final duration: 35-51s (35-46s body + ~5s outro). Flag to CMO if over 46s body — acceptable, but document.
-- [ ] Speed-adjusted VO file (`heygen/avatar_1.25x.mp4`) exists and duration matches `raw / multiplier ± 0.2s`
+- [ ] VO audio file (`renders/vo.aac`) exists; if atempo was applied, verify `ffprobe` duration matches `raw / multiplier ± 0.2s`
 - [ ] Cover at `final/cover.png` — timestamp is mid-PromptReveal or start-of-ResponseReveal (NOT Hook scene)
 - [ ] All 7 Remotion scenes present and in order (verify via frame inspection or Remotion render log)
 - [ ] Audio: aac 48kHz stereo, loudnorm'd to -16 LUFS

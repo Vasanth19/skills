@@ -1,7 +1,7 @@
 ---
 name: p-reels-rmtn-fmt5
 description: Make a vertical reel from an UPLOADED talking-head video as a small bottom PIP over an INTERACTIVE REMOTION background — the background is built beat-by-beat from the speaker's transcript as data-driven Remotion scenes (a typing UI/terminal card, hook title cards, etc. — the "day13" interactive look), with 1-2 uploaded b-roll moments where they fit. Opus plans the scenes + props (flat-cost Max OAuth), kimi just renders the shipped Remotion project from --props (no code authoring). The Remotion sibling of p-reels-hf-fmt5 (which uses HyperFrames text cards). Trigger on "interactive remotion reel with my talking head", "typing/terminal UI reel from my video", "day13-style reel with avatar PIP", "remotion scenes + talking head PIP", "screen-rec style reel with my face".
-when-to-use: Use when the user wants the INTERACTIVE Remotion look (typing prompt reveals, terminal/UI mockups, animated React scenes — like the day13 cold-email reel) AND their own UPLOADED talking head as a small bottom PIP. Sibling of p-reels-hf-fmt5 (HyperFrames text cards, cheaper/simpler) and p-screen-rec-vo (Remotion, but VO-only no PIP) and p-bottom-avatar-pip (HeyGen avatar PIP over b-roll).
+when-to-use: Use when the user wants the INTERACTIVE Remotion look (typing prompt reveals, terminal/UI mockups, animated React scenes — like the day13 cold-email reel) AND their own UPLOADED talking head as a small bottom PIP. Sibling of p-reels-hf-fmt5 (HyperFrames text cards, cheaper/simpler) and p-reels-fmt6 (Remotion, but VO-only no PIP) and p-bottom-avatar-pip (HeyGen avatar PIP over b-roll).
 version: 1.0.0
 kind: pipeline
 visibility: catalog
@@ -121,7 +121,7 @@ One 9:16 H.264 MP4: an interactive Remotion background (typing UI cards + hook b
 ## Notes
 - **Never authors React** — the Remotion project is shipped + data-driven; kimi only passes `--props`.
 - **Relationship:** `p-reels-hf-fmt5` = HyperFrames text cards (cheaper, simpler). This = interactive
-  Remotion scenes (richer, the day13 look). `p-screen-rec-vo` = Remotion but VO-only (no PIP).
+  Remotion scenes (richer, the day13 look). `p-reels-fmt6` = Remotion but VO-only (no PIP).
   `p-bottom-avatar-pip` = HeyGen avatar PIP over b-roll. This one = uploaded PIP + Remotion scenes.
 - **npm install per render** (~20s) — the project ships without node_modules. Cached work dir reuse is
   a future optimization.

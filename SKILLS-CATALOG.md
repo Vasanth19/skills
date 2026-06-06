@@ -89,11 +89,13 @@ Every skill is **self-sufficient** (reads LEARNINGS.md before executing) and **s
 ### Visual Tutorial/Explainer Longform
 | Skill | AI Method | Input | Output | Self-Learn |
 |-------|-----------|-------|--------|-----------|
-| **p-longform-visual** | Remotion GFX + slides | Brand + tutorial script | 16:9 tutorial with animated slide transitions + voiceover | ✅ LEARNINGS.md |
+| **p-longform** | Remotion GFX + slides + HeyGen/AI | Brand + tutorial script | 16:9 tutorial with animated slide transitions + voiceover | ✅ LEARNINGS.md |
 | **p-demo** | Any (asset reuse) | Raw footage/script + brand | 16:9 short/long/avatar demo from existing assets | ✅ LEARNINGS.md |
 
 **When to use:** Product demos, tutorials, "how-to" content.
 **Remotion method:** React-based animation composition → render to MP4.
+
+> **Note:** `p-longform-visual` was merged into `p-longform` on 2026-06-05. Use `p-longform` for all tutorial/explainer longform content.
 
 ---
 
@@ -325,7 +327,7 @@ Every skill is **self-sufficient** (reads LEARNINGS.md before executing) and **s
 - **9:16 short with graphics/no person?** → `p-gfx-short` or `p-gfx-batch`
 - **9:16 recreation of viral format?** → `p-viral-reel` (choose --style)
 - **16:9 longform (5-15 min)?** → `p-vsl`
-- **Tutorial/explainer with slides?** → `p-longform-visual`
+- **Tutorial/explainer with slides?** → `p-longform`
 - **Static image/graphic?** → `c-html-gfx` (1920x1080) or `c-ai-media` (generated)
 - **YouTube thumbnail?** → `p-thumbnail`
 - **LinkedIn carousel?** → `p-linkedin-carousel`

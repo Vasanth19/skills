@@ -1,16 +1,16 @@
-# Anti-Patterns & Gotchas — r-screen-rec-vo
+# Anti-Patterns & Gotchas — p-reels-fmt6
 
 ## Anti-Patterns (don't do this)
 
-**Don't discard the HeyGen render's audio.** It IS the VO. Substituting a separate ElevenLabs TTS call changes the brand voice mid-sprint and audiences notice.
+**Use the brand's cloned ElevenLabs voice for every production.** Always pass the `voiceId` from `brand.yaml` — do not swap to a generic ElevenLabs preset or a different voice ID mid-sprint; audiences notice voice drift. If accepting a user-uploaded VO track instead, loudnorm it to -16 LUFS before compositing.
 
 **Don't skip the outro to hit 35-46s.** Brand consistency > target precision. 47-51s final is acceptable; 60s is the hard cap.
 
-**Don't concat `-c copy` as the last step.** The outro source has B-frames and a different time_base; `-c copy` preserves both. Always do a canonical re-encode after concat (see `pipeline.md` Step 6).
+**Don't concat `-c copy` as the last step.** The outro source has B-frames and a different time_base; `-c copy` preserves both. Always do a canonical re-encode after concat (see `pipeline.md` Step 4).
 
-**Don't use a Sahil-style aesthetic that contradicts MGG's typography.** MGG is Inter + JetBrains Mono on dark navy with coral/violet/teal accents. Do not re-theme to match Sahil's white-on-white minimal style — that's his brand, not MGG's. This recipe borrows the *format* (face off-camera + screen UI), not the visual identity.
+**Don't re-theme the visuals away from MGG's typography.** MGG is Inter + JetBrains Mono on dark navy with coral/violet/teal accents. This format (face off-camera + screen UI) does not mean a generic white-on-white minimal aesthetic — preserve the MGG visual identity in every scene.
 
-**Don't use this recipe for news-jacks.** News-jacks need the creator's face for credibility ("this is ME telling you this dropped today"). Use `r-bottom-avatar-pip` for those.
+**Don't use this recipe for news-jacks.** News-jacks need the creator's face for credibility ("this is ME telling you this dropped today"). Use `p-bottom-avatar-pip` for those.
 
 ---
 

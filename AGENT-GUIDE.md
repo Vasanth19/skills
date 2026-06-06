@@ -51,7 +51,7 @@ After completing your task:
 ```json
 {
   "short-form-9-16": ["p-avatar-short", "p-gfx-short", "p-ai-character", ...],
-  "long-form-16-9": ["p-vsl", "p-longform-visual", "p-demo"],
+  "long-form-16-9": ["p-vsl", "p-longform", "p-demo"],
   "images-graphics": ["c-html-gfx", "c-ai-media", "p-thumbnail", ...]
 }
 ```
@@ -69,7 +69,7 @@ After completing your task:
   "heygen-green-screen": ["p-avatar-short", "p-avatar-screenshot-broll", "p-viral-reel --style avatar"],
   "higgsfield-cinema": ["p-ai-character", "p-viral-reel --style ai-generated"],
   "html-graphics": ["c-html-gfx", "p-gfx-short", "p-gfx-batch", "p-banner"],
-  "elevenlabs-tts": ["c-studio-audio", "p-gfx-short", "p-longform-visual"]
+  "elevenlabs-tts": ["c-studio-audio", "p-gfx-short", "p-longform"]
 }
 ```
 
@@ -122,7 +122,7 @@ Some skills have **mandatory checkpoints** — gates where the user must approve
 
 **Experimental skills** (no active feedback yet, watch for issues):
 - c-ai-media, t-replicate, c-learnloop
-- p-ai-character, p-longform-visual, p-snap-bg-swap
+- p-ai-character, p-snap-bg-swap
 - r-social-post-postforme, r-youtube-data-api
 - *[See LEARNINGS-INDEX.md → Feedback Velocity for full list]*
 

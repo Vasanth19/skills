@@ -149,19 +149,6 @@
         "Delivery checklist all 12 points required"
       ]
     },
-    "p-longform-visual": {
-      "type": "pipeline",
-      "category": "long-form",
-      "format": "16:9 landscape",
-      "description": "Tutorial video with Remotion GFX + slides + voiceover",
-      "aiMethod": "Remotion (React animation) + ElevenLabs TTS",
-      "inputs": ["brand", "tutorial script"],
-      "outputs": ["16:9 tutorial with animated slides + voiceover"],
-      "duration": "5-20 min",
-      "dependencies": ["c-html-gfx", "c-studio-audio", "c-ffmpeg"],
-      "checkpoints": ["slide preview"],
-      "learningsFile": "p-longform-visual/LEARNINGS.md"
-    },
     "p-demo": {
       "type": "pipeline",
       "category": "long-form",
@@ -537,7 +524,7 @@
       ],
       "long-form-16-9": [
         "p-vsl",
-        "p-longform-visual",
+        "p-longform",
         "p-demo"
       ],
       "images-graphics": [
@@ -588,7 +575,7 @@
       "elevenlabs-tts": [
         "c-studio-audio",
         "p-gfx-short",
-        "p-longform-visual"
+        "p-longform"
       ],
       "mlx-whisper-transcription": [
         "c-studio-audio",

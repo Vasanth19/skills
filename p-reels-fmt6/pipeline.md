@@ -1,37 +1,37 @@
-# Pipeline — r-screen-rec-vo
+# Pipeline — p-reels-fmt6
 
 Step-by-step. For scene details see `scene-bank.md`. For anti-patterns/gotchas see `anti-patterns.md`. For DoD see `acceptance.md`.
 
 ---
 
-### Step 1 — HeyGen render
+### Step 1 — Generate VO (ElevenLabs via c-audio)
 
-Standard brand voice, Marcus avatar (or whichever brand config points at). The visual is discarded — you still need HeyGen for the voice. Do not substitute ElevenLabs unless the brand config authorizes it.
+Use the brand's ElevenLabs voice (`voiceId` from `brand.yaml`) for voice consistency; alternatively accept a user-uploaded VO track.
 
-### Step 2 — Speed-adjust
+Invoke `c-audio` with the script and voiceId. The component produces a VO audio file directly — no intermediate video.
+
+```
+c-audio output → renders/vo.aac   (or renders/vo.wav if the brand preset outputs wav)
+```
+
+**Optional — Step 1b: Speed-adjust (default: skip)**
+
+`speedMultiplier` defaults to `1.0` (no change). Only apply atempo if the raw VO lands >50s:
 
 ```bash
-ffmpeg -y -i heygen/raw-avatar.mp4 \
-  -filter:v "setpts=PTS/1.25" \
+ffmpeg -y -i renders/vo.aac \
   -filter:a "atempo=1.25" \
-  -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p -r 30 \
-  heygen/avatar_1.25x.mp4
+  -c:a aac -b:a 192k -ar 48000 -ac 2 \
+  renders/vo_1.25x.aac
 ```
 
-Target check: final audio duration should land inside `35-46s`. If raw <45s, `1.1×` may be fine; if raw >50s, use `1.25×`. See `brand-params.md`.
+ElevenLabs lets you set pace at generation time — prefer adjusting pace in the `c-audio` call before reaching for post-processing atempo. Target check: VO duration should land inside `35-46s`. If raw <45s, `1.1×` atempo may be fine; if raw >50s, use `1.25×`. See `brand-params.md`.
 
-### Step 3 — Extract VO audio (discard video)
+### Step 2 — Remotion full-frame 7-scene broll
 
-```bash
-ffmpeg -y -i heygen/avatar_1.25x.mp4 -vn -c:a aac -b:a 192k -ar 48000 -ac 2 \
-  renders/marcus-vo.aac
-```
+Copy the most recent `p-reels-fmt6` Remotion project as a template (e.g., `ord-20260421-003-mgg-day2-cold-email-prompt/gfx/remotion/`). Fresh `npm install` in the new order folder — pnpm-installed `node_modules` do not survive a filesystem copy.
 
-### Step 4 — Remotion full-frame 7-scene broll
-
-Copy the most recent `r-screen-rec-vo` Remotion project as a template (e.g., `ord-20260421-003-mgg-day2-cold-email-prompt/gfx/remotion/`). Fresh `npm install` in the new order folder — pnpm-installed `node_modules` do not survive a filesystem copy.
-
-Budget the scenes against the extracted audio length. Example for 42.56s VO:
+Budget the scenes against the VO audio length. Example for 42.56s VO:
 
 | # | Scene | Budget (f @ 30fps) | Beat |
 |---|---|---|---|
@@ -48,10 +48,10 @@ Budget the scenes against the extracted audio length. Example for 42.56s VO:
 cd gfx/remotion && ./node_modules/.bin/remotion render ColdEmailShort out/broll.mp4 --log=info --concurrency=2
 ```
 
-### Step 5 — Compose video + VO + loudnorm
+### Step 3 — Compose video + VO + loudnorm
 
 ```bash
-ffmpeg -y -i gfx/remotion/out/broll.mp4 -i renders/marcus-vo.aac \
+ffmpeg -y -i gfx/remotion/out/broll.mp4 -i renders/vo.aac \
   -filter_complex "[0:v]null[outv];[1:a]loudnorm=I=-16:TP=-1.5:LRA=11[outa]" \
   -map "[outv]" -map "[outa]" \
   -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p -r 30 -fps_mode cfr \
@@ -61,7 +61,7 @@ ffmpeg -y -i gfx/remotion/out/broll.mp4 -i renders/marcus-vo.aac \
 
 `-shortest` trims the video to the audio's exact duration. No PIP overlay step.
 
-### Step 6 — Append outro + canonical re-encode
+### Step 4 — Append outro + canonical re-encode
 
 ```bash
 # normalize outro if needed
@@ -80,7 +80,7 @@ ffmpeg -y -i renders/composed-with-outro.mp4 \
   final/short.mp4
 ```
 
-### Step 7 — Cover extract
+### Step 5 — Cover extract
 
 ```bash
 ffmpeg -y -ss <mid-beat-seconds> -i final/short.mp4 -frames:v 1 -q:v 2 final/cover.png
@@ -88,7 +88,7 @@ ffmpeg -y -ss <mid-beat-seconds> -i final/short.mp4 -frames:v 1 -q:v 2 final/cov
 
 Pick a timestamp where the Claude UI + prompt or AI response is most legible — usually mid-PromptReveal or start of ResponseReveal. **Not the Hook scene** (abstract text; cover should show the "money shot").
 
-### Step 8 — Delivery checklist
+### Step 6 — Delivery checklist
 
 Run all 12 spec checks. For this recipe:
 - Resolution: 1080×1920
@@ -97,6 +97,6 @@ Run all 12 spec checks. For this recipe:
 - B-frames: {I, P} only (outro source has them; re-encode strips)
 - PIP safe zone: n/a — document "no PIP by design"
 
-### Step 9 — CMO handoff
+### Step 7 — CMO handoff
 
 Standard CMO template. **Flag duration drift** if final is over the 35-46s target ceiling (the +5s outro often pushes final to 47-51s). Note that it remains well within the 60s Shorts hard cap.

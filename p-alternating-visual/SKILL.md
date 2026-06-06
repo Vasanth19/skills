@@ -18,7 +18,7 @@ dependsOn: [c-heygen, f-remotion, c-ai-media, c-ffmpeg]
 
 **Brand:** Mr Growth Guide (B-GROWTHGUIDE) — tutorial/explainer recipe
 **Paperclip ticket:** VAS-8
-**Sibling recipes:** `p-bottom-avatar-pip` (default PIP-over-broll Shorts), `p-screen-rec-vo` (no-face VO-only)
+**Sibling recipes:** `p-bottom-avatar-pip` (default PIP-over-broll Shorts), `p-reels-fmt6` (no-face VO-only screen-rec)
 
 ## Sub-documents
 

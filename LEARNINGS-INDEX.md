@@ -169,8 +169,8 @@ Agent workflow:
 - No feedback yet
 
 ### p-longform-visual
-**2026-05-08** — Initial template
-- No feedback yet
+**2026-06-05** — Merged into p-longform. No longer a standalone recipe.
+- See p-longform for learnings going forward.
 
 ### p-manual-execution
 **2026-05-08** — Initial template
@@ -240,7 +240,7 @@ Agent workflow:
 - ACTIVE FEEDBACK: Unicode/charset, window size on macOS
 
 ### Long-form Production
-- p-vsl, p-longform-visual, p-demo
+- p-vsl, p-longform, p-demo
 - ACTIVE FEEDBACK: script approval, b-roll review, delivery checklist
 
 ### Short-form Production
@@ -264,7 +264,7 @@ Agent workflow:
 
 **Skills with no ACTIVE FEEDBACK yet** (watch for issues):
 - c-ai-media, c-cloud-media, t-heygen, t-kie-ai, c-learnloop, t-replicate, c-studio-production, c-studio-script, c-web-capture
-- p-ai-character, p-avatar-screenshot-broll, p-banner, p-broll, p-broll-media, p-demo, p-gfx-batch, p-gfx-short, p-hook-reel, p-linkedin-carousel, p-longform-visual, p-manual-execution, p-snap-bg-swap, p-thumbnail
+- p-ai-character, p-avatar-screenshot-broll, p-banner, p-broll, p-broll-media, p-demo, p-gfx-batch, p-gfx-short, p-hook-reel, p-linkedin-carousel, p-manual-execution, p-snap-bg-swap, p-thumbnail
 - r-cfw-publisher, r-social-post-postforme, r-social-post-upload, r-youtube-data-api
 
 ---

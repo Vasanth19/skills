@@ -116,7 +116,7 @@ Complete production pipelines. Invoked by Creative Director or Video Producer ag
 `p-avatar-short`, `p-gfx-short`, `p-gfx-batch`, `p-ai-character`, `p-hook-reel`, `p-viral-reel`, `p-snap-bg-swap`
 
 **Long-form (16:9):**
-`p-vsl`, `p-longform-visual`, `p-demo`
+`p-vsl`, `p-longform`, `p-demo`
 
 **Graphics/Publishing:**
 `p-thumbnail`, `p-linkedin-carousel`, `p-banner`, `p-broll`, `p-broll-media`, `p-manual-execution`

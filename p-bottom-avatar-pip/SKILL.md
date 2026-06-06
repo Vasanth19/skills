@@ -18,7 +18,7 @@ dependsOn: [c-heygen, c-broll, c-ffmpeg]
 
 **Brand:** Mr Growth Guide (B-GROWTHGUIDE) — default Shorts recipe
 **Paperclip ticket:** VAS-7
-**Sibling recipes:** `p-alternating-visual` (tutorial alternating cuts), `p-screen-rec-vo` (no-face VO-only)
+**Sibling recipes:** `p-alternating-visual` (tutorial alternating cuts), `p-reels-fmt6` (no-face VO-only screen-rec)
 
 ## Sub-documents
 
