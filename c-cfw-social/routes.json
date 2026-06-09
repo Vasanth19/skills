@@ -87,8 +87,6 @@
 
     { "path": "/api/v1/music-tracks", "methods": ["GET"], "auth": "session" },
 
-    { "path": "/api/v1/openclaw/webhook", "methods": ["POST"], "auth": "session", "body": {} },
-
     { "path": "/api/v1/ops-prescriptions", "methods": ["GET"], "auth": "api-or-session" },
     { "path": "/api/v1/ops-prescriptions/admin", "methods": ["GET"], "auth": "webhook", "_note": "operator-only surface: uses Better-Auth session + User.role='admin', returns 404 (not 403) by design. Skipped by smoke runner — not reachable via master-key auth." },
 
