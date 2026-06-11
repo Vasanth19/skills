@@ -1,0 +1,117 @@
+<!doctype html>
+<!--
+  p-reels-fmt3 v0.5 — ROOT composition shell (premium edit).
+
+  This file is FILLED by the assembler (Step 5 of SKILL.md), never authored at
+  runtime. It MUST stay a full HTML document (doctype + html/head/body) — a
+  bare composition div is a fragment the bundler cannot inject runtime
+  scripts into ("Unexpected token" errors at validate/render).
+
+  The speaker bed plays full-frame on track 0; opaque takeover
+  sub-compositions cover the picture during their windows on tracks 1+i
+  (one track each); the kinetic caption overlay rides on top on track 9.
+  The render is SILENT — the loudnormed bed audio + SFX are muxed in ffmpeg
+  afterward, which is what preserves fmt3's never-cut-the-voice-bed law.
+
+  Placeholders:
+    DURATION      — full reel duration in seconds (= bed duration)
+    VIDEO_SRC     — relative path to the normalized speaker bed (base.mp4)
+    BG            — brand canvas color (hex)
+    TAKEOVER_DIVS — one sub-composition loader div per takeover window,
+                    generated from plan.json (see assembler). Each takeover
+                    gets its OWN track index (1+i) and explicit
+                    data-width/data-height.
+                    (Keep this comment free of literal angle-bracket tags and
+                    of double-brace tokens — the linter's tag scanner does not
+                    skip comments, and the assembler fills tokens anywhere.)
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: #000;
+      }
+      #root {
+        position: relative;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: {{BG}};
+      }
+      #root > video {
+        position: absolute;
+        inset: 0;
+        width: 1080px;
+        height: 1920px;
+        object-fit: cover;
+        z-index: 0;
+      }
+      #root .takeover-slot {
+        position: absolute;
+        inset: 0;
+        z-index: 50;
+      }
+      #root .caption-slot {
+        position: absolute;
+        inset: 0;
+        z-index: 100;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="premium-reel"
+      data-start="0"
+      data-duration="{{DURATION}}"
+      data-width="1080"
+      data-height="1920"
+    >
+      <!-- Track 0 — the speaker bed, full-frame, full-length. muted: audio is muxed later. -->
+      <video
+        id="bed"
+        data-start="0"
+        data-duration="{{DURATION}}"
+        data-track-index="0"
+        src="{{VIDEO_SRC}}"
+        muted
+        playsinline
+      ></video>
+
+      {{TAKEOVER_DIVS}}
+
+      <!-- Track 9 — kinetic caption overlay, spans the whole reel -->
+      <div
+        id="captions"
+        class="caption-slot"
+        data-composition-id="caption-overlay"
+        data-composition-src="compositions/caption-overlay.html"
+        data-start="0"
+        data-duration="{{DURATION}}"
+        data-width="1080"
+        data-height="1920"
+        data-track-index="9"
+      ></div>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      // Root carries no tweens of its own — the framework auto-nests the
+      // takeover + caption sub-timelines.
+      window.__timelines["premium-reel"] = gsap.timeline({ paused: true });
+    </script>
+  </body>
+</html>
