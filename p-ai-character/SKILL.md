@@ -12,7 +12,7 @@ produces:
   format: 9:16 vertical video
   duration: 30-60s
 inputs: [story_concept]
-dependsOn: [c-ai-media, c-ffmpeg]
+dependsOn: [c-ai-media, c-ffmpeg, c-music]
 ---
 
 # pipeline-ai-character — AI Character Short (9:16)
@@ -38,7 +38,8 @@ Visual storytelling: character lock → Gemini scene images → Hailuo animation
 | production_name | Yes | — | Folder name |
 | story_concept | Yes | — | One-paragraph story concept |
 | character_description | Yes | — | Visual character description (all 6 attributes) |
-| audio_track | Yes | — | Path to music/audio track |
+| audio_track | Yes | — | Background music. Library `cdnUrl` from `list_music_tracks` (preferred) or a local path. If a `media.cfw.social` URL, it is fetched to disk in Step 5a via `c-music`. |
+| music_track_id | No | — | `MusicTrack.id` from `list_music_tracks` — pass to `attach_output_to_composition(musicTrackId)` so CC-BY attribution auto-appends on publish |
 | type | No | `human` | `human` or `plush` — controls character audit checklist and prompt tone |
 | num_scenes | No | `5` | Number of scenes |
 | character_method | No | `gemini` | `gemini` or `floe` |
@@ -125,6 +126,21 @@ For each approved scene image:
 → Motion prompt: match scene motion cue (short, gentle)
 → Poll for completion (5–10 min per clip)
 → Output: `interim/broll/segments/scene-{N}-anim.mp4`
+
+---
+
+## Step 5a — Resolve background music
+
+If `$audio_track` is a `https://media.cfw.social/...` library URL (the normal case — the
+Director picks it via `list_music_tracks`), fetch it to disk first; recipes mux a local
+file, not a URL.
+
+→ Skill: `c-music` (with `MUSIC_CDN_URL=$audio_track`, `MUSIC_TRACK_ID=$music_track_id`)
+- Set `$audio_track` to the returned `AUDIO_PATH` for the mux below.
+- Carry `MUSIC_TRACK_ID` through to `attach_output_to_composition(musicTrackId)` at
+  delivery so CC-BY attribution auto-appends to the caption.
+
+If `$audio_track` is already a local path, skip this step.
 
 ---
 
