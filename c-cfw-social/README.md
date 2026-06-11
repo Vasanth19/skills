@@ -7,7 +7,7 @@ THE comprehensive reference for managing the CFW Social application.
 CFW Social is the main application — a Next.js 16 app with a Prisma/PostgreSQL backend that handles:
 - **Brands** (tenants) with DNA, insights, social connections
 - **Workspaces** (topic containers) with agents, sources, runs, compositions
-- **Runs** (agent executions) that produce outputs via the cfw-agent orchestrator
+- **Runs** (agent executions) that produce outputs
 - **Compositions** (type-locked deliverables) that go through human approval
 - **Posts** (scheduled/published content) dispatched to social platforms
 - **Auth** (Better Auth sessions, brand-scoped API keys, webhooks, signed tokens)
@@ -59,4 +59,3 @@ CFW Social is the main application — a Next.js 16 app with a Prisma/PostgreSQL
 ## Related skills
 
 - [`c-cfw-social-smoke-test`](../c-cfw-social-smoke-test/) — smoke-test runner for the HTTP API
-- [`c-cfw-agent`](../c-cfw-agent/) — how to talk to the cfw-agent orchestrator via MCP

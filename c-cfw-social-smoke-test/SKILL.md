@@ -13,7 +13,6 @@ This folder contains the **smoke-test runner** for cfw-social HTTP API endpoints
 |---|---|---|
 | `SKILL.md` (this file) — drives `smoke.mjs` + `routes.json` | engineers QA'ing cfw-social | You touched `src/app/api/**` and want a fast 5xx hunt across every route |
 
-> **Related:** [`c-cfw-agent`](../c-cfw-agent/) — caller's guide for the cfw-agent MCP (`cfw_run` tool).  
 > **Related:** [`c-cfw-social`](../c-cfw-social/) — comprehensive management guide for the CFW Social app (data model, lifecycle, operations).
 
 ---

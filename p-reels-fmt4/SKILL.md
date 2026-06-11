@@ -2,7 +2,7 @@
 name: p-reels-fmt4
 description: Turn a script into a fully rendered explainer reel with no talking head — one REAL animated HyperFrames motion-graphics composition per beat (charts that draw/count on, terminals that type, diagrams that flow, checklists that check off) plus voiceover. NO stock/AI b-roll, NO static stills. Trigger on "make an explainer reel from this script", "faceless animated short with VO", "no-avatar explainer video", "script to animated reel with voiceover".
 when-to-use: Use when the user wants a faceless explainer reel — numbered/listicle or beat-by-beat brand motion-graphics with a voiceover, NO talking-head avatar and NO random b-roll. Every beat's visual is a genuinely animated HyperFrames composition, not a still card.
-version: 4.4.0
+version: 4.6.0
 kind: pipeline
 visibility: catalog
 providers: elevenlabs
@@ -159,6 +159,45 @@ Example windows from the verified v4 render (VO 39.15s):
 | outro | 39.15 → ~44 | — | brand outro clip (keeps its own audio) |
 
 ### 4 — Author one ANIMATED HyperFrames composition per beat (PRIMARY PATH)
+
+> **HARD GATE — DELEGATE THE BEATS (v4.6). This is the #1 rule of Step 4.**
+> You (the Director) **MUST** render the beats by calling **`delegate_task` with a `tasks` array — one
+> task object per beat** — so they render IN PARALLEL. **Authoring a beat yourself in this loop
+> (running `npx hyperframes init` / `lint` / `render` directly via the `terminal` tool) is a HARD
+> FAILURE of this format.** The ONLY permitted exception: a `delegate_task` call returns an error
+> saying delegation is unavailable — only THEN may you author beats inline (Serial fallback below). If
+> you are about to type `npx hyperframes` into `terminal` and you have NOT yet called `delegate_task`,
+> STOP — that is the bug.
+
+**Parent (Director) does the shared setup ONCE, then delegates ALL beats in a SINGLE `delegate_task` call:**
+1. Resolve the **Visual Identity Gate** (Brand Brief: palette, fonts, ghost/grid/glow) — capture it as
+   a compact text block to pass to every child VERBATIM (children cannot see your gate result).
+2. Build the **beat list** from the SRT (Step 3): each beat's `index`, `slug`, script line, `data-duration`.
+3. Ensure `$WORK/gfx` exists and `npx hyperframes` runs there.
+4. **Call `delegate_task` ONCE with a `tasks` array — one task per beat** (the runtime runs up to 3 in
+   parallel; children inherit this profile's skills + MCP). COPY this shape, one task object per beat:
+
+```json
+delegate_task({
+  "tasks": [
+    {
+      "goal": "Author + render ONE 1080x1920 animated HyperFrames composition for beat 0 (hook); return its MP4 path.",
+      "context": "WORK_GFX=<abs path>/gfx | index=0 slug=hook | script_line=<this beat VO line> | data-duration=5.3 | BRAND BRIEF (verbatim): <palette/fonts/ghost/grid/glow>. DO: read f-hyperframes/SKILL.md via skill_view, then follow p-reels-fmt4 Step 4 doctrine (FOREGROUND HERO mandatory; every element gsap.from(); AMBIENT MOTION the whole window; icons inline SVG never emoji; local media only; Oswald + JetBrains Mono). RUN: npx hyperframes init beat0-hook --non-interactive -> author index.html -> npx hyperframes lint (0 errors REQUIRED) -> npx hyperframes render --output beat0-hook.mp4 --fps 30 --quality high. RETURN the absolute MP4 path + confirm lint=0. Do NOT concat/mux/upload. Touch ONLY your own beat folder.",
+      "toolsets": ["terminal", "skills", "web"]
+    }
+  ]
+})
+```
+
+   Add one more task object per remaining beat (beat1, beat2, …) in the SAME call.
+5. **Collect** every child's returned MP4 path; verify each exists + is non-empty (`ffprobe`
+   codec_type=video), THEN go to Step 5 (concat). If a child failed or returned no valid MP4,
+   re-delegate THAT beat once; if it fails twice, author that one beat inline. **Never concat a missing beat.**
+
+> **Serial fallback (ONLY if `delegate_task` itself is unavailable):** author every beat inline with
+> the per-beat spec below — identical doctrine, just no parallelism.
+
+**Per-beat authoring spec — this is what EACH `delegate_task` CHILD does. The Director runs these commands directly ONLY in the serial fallback above:**
 For EACH beat, scaffold a project and author a full-frame 1080×1920 composition whose visual is
 genuinely animated and purpose-built to illustrate THAT beat's line:
 

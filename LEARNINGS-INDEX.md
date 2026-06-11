@@ -195,10 +195,6 @@ Agent workflow:
 - B-roll plan review (see ACTIVE FEEDBACK above)
 - Delivery checklist (see ACTIVE FEEDBACK above)
 
-### r-cfw-publisher
-**2026-05-08** — Initial template
-- No feedback yet
-
 ### r-social-post-outstand
 **2026-05-08** — Initial template
 - Auth and pricing rules (see ACTIVE FEEDBACK above)
@@ -265,7 +261,7 @@ Agent workflow:
 **Skills with no ACTIVE FEEDBACK yet** (watch for issues):
 - c-ai-media, c-cloud-media, t-heygen, t-kie-ai, c-learnloop, t-replicate, c-studio-production, c-studio-script, c-web-capture
 - p-ai-character, p-avatar-screenshot-broll, p-banner, p-broll, p-broll-media, p-demo, p-gfx-batch, p-gfx-short, p-hook-reel, p-linkedin-carousel, p-manual-execution, p-snap-bg-swap, p-thumbnail
-- r-cfw-publisher, r-social-post-postforme, r-social-post-upload, r-youtube-data-api
+- r-social-post-postforme, r-social-post-upload, r-youtube-data-api
 
 ---
 

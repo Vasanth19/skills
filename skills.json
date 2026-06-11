@@ -481,12 +481,6 @@
       "api": "YouTube Data API v3",
       "learningsFile": "r-youtube-data-api/LEARNINGS.md"
     },
-    "r-cfw-publisher": {
-      "type": "workflow",
-      "category": "publishing",
-      "description": "CFW content sync and recovery",
-      "learningsFile": "r-cfw-publisher/LEARNINGS.md"
-    },
     "c-cfw-social-smoke-test": {
       "type": "tool",
       "category": "qa-testing",
@@ -502,12 +496,6 @@
       "category": "app-management",
       "description": "Comprehensive management guide for the CFW Social app — Prisma data model, entity relationships, run/output/composition lifecycle, approval workflows, publishing system, auth cascade, admin operations.",
       "learningsFile": "c-cfw-social/LEARNINGS.md"
-    },
-    "c-cfw-agent": {
-      "type": "tool",
-      "category": "integration",
-      "description": "How to interact with the cfw-agent orchestrator via its MCP — cfw_run tool, 28 MCP tools exposed at /api/v1/mcp, registration, auth, example prompts, error modes, orchestrator contract v1.",
-      "learningsFile": "c-cfw-agent/LEARNINGS.md"
     }
   },
   "searchIndexes": {

@@ -157,7 +157,7 @@ Schema:
 { \"duration\": $DUR, \"energy\": \"high|medium|low\", \"grade\": \"warm-amber|clean-bright\",
   \"brand\": {\"bg\":\"#hex6\",\"accent\":\"#hex6\",\"fg\":\"#hex6\"},
   \"takeovers\": [ {\"start\":s,\"end\":s,\"template\":\"tk-stat|tk-keyword|tk-list|tk-quote\",
-                    \"fill\":{...per-template keys below...}} ],
+                    \"fill\":{<per-template keys below>}} ],
   \"caption_groups\": [ {\"start\":s,\"end\":s,\"style\":0|1|2,
         \"words\":[{\"w\":\"TEXT\",\"s\":start,\"e\":end,\"em\":false}] } ],
   \"sfx\": [ {\"t\":s,\"name\":\"whoosh-deep|whoosh-air|impact-sub|impact-punch|riser|click|pop|swipe\",\"gain\":0.0-0.8} ] }
@@ -410,7 +410,7 @@ picture assembly moved into HyperFrames.
   validate/render. Sub-composition files keep the `<template>` wrapper. The shipped `root-shell`
   already has the right shape; don't "simplify" it.
 - **Inside sub-composition scripts, `window` is a sandbox Proxy that does not bind methods.**
-  `window.getComputedStyle(...)` throws `Illegal invocation` — call bare globals
+  `window.getComputedStyle(el)` throws `Illegal invocation` — call bare globals
   (`getComputedStyle(el)`) instead. `window.__timelines` / `window.__hyperframes` are fine.
 - **Run `npx hyperframes validate` after lint** — it executes the scripts in headless Chrome and
   catches runtime errors (like the above) that static lint cannot.

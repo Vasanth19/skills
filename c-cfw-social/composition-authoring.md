@@ -266,4 +266,4 @@ These live in `cfw-social/src/lib/openclaw/tools/propose-composition.ts`:
 - `data-model.md` — `Composition` / `Output` field glossary
 - `workspace-operations.md` — composition types × platforms, platform constraint table
 - `publishing.md` — how approved compositions become Posts and publish
-- `c-cfw-agent` skill — the MCP tools (`propose_composition`, `attach_output_to_composition`, `request_approval`)
+- `external-agent-api.md` — the MCP tools (`propose_composition`, `attach_output_to_composition`, `request_approval`)

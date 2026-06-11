@@ -70,5 +70,3 @@ This is the canonical skill for understanding, operating, and debugging the **CF
 ## See also
 
 - `c-cfw-social-smoke-test` — smoke-test runner for confirming no 5xx's after deploy
-- `c-cfw-agent` — how to talk to the cfw-agent orchestrator via its MCP (`cfw_run` tool)
-- `cfw-social/docs/orchestrator-contract-v1.md` — the frozen SSE contract between cfw-social and cfw-agent

@@ -245,7 +245,7 @@ curl -s -X POST https://app.cfw.social/api/v1/agents \
   -H "Content-Type: application/json" \
   -d '{
     "name": "VSL Writer",
-    "skillNames": ["p-vsl", "r-cfw-publisher"],
+    "skillNames": ["p-vsl", "r-social-post-postforme"],
     "persona": "You write punchy VSL scripts in the brand voice.",
     "allowDiscovery": false
   }'
@@ -462,5 +462,4 @@ platform per composition.
 - `auth.md` — full auth cascade theory
 - `routes.json` — canonical route inventory
 - `local-dev.md` — local dev equiv. patterns
-- `c-cfw-agent` skill — how to call the orchestrator (`cfw_run`)
 - `cfw-social/docs/orchestrator-contract-v1.md` — SSE event schema spec

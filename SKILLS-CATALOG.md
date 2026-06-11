@@ -208,15 +208,6 @@ Every skill is **self-sufficient** (reads LEARNINGS.md before executing) and **s
 
 ---
 
-### Content Management & Publishing
-| Skill | Method | Purpose | Self-Learn |
-|--------|---------|---------|-----------|
-| **r-cfw-publisher** | CFW content sync | Recover stuck executions, republish content variants | ✅ LEARNINGS.md |
-
-**When to use:** CFW platform-specific publishing, variant management.
-
----
-
 ## 🏢 CFW SOCIAL APP MANAGEMENT
 
 ### The CFW Social Platform
@@ -227,19 +218,6 @@ Every skill is **self-sufficient** (reads LEARNINGS.md before executing) and **s
 **Files:** `data-model.md` · `lifecycle.md` · `brand-management.md` · `workspace-operations.md` · `approval-workflow.md` · `publishing.md` · `media-capture.md` · `auth.md` · `integrations.md` · `admin-runbook.md` · `routes.json`
 
 **When to use:** Any question about how CFW Social works internally — brands, workspaces, runs, outputs, posts, scheduling, approvals, billing, team access, webhooks.
-
----
-
-## 🤖 CFW AGENT INTEGRATION
-
-### The CFW Agent Orchestrator
-| Skill | What it covers | Read it for |
-|-------|---------------|-------------|
-| **c-cfw-agent** | How to call cfw-agent via its MCP (`cfw_run` tool), register in Claude Code, auth flow, 28 MCP tools at `/api/v1/mcp`, orchestrator contract v1 | Talking to the cfw-agent from outside (Claude Code, curl, CI) |
-
-**Files:** `mcp.md` · `mcp-example.sh` · `cfw-run.md` · `orchestration-contract.md`
-
-**When to use:** Setting up cfw-agent MCP, calling `cfw_run`, understanding the SSE contract, troubleshooting agent errors.
 
 ---
 
@@ -340,7 +318,6 @@ Every skill is **self-sufficient** (reads LEARNINGS.md before executing) and **s
 
 - **CFW Social app internals** → `c-cfw-social` (data model, lifecycle, auth, admin)
 - **Smoke test after deploy** → `c-cfw-social-smoke-test`
-- **Call cfw-agent from Claude Code** → `c-cfw-agent` (MCP registration, `cfw_run`)
 - **Recover a stuck run** → `c-cfw-social/admin-runbook.md`
 - **Set up social platform OAuth** → `c-cfw-social/integrations.md`
 - **Understand the approval flow** → `c-cfw-social/approval-workflow.md`

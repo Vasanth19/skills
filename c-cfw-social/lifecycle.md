@@ -9,7 +9,7 @@ How work moves through the CFW Social system: from user intent → agent executi
 A `Run` is a single agent execution. It starts with a user prompt and ends with zero or more `Output`s.
 
 ```
-┌─────────┐   POST /chat/stream or MCP cfw_run   ┌─────────┐
+┌─────────┐          POST /chat/stream           ┌─────────┐
 │  User   │ ────────────────────────────────────▶│  Run    │
 │ Intent  │   { workspaceId, agentId, prompt,    │ pending │
 │         │     sources, allowedSkills, model }  └────┬────┘
