@@ -11,7 +11,7 @@ produces:
   format: 9:16 vertical video
   duration: 30-60s
 inputs: [script, broll]
-dependsOn: [c-heygen, c-ffmpeg, c-broll]
+dependsOn: [c-heygen, c-ffmpeg, c-broll, c-reel-premium]
 ---
 
 # p-reels-fmt2 — Rich-Graphics Background + HeyGen Talking Head → PIP Vertical Reel
@@ -199,8 +199,8 @@ Set `$AV` = avatar video, `$OUT` = final path, `$W` = a scratch `work/` dir, `$M
    already a 720×720 square. For a different avatar, first apply the measured Step-3.5 band crop, then
    recompute the square `S`/`Xoff` on the cleaned result. Always keep `Yoff=0` — never crop the top.
 
-5. **Captions (optional).** Burn word-level captions over `$W/composed.mp4` via `c-ffmpeg` if a
-   transcript/SRT is available. Skipped for layout previews.
+5. **Captions — SUPERSEDED by the premium polish pass (step 6.5).** The old plain SRT burn is
+   only the fallback when the polish pass is explicitly off; skip this step otherwise.
 
 6. **Append outro (optional).** Normalize the outro to match the composite, then concat via the
    **filter** (demuxer `-c copy` causes channel-config jitter at the boundary):
@@ -217,6 +217,18 @@ Set `$AV` = avatar video, `$OUT` = final path, `$W` = a scratch `work/` dir, `$M
      -c:a aac -b:a 192k -ar 48000 -ac 2 -movflags +faststart -y "$OUT"
    ```
    No outro → `$W/composed.mp4` is the final.
+
+6.5. **Premium polish pass (captions + SFX + grade) — DEFAULT ON.**
+   → Skill: `c-reel-premium` — follow its Steps P1–P4 over `$OUT`:
+   ```bash
+   PREMIUM_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" -maxdepth 4 -type d -name c-reel-premium 2>/dev/null | head -1)
+   # REEL_IN="$OUT"  REEL_OUT="$OUT"
+   # WORDS_JSON: transcribe the avatar audio (npx hyperframes transcribe "$OUT" --model small; NO .en unless confirmed English)
+   # CAP_TOP=1020   <- the caption band MUST clear the bottom avatar PIP
+   # CAPTIONS=on  SFX=on  GRADE=<planner picks>
+   ```
+   Format defaults: **CAP_TOP=1020** (bottom-PIP clearance), captions ON, SFX ON, grade ON. The
+   pass never extends/trims the reel and never re-touches the audio mastering.
 
 7. **Verify (ffprobe).** Confirm 1080×1920, h264/yuv420p, aac stereo 48k, expected duration, and
    that the outro tail carries audio (`mean_volume > -60 dB`):

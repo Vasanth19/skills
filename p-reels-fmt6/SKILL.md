@@ -9,7 +9,7 @@ produces:
   format: 9:16 vertical video
   duration: 35-50s
 inputs: [script]
-dependsOn: [c-audio, f-remotion, c-ffmpeg]
+dependsOn: [c-audio, f-remotion, c-ffmpeg, c-reel-premium]
 ---
 
 # p-reels-fmt6
@@ -48,6 +48,23 @@ Pick `p-reels-fmt6` when:
 | `voiceId` | No | from `brand.yaml` | Override brand ElevenLabs voice |
 | `speedMultiplier` | No | `1.0` | Optional atempo multiplier (post-generation); default 1.0 (no change). Use 1.25 only if raw VO lands >50s. |
 | `targetDuration` | No | 35-46s | Final duration window (not including outro ~5s) |
+
+## Premium polish pass (SFX + grade; captions OFF by default)
+
+After `pipeline.md` Step 9 produces `final/short.mp4` and BEFORE any upload/handoff:
+
+→ Skill: `c-reel-premium` — follow its Steps P1–P4 over the final file:
+
+```bash
+PREMIUM_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" -maxdepth 4 -type d -name c-reel-premium 2>/dev/null | head -1)
+# REEL_IN/REEL_OUT=final/short.mp4  WORDS_JSON=<the VO transcript>
+# CAPTIONS=off   <- the typing/terminal scenes already carry on-screen text; kinetic captions
+#                   would double-caption. Enable only if the brief asks.
+# SFX=on  GRADE=<planner picks>
+```
+
+Format defaults: captions OFF, SFX ON (whoosh/impact cues lift the scene transitions), grade ON.
+The pass never extends/trims the reel and never re-touches the VO mastering.
 
 ## Output
 

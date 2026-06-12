@@ -11,7 +11,7 @@ produces:
   format: 9:16 vertical video
   duration: 20-60s
 inputs: [talking_head_video, broll_media]
-dependsOn: [c-audio, c-broll, c-ffmpeg, f-remotion, c-cloud-media]
+dependsOn: [c-audio, c-broll, c-ffmpeg, f-remotion, c-cloud-media, c-reel-premium]
 ---
 
 # p-reels-rmtn-fmt5 — Uploaded Talking-Head PIP over an INTERACTIVE Remotion background
@@ -109,6 +109,22 @@ Concat the `bg_beat*.mp4` → `$W/bg-all.mp4`; brightness-verify it is not black
 ### 6 — Composite the SMALL uploaded-PIP (identical to fmt5 Step 5)
 ffprobe `$TH`; scale-to-FIT into a 400×540 card (whole face, no crop); **portrait → bottom-LEFT,
 square/landscape → bottom-CENTER**, 80px margins; map the talking head's own audio.
+
+### 6.5 — Premium polish pass (captions + SFX + grade) — DEFAULT ON
+
+→ Skill: `c-reel-premium` — follow its Steps P1–P4 over the composited reel:
+
+```bash
+PREMIUM_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" -maxdepth 4 -type d -name c-reel-premium 2>/dev/null | head -1)
+# REEL_IN/REEL_OUT=<the Step-6 composite>  WORDS_JSON="$W/th_transcript.json" (from Step 2)
+# CAP_TOP=1020   <- the caption band MUST clear the bottom PIP card
+# CAPTIONS=on  SFX=on  GRADE=<planner picks>
+```
+
+Format defaults: **CAP_TOP=1020** (bottom-PIP clearance), captions ON, SFX ON, grade ON. The pass
+never extends/trims the reel and never re-touches the audio mastering. (The polish overlay renders
+in HyperFrames even though this format's background is Remotion — it operates on the finished MP4,
+so the two never meet.)
 
 ### 7-9 — Audio mix (optional) → Visual QA Gate (MANDATORY, read 6 frames: scenes animate, typing is
 legible, PIP shows the full face + margin, no black) → upload to R2 + print the URL on the LAST line.

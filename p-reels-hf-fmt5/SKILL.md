@@ -11,7 +11,7 @@ produces:
   format: 9:16 vertical video
   duration: 20-60s
 inputs: [talking_head_video, broll_media]
-dependsOn: [c-audio, c-broll, c-ffmpeg, f-hyperframes, c-cloud-media]
+dependsOn: [c-audio, c-broll, c-ffmpeg, f-hyperframes, c-cloud-media, c-reel-premium]
 ---
 
 # p-reels-hf-fmt5 — Uploaded Talking-Head PIP over Transcript-Synced Background
@@ -321,6 +321,21 @@ Also confirm the **VO is the clear audio foreground** and **no static-only stret
 **If ANY check on ANY frame fails: fix and RE-RENDER. Re-extract the frames and look again. Repeat
 until every frame passes. NEVER upload a reel that fails this gate** (the all-black-background reel
 that prompted this recipe would fail check (a) immediately).
+
+### 8.5 — Premium polish pass (captions + SFX + grade) — DEFAULT ON
+
+→ Skill: `c-reel-premium` — follow its Steps P1–P4 over `$OUT`:
+
+```bash
+PREMIUM_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" -maxdepth 4 -type d -name c-reel-premium 2>/dev/null | head -1)
+# REEL_IN="$OUT"  REEL_OUT="$OUT"  WORDS_JSON="$W/th_transcript.json"  (already produced in Step 2)
+# CAP_TOP=1020   <- the caption band MUST clear the bottom PIP card
+# CAPTIONS=on  SFX=on  GRADE=<planner picks>
+```
+
+Format defaults: **CAP_TOP=1020** (bottom-PIP clearance), captions ON (word-synced kinetic
+captions, brand-accent keyword pops), SFX ON, grade ON. The pass never extends/trims the reel and
+never re-touches the audio mastering — the talking head's own voice stays exactly as mastered.
 
 ### 9 — Upload to R2 and print the URL (LAST LINE)
 

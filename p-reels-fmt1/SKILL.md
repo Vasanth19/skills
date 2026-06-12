@@ -11,7 +11,7 @@ produces:
   format: 9:16 vertical video
   duration: 30-60s
 inputs: [main_video, broll_clips]
-dependsOn: [c-ffmpeg, c-broll, c-audio, f-hyperframes, f-hyperframes-cli]
+dependsOn: [c-ffmpeg, c-broll, c-audio, f-hyperframes, f-hyperframes-cli, c-reel-premium]
 ---
 
 # p-reels-fmt1 — Graphics-Background Reel with Bottom Webcam PIP
@@ -248,6 +248,21 @@ Normalize the outro (keep its own audio), then concat body + outro:
 ffmpeg -y -i "$OUTRO" -vf "$NORM" -af "aresample=48000" -r 30 -c:v libx264 -preset veryfast -crf 20 -pix_fmt yuv420p -c:a aac -ar 48000 -ac 2 -b:a 192k outro.mp4
 ffmpeg -y -i body.mp4 -i outro.mp4 -filter_complex "[0:v][0:a][1:v][1:a]concat=n=2:v=1:a=1[v][a]" -map "[v]" -map "[a]" -c:v libx264 -preset veryfast -crf 20 -pix_fmt yuv420p -movflags +faststart -c:a aac -ar 48000 -ac 2 -b:a 192k "$OUTPUT"
 ```
+
+### 6.5 Premium polish pass (captions + SFX + grade) — DEFAULT ON
+
+→ Skill: `c-reel-premium` — follow its Steps P1–P4 over `$OUTPUT`:
+
+```bash
+PREMIUM_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" -maxdepth 4 -type d -name c-reel-premium 2>/dev/null | head -1)
+# REEL_IN="$OUTPUT"  REEL_OUT="$OUTPUT"  WORDS_JSON=<the Step-1 word transcript of the main video>
+# CAP_TOP=1020   <- the caption band MUST clear the bottom webcam PIP
+# CAPTIONS=on  SFX=on  GRADE=<planner picks>
+```
+
+Format defaults: **CAP_TOP=1020** (bottom-PIP clearance), captions ON (word-synced kinetic
+captions, brand-accent keyword pops), SFX ON, grade ON. The pass never extends/trims the reel and
+never re-touches the audio mastering (`amix=normalize=0`).
 
 ### 7. Verify (ffprobe + decode integrity + frame spot-checks)
 ```bash

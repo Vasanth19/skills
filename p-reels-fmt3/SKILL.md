@@ -53,7 +53,7 @@ any timestamp the VO is silent during a takeover, the reel is broken (continuity
 | `sfx` | No | **on** | Sound design from the shipped pack (`assets/sfx/` — authored in-house, CC0). `off` to skip. |
 | `grade` | No | planner picks | `warm-amber` or `clean-bright` final grade preset. |
 | `takeover_windows[]` | No | planner picks | Manual override for takeover timing — normally Opus plans them. |
-| `outro` | No | — | Brand outro MP4, appended after the bed ends (the only place different audio is allowed). |
+| `cta_card` | No | brand default | Auto-generated end-card takeover (2.5–3s) **that overlays the final 2.5–3s of the bed** — it does NOT extend the reel. The speaker's spoken CTA line ("Comment KEYWORD…") plays as the underlying VO; the card is the matching visual. Pass `off` to skip. Default text comes from the brand's `cta_outro` block in DESIGN.md (e.g. `"FOLLOW FOR DAILY AI BUILDS · @handle"`). Rendered as a HyperFrames composition and composited via ffmpeg `overlay` with a time-gated `enable=` window. See Step 7. |
 | `avatar_layout` | No | `fill` | `fill` (band-clean → scale-to-cover) or `letterbox`. |
 | `target_duration` | No | = bed length | The VO is the master; the edit covers exactly it. |
 | `topic` / `script` | Conditional | — | Only when producing a fresh avatar via `c-heygen`. |
@@ -61,8 +61,9 @@ any timestamp the VO is silent during a takeover, the reel is broken (continuity
 ## Output
 
 One 9:16 (1080×1920) H.264 + AAC MP4: speaker full-frame on a continuous voice bed, kinetic
-captions over the whole reel, graphics takeovers at planned beats, SFX, cinematic grade, optional
-outro. Uploaded to R2 — **the R2 public URL is the deliverable** (Step 9).
+captions over the whole reel, graphics takeovers at planned beats, SFX, cinematic grade, and an
+auto-generated CTA end-card (no external outro mp4). Uploaded to R2 — **the R2 public URL is the
+deliverable** (Step 9).
 
 ## Steps
 
@@ -70,7 +71,9 @@ Set up variables:
 
 ```bash
 AVATAR="<path to talking-head mp4>"
-OUTRO="<path to outro mp4 or empty>"
+CTA_TEXT="${CTA_TEXT:-FOLLOW FOR DAILY AI BUILDS}"   # falls back to brand DESIGN.md cta_outro if unset
+CTA_HANDLE="${CTA_HANDLE:-@mr.growthguide}"
+CTA_DURATION="${CTA_DURATION:-3}"                    # seconds — kept short so it doesn't tax retention
 W="{production}/interim/fmt3" ; mkdir -p "$W"
 OUT="{production}/final/premium-reel.mp4" ; mkdir -p "$(dirname "$OUT")"
 SKILL_DIR=$(find "$HOME/.claude/skills" -maxdepth 3 -type d -name p-reels-fmt3 2>/dev/null | head -1)
@@ -299,19 +302,85 @@ bash "$W/mux.sh"
 **Never loudnorm again here** — the bed was normalized once in Step 2; `normalize=0` keeps it at
 exactly that level with SFX tucked under.
 
-### Step 7 — Append the outro (optional)
+### Step 7 — CTA end-card is the FINAL TAIL TAKEOVER (not an append)
+
+**Hard rule:** the CTA end-card is rendered as the **last graphics takeover** of the bed,
+covering the picture during the speaker's spoken CTA line ("Comment KEYWORD…"). The reel ENDS
+when the speaker ends. **Nothing is appended after the bed.** Total reel duration = bed duration.
+
+This is structurally identical to any other inline takeover (the picture is covered, the speaker's
+voice continues underneath as the unbroken bed) — the only thing special is that this takeover
+runs to the exact end of the bed, so it bookends the reel without extending it.
+
+**Why this beats appending:**
+
+- The speaker's spoken CTA and the visual CTA land at the same time — viewer hears "Comment
+  REPURPOSE…" while seeing "FOLLOW @mr.growthguide" on screen. Spoken + visual reinforcement
+  is the highest-converting CTA pattern.
+- The reel never has a "ghost tail" where the speaker stopped but the video is still playing
+  a silent card. Algorithm retention curves don't get punished by the dead-air post-VO segment.
+- Total duration is shorter — every reel in the Day10 batch now lands under 60s without needing
+  to trim the CTA card.
+- No audio concat boundary. No bed→tail re-mux step. The bed audio is the final audio, full stop.
+
+Build the CTA card the same way (HyperFrames composition, silent video output):
 
 ```bash
-ffmpeg -y -i "$OUTRO" \
-  -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30" \
-  -c:v libx264 -pix_fmt yuv420p -c:a aac -ar 48000 -ac 2 "$W/outro.mp4"
-ffmpeg -y -i "$W/bed.mp4" -i "$W/outro.mp4" \
-  -filter_complex "[0:v][0:a][1:v][1:a]concat=n=2:v=1:a=1[v][a]" \
-  -map "[v]" -map "[a]" -c:v libx264 -pix_fmt yuv420p -c:a aac -ar 48000 -ac 2 \
-  -movflags +faststart "$OUT"
+CTA_DURATION="${CTA_DURATION:-3.0}"   # 2.5–3.0s. The card OVERLAYS the last $CTA_DURATION
+                                       # seconds of the bed — it does NOT extend the reel.
+cat > "$W/cta-card.json" <<JSON
+{
+  "duration": ${CTA_DURATION},
+  "fps": 30,
+  "size": [1080, 1920],
+  "background": "${BG_HEX}",
+  "layers": [
+    { "type": "kicker", "text": "MR GROWTH GUIDE",       "color": "${ACCENT_HEX}", "y": 540  },
+    { "type": "hero",   "text": "${CTA_TEXT}",           "color": "${FG_HEX}",     "y": 760, "fontSize": 110, "weight": 800, "wrap": true, "highlight": ["AI", "BUILDS", "DAILY"] },
+    { "type": "handle", "text": "${CTA_HANDLE}",         "color": "${FG_HEX}",     "y": 1180, "fontSize": 56, "opacity": 0.72 },
+    { "type": "arrow",  "from": [540, 1320], "to": [540, 1420], "color": "${ACCENT_HEX}", "appearAt": 0.5 }
+  ],
+  "entry": { "type": "scale-pop", "from": 0.92, "to": 1.0, "duration": 0.35, "sfx": "impact-sub" },
+  "exit":  { "type": "none" }
+}
+JSON
+
+hyperframes render "$W/cta-card.json" "$W/cta-card.mp4"   # silent video — no audio track
 ```
 
-(No outro: `cp "$W/bed.mp4" "$OUT"`.)
+**Overlay the CTA card onto the last $CTA_DURATION seconds of the bed** using ffmpeg's overlay
+filter with a time-gated `enable=` window. The bed audio passes through untouched.
+
+```bash
+BED_DUR=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$W/bed.mp4")
+CTA_START=$(python3 -c "print(${BED_DUR} - ${CTA_DURATION})")
+
+# Important: align the CTA card's internal time (0..CTA_DURATION) to BED time (CTA_START..BED_DUR)
+# by using setpts on the overlay input. The bed VIDEO is the base; the CTA video is the overlay.
+ffmpeg -y -i "$W/bed.mp4" -itsoffset "${CTA_START}" -i "$W/cta-card.mp4" \
+  -filter_complex "[0:v][1:v]overlay=enable='between(t,${CTA_START},${BED_DUR})':eof_action=pass[v]" \
+  -map "[v]" -map 0:a \
+  -c:v libx264 -pix_fmt yuv420p -c:a copy \
+  -movflags +faststart "$W/bed-with-cta.mp4"
+
+# If a music bed is used, mux it across the FULL bed duration (not extended) with fade-out over
+# the last 0.5s — speaker VO + music + impact-sub SFX on the CTA entry all live within the bed.
+if [ -n "${MUSIC:-}" ]; then
+  FADE_START=$(python3 -c "print(${BED_DUR} - 0.5)")
+  ffmpeg -y -i "$W/bed-with-cta.mp4" -i "$MUSIC" \
+    -filter_complex "[1:a]aloop=loop=-1:size=2e9,atrim=duration=${BED_DUR},asetpts=PTS-STARTPTS,volume=-22dB,afade=in:st=0:d=0.8,afade=out:st=${FADE_START}:d=0.5[bg];[0:a][bg]amix=inputs=2:duration=first:normalize=0[a]" \
+    -map 0:v -map "[a]" -c:v copy -c:a aac -b:a 192k -ar 48000 -ac 2 \
+    -movflags +faststart "$OUT"
+else
+  cp "$W/bed-with-cta.mp4" "$OUT"
+fi
+```
+
+**Verify:** `ffprobe duration $OUT` ≈ `BED_DUR` (within ±0.1s — the overlay does not extend the
+reel). A frame sample at `$BED_DUR - 0.5s` must show the CTA card composited over the speaker's
+podcast scene; a frame at `$CTA_START - 0.1s` must still show the speaker undamaged.
+
+(To disable the card: `cp "$W/bed.mp4" "$OUT"`.)
 
 ### Step 8 — Verify (mandatory — continuity proof + Visual QA Gate)
 

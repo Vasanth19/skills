@@ -11,7 +11,7 @@ produces:
   format: 9:16 vertical video
   duration: 30-60s
 inputs: [script]
-dependsOn: [c-audio, c-ffmpeg, f-hyperframes, f-hyperframes-cli, c-cloud-media]
+dependsOn: [c-audio, c-ffmpeg, f-hyperframes, f-hyperframes-cli, c-cloud-media, c-reel-premium]
 ---
 
 # p-reels-fmt4 — Script → Faceless Explainer Reel (No Talking Head)
@@ -476,6 +476,22 @@ checklist mid-check). Also confirm: **VO is the clear foreground**, **no static-
 
 **If ANY check on ANY frame or ANY beat fails: fix the composition and RE-RENDER. Re-extract the
 frames and look again. Repeat until everything passes. NEVER upload a reel that fails this gate.**
+
+### 8.5 — Premium polish pass (SFX + grade; captions OFF by default)
+
+→ Skill: `c-reel-premium` — follow its Steps P1–P4 over the final reel:
+
+```bash
+PREMIUM_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" -maxdepth 4 -type d -name c-reel-premium 2>/dev/null | head -1)
+# REEL_IN/REEL_OUT="$OUT_DIR/faceless-explainer-reel.mp4"  WORDS_JSON=<the VO transcript>
+# CAPTIONS=off   <- the beat compositions already carry the on-screen text; kinetic captions
+#                   on top would double-caption the reel. Enable only if the brief asks.
+# SFX=on  GRADE=<planner picks>
+```
+
+Format defaults: captions OFF (this format's graphics ARE the text), SFX ON (whoosh/impact cues
+lift the beat transitions), grade ON. The pass never extends/trims the reel and never re-touches
+the VO mastering.
 
 ### 9 — Upload to R2 and print the URL (LAST LINE)
 
