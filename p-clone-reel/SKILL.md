@@ -1,18 +1,18 @@
 ---
 name: p-clone-reel
-description: Clone-a-viral pipeline — adapt a winning viral video into your brand voice on your topic. Downloads a viral source video, transcribes it, adapts the script to brand voice, and delivers a 9:16 short in the viral format. Two styles — avatar PIP (HeyGen green-screen) or AI-generated (Higgsfield cinematic + Veo talking head).
+description: Clone-a-viral pipeline — adapt a winning viral video into your brand voice on your topic. Downloads a viral source video, transcribes it, adapts the script to brand voice, and delivers a 9:16 short in the viral format using an avatar PIP (HeyGen green-screen).
 disable-model-invocation: true
-argument-hint: "[brand] [production-name] [source-url] [--style avatar|ai-generated]"
+argument-hint: "[brand] [production-name] [source-url]"
 allowed-tools: Bash, Read, Write
 kind: pipeline
 visibility: catalog
-providers: heygen, elevenlabs, kie
+providers: heygen, elevenlabs
 produces:
   dish: Viral Reel Recreation
   format: 9:16 vertical video
   duration: 30-60s
 inputs: [source_url]
-dependsOn: [c-script, c-heygen, c-html-gfx, c-audio, c-production, c-ffmpeg, c-ai-media]
+dependsOn: [c-script, c-heygen, c-html-gfx, c-audio, c-production, c-ffmpeg]
 ---
 
 # p-clone-reel — Viral Reel Recreation
@@ -26,9 +26,7 @@ dependsOn: [c-script, c-heygen, c-html-gfx, c-audio, c-production, c-ffmpeg, c-a
 > 5. Summarize the feedback into 1–3 bullet points and append to `LEARNINGS.md` with today's date.
 > 6. If feedback is critical (affects correctness or quality), add it to the **Active Feedback** section so it applies on every future run.
 
-> **`--style ai-generated` BACKEND STALE** — Higgsfield and Veo references in Steps 3 and 5 need updating to current model APIs before use. `--style avatar` (HeyGen green-screen path) is fully current.
-
-Take a viral format → adapt to brand → deliver 9:16 short.
+Take a viral format → adapt to brand → deliver 9:16 short (avatar PIP).
 
 ## Arguments
 
@@ -37,15 +35,13 @@ Take a viral format → adapt to brand → deliver 9:16 short.
 | brand | Yes | — | Brand slug |
 | production_name | Yes | — | Folder name |
 | source_url | Yes | — | YouTube/social URL of viral video |
-| style | No | `avatar` | `avatar` (HeyGen PIP) or `ai-generated` (Higgsfield + Veo) |
 | section | No | `middle` | `opening`, `middle`, or `full` — which section to adapt |
-| cover_style | No | `card-holding` | `card-holding` or `faceless-card` (avatar style only) |
-| reference_images | No | — | Brand reference images for Higgsfield (ai-generated style only) |
+| cover_style | No | `card-holding` | `card-holding` or `faceless-card` |
 | cta | No | — | Custom CTA for the end |
 
 ---
 
-## Step 1 — Download + Transcribe (both styles)
+## Step 1 — Download + Transcribe
 
 ```bash
 yt-dlp -f "bestvideo[height<=1080]+bestaudio" \
@@ -57,29 +53,18 @@ Identify viral format type: hook structure, pacing, visual rhythm.
 
 ---
 
-## Step 2 — Segment Map / Script Adaptation ⛔ CHECKPOINT
+## Step 2 — Script Adaptation ⛔ CHECKPOINT
 
-**If `--style avatar`:**
 → Skill: `c-script` → voice adaptation
 → Match word count ±10% to preserve timing (150 wpm baseline)
 → Apply brand vocabulary, CTA swap, phonetic readiness
 → Output: `interim/scripts/{name}-adapted.txt`
 
-**If `--style ai-generated`:**
-Build segment map: `timestamp | description | visual type | replacement plan`
-
-Replacement plan options per segment:
-- `higgsfield` — replace with Higgsfield cinematic scene
-- `screen-recording` — keep original (if brand-appropriate)
-- `veo-talking-head` — replace with Veo talking head clip
-
-**Gate: User approves adapted script (avatar) or segment map (ai-generated).**
+**Gate: User approves adapted script.**
 
 ---
 
 ## Step 3 — Footage Generation
-
-**If `--style avatar`:**
 
 → Skill: `c-heygen` → browser render or human delegation
 → Script: adapted `.txt`, background: `#00FF00` solid
@@ -89,22 +74,9 @@ Replacement plan options per segment:
 
 → Cover frame: `c-html-gfx` → brand card at 1080×1920 (`$cover_style`)
 
-**If `--style ai-generated`:**
-
-For segments marked `higgsfield`:
-→ Skill: `c-ai-media` → Higgsfield Cinema Studio
-→ Genre: General, camera: Auto — match segment timing
-→ Output: `interim/broll/segments/scene-{N}-higgsfield.mp4`
-
-For segments marked `veo-talking-head`:
-→ Skill: `c-ai-media` → Veo generation, reference brand avatar image
-→ Output: `interim/broll/segments/scene-{N}-veo.mp4`
-
-**Gate (ai-generated only): User reviews all generated scenes before assembly.**
-
 ---
 
-## Step 4 — TTS Voiceover (avatar style only — if no HeyGen)
+## Step 4 — TTS Voiceover (if no HeyGen)
 
 → Skill: `c-audio` → ElevenLabs TTS
 → `interim/audio/{name}-vo.mp3`
@@ -113,13 +85,8 @@ For segments marked `veo-talking-head`:
 
 ## Step 5 — Assembly
 
-**If `--style avatar`:**
 → Skill: `c-ffmpeg` → composite-split-screen (source top + avatar bottom, or PIP at detected position)
 → Two-pass colorkey: `0x00FF00:0.25:0.05,colorkey=0x00FF00:0.40:0.01`
-
-**If `--style ai-generated`:**
-→ Skill: `c-ffmpeg` → vertical concat per segment map order
-→ Mux adapted audio from source (or new voiceover)
 
 → Output: `video/compositing/composite-v1.mp4`
 
@@ -141,4 +108,3 @@ After completing this skill's task:
 3. Append to `LEARNINGS.md` in this folder with the date.
 4. If feedback is critical (affects correctness or quality), add it to the **Active Feedback** section at the top of `LEARNINGS.md`.
 5. Mark critical feedback with `[ACTIVE]` prefix so it is visually distinct.
-

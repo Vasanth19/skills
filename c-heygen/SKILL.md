@@ -35,10 +35,14 @@ requires: python3
 
 | Path | When | Cost |
 |------|------|------|
-| 1. Human (Discord) | Default when credits not a concern | Lowest |
-| 2. MCP Tool | Automated pipeline integration | api_credits |
-| 3. Browser UI | When MCP unavailable | premium_credits |
-| 4. REST API | Scripted/batch automation | api_credits |
+| 1. MCP Tool (**DEFAULT**) | Agent-driveable from a Paperclip subprocess; no interactive session, no manual paste. Proven end-to-end on VAS-564 (7 Week-1 videos, 2026-05-30). | api / plan_credit |
+| 2. REST API | When the MCP tier is unavailable and direct REST is preferred | api_credits |
+| 3. Browser UI | Fallback when MCP/API degrade (credit-pool exhaustion). **INTERACTIVE session only** — claude-in-chrome binds one Chrome profile to one interactive session; a subprocess runs only `--dry-run`/`--plan` and hands the live submit to an interactive session. | none (drives the live HeyGen UI) |
+| 4. Human (Discord) | Last resort when neither MCP nor an interactive browser session is available | none |
+
+**Tier order: MCP → API → Browser → Human. MCP is the default** as of 2026-05-30 (VAS-564
+direction change). On `MOVIO_PAYMENT_INSUFFICIENT_CREDIT` from MCP/API → fall through to the
+next tier. Never retry on a credit error.
 
 ## Green Screen Standard (Non-Negotiable)
 
