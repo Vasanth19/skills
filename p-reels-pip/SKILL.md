@@ -88,7 +88,7 @@ band in CSS (`--pip-band: 680px`).
 |---|---|---|
 | Canvas | 1080×1920, 30 fps | 9:16 portrait |
 | Canvas color | `#0F172A` | Dark navy — visible only in letterbox gaps (scale-to-COVER removes them) |
-| Background fit | scale-to-COVER + center crop | `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920` — fills full frame, no pillarbox, no stretch. NEVER `pad`, never bare `scale=1080:1920`. |
+| Background fit | FIT + BLURRED-FILL | Clip shown whole (no crop); heavy-blurred zoomed copy fills frame edges. Replaces scale-to-COVER which cropped non-9:16 sources (e.g. website captures) badly. |
 | PIP source | uploaded talking-head | NOT HeyGen. Opaque by default — no chroma-key. |
 | PIP fit | scale-to-FIT (face never cropped) | `scale=CARD_W:CARD_H:force_original_aspect_ratio=decrease` — whole face shows, scaled to fit. Never crop the face. |
 | PIP card | 364×504 default, bottom-center | Portrait box sized to the upload's aspect (70% of the earlier 520×720 — smaller, less obtrusive PIP, 2026-06-13). Rounded corners (yuva444p mask at scaled size). |
@@ -109,12 +109,14 @@ TH="<path to downloaded talking-head mp4>"
 W="<production>/interim/pip" ; mkdir -p "$W" "$W/src" "$W/bg_beats"
 OUT="<production>/final/pip-reel.mp4" ; mkdir -p "$(dirname "$OUT")"
 FF="ffmpeg"
-SKILL_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" -maxdepth 4 -type d -name p-reels-pip 2>/dev/null | head -1)
+SKILL_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" "$HOME/.hermes/profiles" /Users/vasanth/Code/skills -maxdepth 5 -type d -name p-reels-pip 2>/dev/null | head -1)
 
 # Locate component skills
-BROLL_SYNC_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" -maxdepth 4 -type d -name c-broll-sync 2>/dev/null | head -1)
-PREMIUM_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" -maxdepth 4 -type d -name c-reel-premium 2>/dev/null | head -1)
-TYPING_UI_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" -maxdepth 4 -type d -name c-typing-ui 2>/dev/null | head -1)
+# $HOME/.hermes/profiles is searched for box deployments where skills live under
+# $HOME/.hermes/profiles/<slug>/skills/cfw/<skill>/
+BROLL_SYNC_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" "$HOME/.hermes/profiles" /Users/vasanth/Code/skills -maxdepth 5 -type d -name c-broll-sync 2>/dev/null | head -1)
+PREMIUM_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" "$HOME/.hermes/profiles" /Users/vasanth/Code/skills -maxdepth 5 -type d -name c-reel-premium 2>/dev/null | head -1)
+TYPING_UI_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" "$HOME/.hermes/profiles" /Users/vasanth/Code/skills -maxdepth 5 -type d -name c-typing-ui 2>/dev/null | head -1)
 
 # Coverage params (from brief / defaults)
 BROLL_COVERAGE_PCT="${broll_coverage_pct:-30}"
@@ -219,10 +221,23 @@ print(json.dumps(words))
 " > "$W/transcript.json"
   echo "[p-reels-pip] Using provided transcript — skipping transcription"
 else
-  # Transcribe the bed audio to word-level JSON
-  # Try cfw-transcribe first (Gemini/MLX); falls back to npx hyperframes transcribe
-  cfw-transcribe --input "$W/bed.mp4" --out "$W/transcript.srt" --format srt \
-    && python3 - "$W/transcript.srt" "$W/transcript.json" <<'PY'
+  # Transcribe the bed audio to word-level JSON.
+  # Fallback chain: cfw-transcribe (preferred) → mlx_whisper → whisper → STOP.
+  if command -v cfw-transcribe >/dev/null 2>&1; then
+    cfw-transcribe --input "$W/bed.mp4" --out "$W/transcript.srt" --format srt
+  elif command -v mlx_whisper >/dev/null 2>&1; then
+    echo "[p-reels-pip] cfw-transcribe not found — falling back to mlx_whisper"
+    mlx_whisper "$W/bed.mp4" --model mlx-community/whisper-small --output-dir "$W" --output-format srt
+    mv "$W/bed.srt" "$W/transcript.srt"
+  elif command -v whisper >/dev/null 2>&1; then
+    echo "[p-reels-pip] cfw-transcribe not found — falling back to whisper CLI"
+    whisper "$W/bed.mp4" --model small --output_dir "$W" --output_format srt
+    mv "$W/bed.srt" "$W/transcript.srt"
+  else
+    echo "[p-reels-pip] FATAL: no transcription tool found (cfw-transcribe, mlx_whisper, or whisper). Install cfw-transcribe or provide known_transcript." >&2
+    exit 1
+  fi
+  python3 - "$W/transcript.srt" "$W/transcript.json" <<'PY'
 import re, json, sys
 lines = open(sys.argv[1]).read().strip().split('\n\n')
 words = []
@@ -279,8 +294,17 @@ if [ ${#BROLL_CLIPS[@]} -gt 0 ]; then
     # Check if clip has audio
     local has_audio=$(ffprobe -v error -select_streams a -show_entries stream=codec_type -of csv=p=0 "$clip" 2>/dev/null | head -1)
     if [ -n "$has_audio" ]; then
-      cfw-transcribe --input "$clip" --out "$srt_out" --format srt 2>/dev/null && \
-      python3 - "$srt_out" "$cues_out" <<'PY'
+      # Use same transcribe fallback chain as Step 3
+      if command -v cfw-transcribe >/dev/null 2>&1; then
+        cfw-transcribe --input "$clip" --out "$srt_out" --format srt 2>/dev/null
+      elif command -v mlx_whisper >/dev/null 2>&1; then
+        mlx_whisper "$clip" --model mlx-community/whisper-small --output-dir "$(dirname "$srt_out")" --output-format srt 2>/dev/null && \
+        mv "$(dirname "$srt_out")/$(basename "$clip" .mp4).srt" "$srt_out" 2>/dev/null || true
+      elif command -v whisper >/dev/null 2>&1; then
+        whisper "$clip" --model small --output_dir "$(dirname "$srt_out")" --output_format srt 2>/dev/null && \
+        mv "$(dirname "$srt_out")/$(basename "$clip" .mp4).srt" "$srt_out" 2>/dev/null || true
+      fi
+      [ -f "$srt_out" ] && python3 - "$srt_out" "$cues_out" <<'PY'
 import re, json, sys
 lines = open(sys.argv[1]).read().strip().split('\n\n')
 cues = []
@@ -408,9 +432,21 @@ if beat["kind"] == "broll":
     b = beat["broll"]
     # Locate the clip in $W/src/
     clip_path = os.path.join(W, "src", b["clip"])
+    # FIT + BLURRED-FILL composite: the clip is shown whole (no cropping), a
+    # heavy-blurred zoomed copy fills the frame edges.  This replaces scale-to-COVER
+    # (force_original_aspect_ratio=increase + crop) which cropped the edges off
+    # non-9:16 sources like website screen-captures — producing a bad look.
+    # For true 9:16 clips the fit copy == the frame; blurred-fill is a harmless no-op.
+    # Blur strength is tunable: boxblur=40:2 is the default (stronger = more separation).
     subprocess.run([FF,
         "-ss", str(b["in"]), "-to", str(b["out"]), "-i", clip_path,
-        "-vf", "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,format=yuv420p",
+        "-vf", (
+            "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,"
+            "boxblur=40:2,setsar=1[bg];"
+            "[0:v]scale=1080:1920:force_original_aspect_ratio=decrease,setsar=1[fg];"
+            "[bg][fg]overlay=(W-w)/2:(H-h)/2,format=yuv420p,fps=30[bv]"
+        ),
+        "-map", "[bv]",
         "-an", "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-y", out
     ], check=True)
 else:
@@ -959,9 +995,10 @@ Clean up `$W` after the URL is confirmed.
   `broll=[]`) → every beat is graphics. 100% HyperFrames background. Valid and complete.
 - **The talking head is the audio + duration master.** `shortest=1` on the overlay clips the
   composite to it; the background is built to cover at least its full length.
-- **Scale-to-COVER (background), never pad/stretch.**
-  `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920`. A bare `scale=1080:1920`
-  distorts landscape sources; `pad`/`force_original_aspect_ratio=decrease` letterboxes — both wrong.
+- **FIT + BLURRED-FILL (background), never bare scale or letterbox.**
+  B-roll is shown whole (no cropping), a heavy-blurred copy fills the frame edges.
+  `pad`/`force_original_aspect_ratio=decrease` alone letterboxes (dead bars) — wrong.
+  The old scale-to-COVER (`increase+crop`) cropped non-9:16 sources like website captures badly.
 - **Scale-to-FIT (PIP), never crop the face.**
   `scale=CARD_W:CARD_H:force_original_aspect_ratio=decrease` → whole face visible.
   fmt5 v1 cut the chin with a square crop — this is the explicit fix.

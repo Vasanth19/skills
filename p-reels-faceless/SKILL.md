@@ -133,12 +133,12 @@ These rules are LOAD-BEARING. Violating any one of them is a HARD FAILURE.
 source ~/.gsai/secrets.env
 FF=/opt/homebrew/opt/ffmpeg-full/bin/ffmpeg
 W="$OUT_DIR/work" ; mkdir -p "$W/gfx"
-SKILL_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" -maxdepth 4 -type d -name p-reels-faceless 2>/dev/null | head -1)
-BROLL_SYNC_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" -maxdepth 4 -type d -name c-broll-sync 2>/dev/null | head -1)
+SKILL_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" "$HOME/.hermes/profiles" /Users/vasanth/Code/skills -maxdepth 5 -type d -name p-reels-faceless 2>/dev/null | head -1)
+BROLL_SYNC_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" "$HOME/.hermes/profiles" /Users/vasanth/Code/skills -maxdepth 5 -type d -name c-broll-sync 2>/dev/null | head -1)
 [ -n "$BROLL_SYNC_DIR" ] || BROLL_SYNC_DIR="$SKILL_DIR/.hub/c-broll-sync"
-TYPING_UI_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" -maxdepth 4 -type d -name c-typing-ui 2>/dev/null | head -1)
+TYPING_UI_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" "$HOME/.hermes/profiles" /Users/vasanth/Code/skills -maxdepth 5 -type d -name c-typing-ui 2>/dev/null | head -1)
 [ -n "$TYPING_UI_DIR" ] || TYPING_UI_DIR="$SKILL_DIR/.hub/c-typing-ui"
-PREMIUM_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" -maxdepth 4 -type d -name c-reel-premium 2>/dev/null | head -1)
+PREMIUM_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" "$HOME/.hermes/profiles" /Users/vasanth/Code/skills -maxdepth 5 -type d -name c-reel-premium 2>/dev/null | head -1)
 
 VOICE_ID="${VOICE_ID:-${ELEVENLABS_DEFAULT_VOICE_ID}}"
 BROLL_CLIPS="${BROLL_CLIPS:-}"
@@ -186,9 +186,37 @@ Verify duration fits `$TARGET`.
 ### 3 — Word-level transcription
 
 ```bash
-# Gemini cloud (default); MLX fast-path on macOS
-cfw-transcribe --input "$W/vo.mp3" --out "$W/vo.srt" --format srt
-cfw-transcribe --input "$W/vo.mp3" --out "$W/vo-words.json" --format words
+# Fallback chain: cfw-transcribe (preferred) → mlx_whisper → whisper → STOP.
+if command -v cfw-transcribe >/dev/null 2>&1; then
+  # Gemini cloud (default); MLX fast-path on macOS
+  cfw-transcribe --input "$W/vo.mp3" --out "$W/vo.srt" --format srt
+  cfw-transcribe --input "$W/vo.mp3" --out "$W/vo-words.json" --format words
+elif command -v mlx_whisper >/dev/null 2>&1; then
+  echo "[faceless] cfw-transcribe not found — falling back to mlx_whisper"
+  mlx_whisper "$W/vo.mp3" --model mlx-community/whisper-small --output-dir "$W" --output-format srt
+  mv "$W/vo.srt" "$W/vo.srt" 2>/dev/null || true
+  mlx_whisper "$W/vo.mp3" --model mlx-community/whisper-small --output-dir "$W" --output-format json
+  python3 -c "import json; d=json.load(open('$W/vo.json')); words=[{'text':s['text'],'start':s['start'],'end':s['end']} for s in d.get('segments',[])] ; json.dump(words,open('$W/vo-words.json','w'))"
+elif command -v whisper >/dev/null 2>&1; then
+  echo "[faceless] cfw-transcribe not found — falling back to whisper CLI"
+  whisper "$W/vo.mp3" --model small --output_dir "$W" --output_format srt
+  python3 - "$W/vo.srt" "$W/vo-words.json" <<'PY'
+import re, json, sys
+lines = open(sys.argv[1]).read().strip().split('\n\n')
+words = []
+for block in lines:
+    parts = block.strip().split('\n')
+    if len(parts) < 3: continue
+    ts = parts[1]; text = ' '.join(parts[2:])
+    def t2s(s): h,m,rest=s.replace(',','.').split(':'); return int(h)*3600+int(m)*60+float(rest)
+    s, e = ts.split(' --> ')
+    for w in text.split(): words.append({"text": w, "start": t2s(s.strip()), "end": t2s(e.strip())})
+json.dump(words, open(sys.argv[2], 'w'))
+PY
+else
+  echo "[faceless] FATAL: no transcription tool found (cfw-transcribe, mlx_whisper, or whisper). Install cfw-transcribe." >&2
+  exit 1
+fi
 ```
 
 Read `vo.srt`. Map each beat (HOOK, #1, #2 …) to its `[start → end]` window. These SRT timecodes
@@ -226,14 +254,34 @@ for clip in clips:
         "-of", "csv=p=0", clip
     ]).decode().strip()
     dur = float(dur_out)
-    # Transcribe clip audio for cue matching
+    # Transcribe clip audio for cue matching — same fallback chain as Step 3
     cue_json = f"{W}/broll_cue_{os.path.basename(clip).replace('.', '_')}.json"
+    import shutil as _shutil
+    cues = []
     try:
-        subprocess.run(
-            ["cfw-transcribe", "--input", clip, "--out", cue_json, "--format", "words"],
-            check=True, capture_output=True
-        )
-        cues = json.load(open(cue_json))
+        if _shutil.which("cfw-transcribe"):
+            subprocess.run(
+                ["cfw-transcribe", "--input", clip, "--out", cue_json, "--format", "words"],
+                check=True, capture_output=True
+            )
+            cues = json.load(open(cue_json))
+        elif _shutil.which("mlx_whisper"):
+            td = os.path.dirname(cue_json)
+            subprocess.run(["mlx_whisper", clip, "--model", "mlx-community/whisper-small",
+                            "--output-dir", td, "--output-format", "json"],
+                           capture_output=True)
+            base_json = os.path.join(td, os.path.splitext(os.path.basename(clip))[0] + ".json")
+            if os.path.exists(base_json):
+                d = json.load(open(base_json))
+                cues = [{"text": s["text"], "start": s["start"], "end": s["end"]} for s in d.get("segments", [])]
+        elif _shutil.which("whisper"):
+            td = os.path.dirname(cue_json)
+            subprocess.run(["whisper", clip, "--model", "small", "--output_dir", td,
+                            "--output_format", "json"], capture_output=True)
+            base_json = os.path.join(td, os.path.splitext(os.path.basename(clip))[0] + ".json")
+            if os.path.exists(base_json):
+                d = json.load(open(base_json))
+                cues = [{"text": s["text"], "start": s["start"], "end": s["end"]} for s in d.get("segments", [])]
     except Exception:
         cues = []  # silent clip — filename heuristic fallback in c-broll-sync
     entries.append({"clip": clip, "duration": dur, "cues": cues})
@@ -440,9 +488,20 @@ for b in bl["beats"]:
     # Probe source — must be local file
     subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration",
                     "-of", "csv=p=0", clip], check=True, capture_output=True)
+    # FIT + BLURRED-FILL composite: replaces scale-to-COVER (increase+crop) which
+    # cropped non-9:16 sources like website screen-captures badly.  The clip is shown
+    # whole; a heavy-blurred zoomed copy fills the frame edges.  For true 9:16 clips
+    # the fit copy == the frame — blurred-fill is a harmless no-op.
+    # Blur strength: boxblur=40:2 (tunable; stronger = more separation from fg).
     subprocess.run([
         FF, "-y", "-ss", str(t_in), "-i", clip, "-t", str(dur),
-        "-vf", "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,format=yuv420p",
+        "-vf", (
+            "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,"
+            "boxblur=40:2,setsar=1[bg];"
+            "[0:v]scale=1080:1920:force_original_aspect_ratio=decrease,setsar=1[fg];"
+            "[bg][fg]overlay=(W-w)/2:(H-h)/2,format=yuv420p,fps=30[bv]"
+        ),
+        "-map", "[bv]",
         "-an", "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-pix_fmt", "yuv420p", out
     ], check=True)
     broll_segments[b["index"]] = out

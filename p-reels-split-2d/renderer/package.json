@@ -1,0 +1,21 @@
+{
+  "name": "p-reels-split-2d-renderer",
+  "version": "1.0.0",
+  "description": "Konva + node-canvas headless renderer for p-reels-split-2d top-half overlay",
+  "type": "module",
+  "main": "render-overlay.mjs",
+  "scripts": {
+    "smoke": "node render-overlay.mjs --beats ../examples/beats-example.json --duration 30 --smoke 1,10,25 --out /tmp/split2d-sample/overlay.mp4"
+  },
+  "dependencies": {
+    "canvas": "^3.2.3",
+    "konva": "^9.3.6"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "notes": {
+    "canvas_native_deps_macos": "brew install pkg-config cairo pango libpng jpeg giflib librsvg",
+    "canvas_native_deps_ubuntu": "apt-get install build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libpng-dev libgif-dev"
+  }
+}

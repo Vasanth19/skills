@@ -102,10 +102,10 @@ OUT_RAW="$OUT_BASE.mp4"
 OUT="${OUT_BASE}-with-cover.mp4"
 COVER_PNG="{production}/final/spotlight-cover.png"
 mkdir -p "$(dirname "$OUT")"
-SKILL_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" -maxdepth 4 -type d -name p-reels-spotlight 2>/dev/null | head -1)
-BROLL_SYNC_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" -maxdepth 4 -type d -name c-broll-sync 2>/dev/null | head -1)
-PREMIUM_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" -maxdepth 4 -type d -name c-reel-premium 2>/dev/null | head -1)
-TYPING_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" -maxdepth 4 -type d -name c-typing-ui 2>/dev/null | head -1)
+SKILL_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" "$HOME/.hermes/profiles" /Users/vasanth/Code/skills -maxdepth 5 -type d -name p-reels-spotlight 2>/dev/null | head -1)
+BROLL_SYNC_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" "$HOME/.hermes/profiles" /Users/vasanth/Code/skills -maxdepth 5 -type d -name c-broll-sync 2>/dev/null | head -1)
+PREMIUM_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" "$HOME/.hermes/profiles" /Users/vasanth/Code/skills -maxdepth 5 -type d -name c-reel-premium 2>/dev/null | head -1)
+TYPING_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" "$HOME/.hermes/profiles" /Users/vasanth/Code/skills -maxdepth 5 -type d -name c-typing-ui 2>/dev/null | head -1)
 ```
 
 ### Step 1 — Source the speaker video (the voice bed)
@@ -201,7 +201,49 @@ fi
 ### Step 3 — Transcribe with WORD timestamps
 
 ```bash
-cd "$W" && npx hyperframes transcribe base.mp4 --model small
+# Fallback chain: cfw-transcribe (preferred) → mlx_whisper → whisper → npx hyperframes transcribe.
+# known_transcript path: if provided externally (e.g. by p-reels-spotlight-heygen wrapper), write
+# it to $W/words.json and skip this block.
+if command -v cfw-transcribe >/dev/null 2>&1; then
+  cfw-transcribe --input "$W/base.mp4" --out "$W/transcript.srt" --format srt
+  # Convert SRT → words.json
+  python3 - "$W/transcript.srt" "$W/words.json" <<'PY'
+import re, json, sys
+lines = open(sys.argv[1]).read().strip().split('\n\n')
+words = []
+for block in lines:
+    parts = block.strip().split('\n')
+    if len(parts) < 3: continue
+    ts = parts[1]; text = ' '.join(parts[2:])
+    def t2s(s): h,m,rest=s.replace(',','.').split(':'); return int(h)*3600+int(m)*60+float(rest)
+    s, e = ts.split(' --> ')
+    for w in text.split(): words.append({"text": w, "start": t2s(s.strip()), "end": t2s(e.strip())})
+json.dump(words, open(sys.argv[2], 'w'))
+PY
+elif command -v mlx_whisper >/dev/null 2>&1; then
+  echo "[spotlight] cfw-transcribe not found — falling back to mlx_whisper"
+  mlx_whisper "$W/base.mp4" --model mlx-community/whisper-small --output-dir "$W" --output-format json
+  python3 -c "import json; d=json.load(open('$W/base.json')); words=[{'text':s['text'],'start':s['start'],'end':s['end']} for s in d.get('segments',[])] ; json.dump(words,open('$W/words.json','w'))"
+elif command -v whisper >/dev/null 2>&1; then
+  echo "[spotlight] cfw-transcribe not found — falling back to whisper CLI"
+  whisper "$W/base.mp4" --model small --output_dir "$W" --output_format srt
+  python3 - "$W/base.srt" "$W/words.json" <<'PY'
+import re, json, sys
+lines = open(sys.argv[1]).read().strip().split('\n\n')
+words = []
+for block in lines:
+    parts = block.strip().split('\n')
+    if len(parts) < 3: continue
+    ts = parts[1]; text = ' '.join(parts[2:])
+    def t2s(s): h,m,rest=s.replace(',','.').split(':'); return int(h)*3600+int(m)*60+float(rest)
+    s, e = ts.split(' --> ')
+    for w in text.split(): words.append({"text": w, "start": t2s(s.strip()), "end": t2s(e.strip())})
+json.dump(words, open(sys.argv[2], 'w'))
+PY
+else
+  echo "[spotlight] falling back to npx hyperframes transcribe"
+  cd "$W" && npx hyperframes transcribe base.mp4 --model small
+fi
 # NO .en suffix unless audio is confirmed English — .en models TRANSLATE non-English.
 # Hinglish/multilingual → --model medium. Output: word-level transcript JSON.
 ```
@@ -393,10 +435,20 @@ for b in broll_beats:
     t_out = float(b["broll"]["out"])
     dur_w = round(t_out - t_in, 3)
     out_path = f"{W}/broll_takeovers/broll_tk{idx}.mp4"
-    # Trim, scale to 1080x1920 (cover-fill), silent (audio stripped — bed is the VO)
+    # Trim + FIT + BLURRED-FILL composite, silent (audio stripped — bed is the VO).
+    # Replaces scale-to-COVER (increase+crop) which cropped non-9:16 sources like
+    # website screen-captures badly.  The clip is shown whole; a heavy-blurred zoomed
+    # copy fills the frame edges.  For true 9:16 clips the fit copy == the frame —
+    # blurred-fill is a harmless no-op.  Blur strength: boxblur=40:2 (tunable).
     subprocess.run([
         "ffmpeg", "-y", "-ss", str(t_in), "-t", str(dur_w), "-i", clip,
-        "-vf", "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30",
+        "-vf", (
+            "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,"
+            "boxblur=40:2,setsar=1[bg];"
+            "[0:v]scale=1080:1920:force_original_aspect_ratio=decrease,setsar=1[fg];"
+            "[bg][fg]overlay=(W-w)/2:(H-h)/2,format=yuv420p,fps=30[bv]"
+        ),
+        "-map", "[bv]",
         "-an",  # strip audio — the VO bed carries through
         "-c:v", "libx264", "-pix_fmt", "yuv420p",
         out_path

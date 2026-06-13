@@ -53,8 +53,8 @@ const raw = parseArgs(process.argv.slice(2));
 const TRANSCRIPT_PATH = raw['transcript'] || null;
 const BROLL_PATH      = raw['broll']      || null;
 const COVERAGE_PCT    = parseFloat(raw['coverage']  ?? '30');
-const CLIP_SECS       = parseFloat(raw['clip-secs'] ?? '4');
-const MIN_SECS        = parseFloat(raw['min-secs']  ?? '2');
+const CLIP_SECS       = parseFloat(raw['clip-secs'] ?? '5');   // default 5 (4-6 range); 4 read too short for screen-rec b-roll (user, 2026-06-13)
+const MIN_SECS        = parseFloat(raw['min-secs']  ?? '4');   // 4s floor — screen-rec b-roll needs >=4s to read
 const MAX_SECS        = parseFloat(raw['max-secs']  ?? '6');
 const ORDER           = raw['order']  || 'transcript-match';   // transcript-match | as-given | even
 const REUSE           = (raw['reuse'] || 'false') === 'true';
