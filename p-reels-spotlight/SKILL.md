@@ -11,18 +11,10 @@ produces:
   format: 9:16 vertical video
   duration: 20-60s
 inputs: [talking_head_video, broll, script]
-dependsOn: [c-reel-premium, c-broll-sync, c-typing-ui, f-hyperframes, f-hyperframes-cli, c-ffmpeg, c-cloud-media]
+dependsOn: [c-reel-premium, c-broll-sync, c-typing-ui, f-hyperframes, f-hyperframes-cli, c-ffmpeg, c-cloud-media, c-overlay-fx]
 metadata:
   hermes:
-    vendored:
-      - c-overlay-fx
-      - c-reel-premium
-      - c-broll-sync
-      - c-typing-ui
-      - f-hyperframes
-      - f-hyperframes-cli
-      - c-ffmpeg
-      - c-cloud-media
+    vendored: [c-overlay-fx, c-reel-premium, c-broll-sync, c-typing-ui, f-hyperframes, f-hyperframes-cli, c-ffmpeg, c-cloud-media]
 ---
 
 # p-reels-spotlight — Full-Frame Premium Reel (continuous-audio bed + kinetic captions + optional b-roll)
