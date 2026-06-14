@@ -10,10 +10,10 @@ produces:
   format: 9:16 vertical video
   duration: 20-60s
 inputs: [talking_head_video, broll, known_transcript, outro]
-dependsOn: [c-ffmpeg, c-audio, c-reel-premium, c-broll-sync, c-typing-ui, f-hyperframes, f-hyperframes-cli, f-gsap]
+dependsOn: [c-ffmpeg, c-audio, c-reel-premium, c-broll-sync, c-typing-ui, f-hyperframes, f-hyperframes-cli, f-gsap, c-overlay-fx]
 metadata:
   hermes:
-    vendored: [c-reel-premium, c-broll-sync, c-typing-ui, c-ffmpeg, c-audio, f-hyperframes, f-hyperframes-cli, f-gsap]
+    vendored: [c-reel-premium, c-broll-sync, c-typing-ui, c-ffmpeg, c-audio, f-hyperframes, f-hyperframes-cli, f-gsap, c-overlay-fx]
 ---
 
 # p-reels-pip — Bottom PIP Reel from Uploaded Talking-Head Video
@@ -186,7 +186,7 @@ fi
 
 # Re-probe cleaned clip dimensions
 read TH_CW TH_CH < <(ffprobe -v error -select_streams v:0 \
-  -show_entries stream=width,height -of csv=p=0:s=' ' "$TH_CLEAN")
+  -show_entries stream=width,height -of default=noprint_wrappers=1 "$TH_CLEAN" | awk -F= 'NR==1{w=$2} NR==2{h=$2} END{print w,h}')  # box-compat: Ubuntu 22.04 csv format differs → use default+awk
 ```
 
 ### Step 2 — Build the loudnormed voice bed (ONCE, never again)
@@ -223,6 +223,10 @@ print(json.dumps(words))
 else
   # Transcribe the bed audio to word-level JSON.
   # Fallback chain: cfw-transcribe (preferred) → mlx_whisper → whisper → STOP.
+  # box-compat: cfw-transcribe (Gemini backend) needs GEMINI_API_KEY; source from box
+  # env file when not already in the environment. Harmless no-op off-box.
+  [ -z "${GEMINI_API_KEY:-}" ] && GEMINI_API_KEY=$(grep GEMINI_API_KEY /opt/cfw-agent/.env 2>/dev/null | cut -d= -f2-) || true
+  export GEMINI_API_KEY
   if command -v cfw-transcribe >/dev/null 2>&1; then
     cfw-transcribe --input "$W/bed.mp4" --out "$W/transcript.srt" --format srt
   elif command -v mlx_whisper >/dev/null 2>&1; then
@@ -599,7 +603,7 @@ with a 110px bottom margin (never flush). Audio comes from the talking-head trac
 
 ```bash
 read TH_CW TH_CH < <(ffprobe -v error -select_streams v:0 \
-  -show_entries stream=width,height -of csv=p=0:s=' ' "$TH_CLEAN")
+  -show_entries stream=width,height -of default=noprint_wrappers=1 "$TH_CLEAN" | awk -F= 'NR==1{w=$2} NR==2{h=$2} END{print w,h}')  # box-compat: Ubuntu 22.04 csv format differs → use default+awk
 
 # PIP card: portrait box sized to the upload's aspect.
 # SIZING HISTORY: 440×600 (too small) → 520×720 (bake-off #1) → 364×504 (user pref
@@ -706,16 +710,27 @@ JSON
 hyperframes render "$W/cta-card.json" "$W/cta-card.mp4" 2>/dev/null || {
   # Fallback: minimal HyperFrames composition
   mkdir -p "$W/cta"
+  # box-compat: the fallback must be a PROPER HyperFrames standalone composition —
+  # full HTML doc, a .cta-root with data-composition-id/dims, and a registered
+  # window.__timelines["root"] — or `hyperframes lint`/`render` rejects it.
   cat > "$W/cta/index.html" <<HTML
 <!DOCTYPE html>
 <html><head><meta charset="utf-8">
-<style>html,body{margin:0;padding:0;width:1080px;height:1920px;overflow:hidden;background:#0F172A;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<style>html,body{margin:0;padding:0;width:1080px;height:1920px;overflow:hidden;}
+.cta-root{position:absolute;inset:0;background:#0F172A;display:flex;flex-direction:column;align-items:center;justify-content:center;}
 h1{color:#F1F5F9;font-family:Oswald,sans-serif;font-size:120px;font-weight:900;text-align:center;margin:0;padding:0 80px;}
 p{color:#F97316;font-family:Inter,sans-serif;font-size:56px;opacity:0.9;margin-top:40px;}</style>
 </head><body>
+<div class="cta-root" data-composition-id="root" data-start="0" data-duration="${CTA_DURATION}" data-width="1080" data-height="1920">
 <h1>${CTA_TEXT}</h1><p>${CTA_HANDLE}</p>
+</div>
+<script>window.__timelines = window.__timelines || {}; window.__timelines["root"] = gsap.timeline();</script>
 </body></html>
 HTML
+  # box-compat: gpt-5.5 sometimes emits '##' in CSS hex (e.g. --bg: ##0F172A) → white bg.
+  # Collapse any double-hash to single before lint/render.
+  sed -i 's/##/#/g' "$W/cta/index.html"
   cd "$W/cta" && npx hyperframes lint && npx hyperframes render --output "$W/cta-card.mp4" --fps 30 --quality high
   cd -
 }
@@ -770,6 +785,11 @@ GRADE="${GRADE:-}"  # planner picks; default = clean-bright
 # P3: grades + mixes SFX under original audio (amix=normalize=0 — never re-loudnorm)
 # P4: QA gate (frame spot-checks + clean decode)
 
+# box-compat: the Opus/kimi planning fallback (no subscription auth on-box) needs
+# ANTHROPIC_API_KEY; source from box env file when not already set. No-op off-box.
+[ -z "${ANTHROPIC_API_KEY:-}" ] && ANTHROPIC_API_KEY=$(grep ANTHROPIC_API_KEY /opt/cfw-agent/.env 2>/dev/null | cut -d= -f2-) || true
+export ANTHROPIC_API_KEY
+
 DUR_CHECK=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$REEL_IN")
 
 # --- P1 ---
@@ -795,12 +815,12 @@ IMPORTANT: CAP_TOP=$CAP_TOP — captions must NOT enter the bottom $((1920-CAP_T
 PREMIUM_PLAN=$(env -u ANTHROPIC_BASE_URL -u ANTHROPIC_AUTH_TOKEN -u ANTHROPIC_API_KEY \
   -u ANTHROPIC_DEFAULT_OPUS_MODEL -u ANTHROPIC_DEFAULT_SONNET_MODEL -u ANTHROPIC_DEFAULT_HAIKU_MODEL \
   -u CLAUDE_CODE_SUBAGENT_MODEL \
-  timeout 240 claude --print "$PLAN_PROMPT" --dangerously-skip-permissions 2>/dev/null \
+  timeout 240 claude --print "$PLAN_PROMPT" 2>/dev/null \
   | python3 -c "import sys,re; m=re.search(r'\{.*\}', sys.stdin.read(), re.S); print(m.group(0) if m else '')")
 
 if ! echo "$PREMIUM_PLAN" | python3 -c 'import json,sys; json.load(sys.stdin)' 2>/dev/null; then
   echo "[p-reels-pip] Opus unavailable — planning premium on kimi"
-  PREMIUM_PLAN=$(claude --print "$PLAN_PROMPT" --dangerously-skip-permissions 2>/dev/null \
+  PREMIUM_PLAN=$(claude --print "$PLAN_PROMPT" 2>/dev/null \
     | python3 -c "import sys,re; m=re.search(r'\{.*\}', sys.stdin.read(), __import__('re').S); print(m.group(0) if m else '')")
 fi
 echo "$PREMIUM_PLAN" > "$PW/plan.json"
@@ -870,6 +890,56 @@ print(f'''ffmpeg -y -i "{PW}/visuals.mp4" -i "{REEL}" {inputs} \\
   -c:a aac -b:a 192k -ar 48000 -ac 2 -movflags +faststart "{PW}/polished.mp4"''')
 PY
 bash "$PW/mux.sh" && cp "$PW/polished.mp4" "$W/polished.mp4"
+```
+
+### Step 8.7 — Overlay-FX beats (OPTIONAL — Director-placed, OFF by default)
+
+Default behavior is unchanged: this step is a no-op unless the Director supplies `overlay_beats`.
+When set, the Director MAY drop 1–3 animated overlay graphics (pill / sticker / mini-flowchart) on
+top of the assembled reel at chosen beats, via the `c-overlay-fx` component. Each overlay is rendered
+to a transparent (alpha) clip and `overlay`-composited over `polished.mp4` — the picture underneath is
+never re-encoded into the graphic.
+
+**The Director picks BOTH the moment AND a SAFE position from the map below.** An overlay must NEVER
+cover the face PIP or the HyperFrames title/captions.
+
+**Safe-zone map — `pip` format (1080×1920):**
+- Face PIP sits **bottom-center** (~`x270–810, y1240–1810`) — never place an overlay there.
+- HyperFrames title/captions occupy the **upper zone** (above the PIP, roughly `y < 1040`).
+- **SAFE = the side margins + the band between the graphics and the PIP**, e.g. left/right gutters
+  (`x < 240` or `x > 840`) and the mid-band around `y 1060–1220` (under the caption zone, above the PIP).
+
+```bash
+# overlay_beats: a JSON array the Director sets, e.g.
+#   [{"type":"pill","text":"NEW","position":{"x":840,"y":1100},"start":2.0,"duration":2.5}]
+# Each spec also carries brand context. Empty/unset → skip entirely (default).
+OVERLAY_BEATS="${overlay_beats:-[]}"
+if [ "$(echo "$OVERLAY_BEATS" | python3 -c 'import sys,json; print(len(json.load(sys.stdin)))' 2>/dev/null || echo 0)" -gt 0 ]; then
+  OVERLAY_FX_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" "$HOME/.hermes/profiles" /Users/vasanth/Code/skills -maxdepth 5 -type d -name c-overlay-fx 2>/dev/null | head -1)
+  [ -z "$OVERLAY_FX_DIR" ] && { echo "[p-reels-pip] overlay_beats set but c-overlay-fx not found — skipping"; OVERLAY_BEATS="[]"; }
+fi
+if [ "$(echo "$OVERLAY_BEATS" | python3 -c 'import sys,json; print(len(json.load(sys.stdin)))' 2>/dev/null || echo 0)" -gt 0 ]; then
+  CUR="$W/polished.mp4"
+  i=0
+  echo "$OVERLAY_BEATS" | python3 -c 'import sys,json;[print(json.dumps(o)) for o in json.load(sys.stdin)]' | while IFS= read -r spec; do
+    i=$((i+1))
+    echo "$spec" > "$W/overlay-$i.json"
+    OVPNG="$W/overlay-$i.mov"   # transparent alpha clip
+    node "$OVERLAY_FX_DIR/render-overlay.cjs" "$W/overlay-$i.json" "$OVPNG"
+    X=$(echo "$spec" | python3 -c 'import sys,json; print(json.load(sys.stdin)["position"]["x"])')
+    Y=$(echo "$spec" | python3 -c 'import sys,json; print(json.load(sys.stdin)["position"]["y"])')
+    ST=$(echo "$spec" | python3 -c 'import sys,json; print(json.load(sys.stdin)["start"])')
+    DU=$(echo "$spec" | python3 -c 'import sys,json; print(json.load(sys.stdin)["duration"])')
+    EN=$(python3 -c "print(${ST}+${DU})")
+    $FF -y -i "$CUR" -itsoffset "$ST" -i "$OVPNG" \
+      -filter_complex "[0:v][1:v]overlay=${X}:${Y}:format=auto:enable='between(t,${ST},${EN})'[v]" \
+      -map "[v]" -map 0:a -c:v libx264 -pix_fmt yuv420p -preset medium -crf 19 \
+      -c:a copy -movflags +faststart "$W/polished-ov-$i.mp4"
+    CUR="$W/polished-ov-$i.mp4"
+  done
+  LAST=$(ls -1 "$W"/polished-ov-*.mp4 2>/dev/null | sort -V | tail -1)
+  [ -n "$LAST" ] && cp "$LAST" "$W/polished.mp4"
+fi
 ```
 
 ### Step 9 — First-frame cover rule (§2d — MANDATORY)
@@ -1026,3 +1096,26 @@ Clean up `$W` after the URL is confirmed.
 - **c-broll-sync shortfall logging.** If fewer b-roll clips are available than the budget allows
   (and reuse is off), c-broll-sync logs the shortfall and caps at available clips. This is normal
   — the plan completes with fewer b-roll windows, rest are graphics.
+
+### Box-compat gotchas (Ubuntu 22.04 / Hermes — folded from on-box validation)
+
+- **ffprobe csv differs on Ubuntu.** `read W H < <(... -of csv=p=0:s=' ' ...)` mis-parses there.
+  Use `-of default=noprint_wrappers=1` piped through `awk -F=` to read width/height into shell vars
+  (Steps 1 and 7). Single-field `-of csv=p=0` (one value, e.g. duration) is unaffected.
+- **No `--dangerously-skip-permissions`.** That flag is blocked for `root` on the box — drop it from
+  every `claude --print` call (Step 8.5 planning). The call still works without it.
+- **Source `GEMINI_API_KEY` before `cfw-transcribe`** (Step 3). cfw-transcribe's Gemini backend reads
+  it from the env; on-box it lives in `/opt/cfw-agent/.env`, not the shell. The guard
+  `[ -z "${GEMINI_API_KEY:-}" ] && GEMINI_API_KEY=$(grep ... /opt/cfw-agent/.env ...)` is a no-op off-box.
+- **Source `ANTHROPIC_API_KEY` before the premium planner fallback** (Step 8.5). On-box there is no
+  subscription auth, so the Opus/kimi fallback needs the key from `/opt/cfw-agent/.env`. No-op off-box.
+- **CTA fallback HTML must be a real HyperFrames standalone composition** — full HTML doc, a root
+  element with `data-composition-id="root"` + `data-width/height/start/duration`, and a registered
+  `window.__timelines["root"]`. A bare `<h1>/<p>` body fails `hyperframes lint` (Step 8 fallback).
+- **`##` CSS guard.** gpt-5.5 occasionally emits a double-hash hex (`--bg: ##0F172A`), which renders a
+  white background. After writing ANY generated HyperFrames HTML, run `sed -i 's/##/#/g' <file>` before
+  lint/render (applied to the Step 8 CTA fallback; apply the same to any HTML emitted by an LLM here).
+- **Three.js linter no-op.** The HyperFrames linter false-flags any composition whose text contains the
+  literal "THREE" (e.g. a caption "THREE.") as a missing-Three.js error. Inject a harmless Three.js CDN
+  `<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>` into that
+  composition's `<head>` to satisfy the linter — it is never used at runtime.

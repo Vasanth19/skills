@@ -15,6 +15,7 @@ dependsOn: [c-reel-premium, c-broll-sync, c-typing-ui, f-hyperframes, f-hyperfra
 metadata:
   hermes:
     vendored:
+      - c-overlay-fx
       - c-reel-premium
       - c-broll-sync
       - c-typing-ui
@@ -204,6 +205,10 @@ fi
 # Fallback chain: cfw-transcribe (preferred) → mlx_whisper → whisper → npx hyperframes transcribe.
 # known_transcript path: if provided externally (e.g. by p-reels-spotlight-heygen wrapper), write
 # it to $W/words.json and skip this block.
+# box-compat: cfw-transcribe (Gemini backend) needs GEMINI_API_KEY; source from box
+# env file when not already in the environment. Harmless no-op off-box.
+[ -z "${GEMINI_API_KEY:-}" ] && GEMINI_API_KEY=$(grep GEMINI_API_KEY /opt/cfw-agent/.env 2>/dev/null | cut -d= -f2-) || true
+export GEMINI_API_KEY
 if command -v cfw-transcribe >/dev/null 2>&1; then
   cfw-transcribe --input "$W/base.mp4" --out "$W/transcript.srt" --format srt
   # Convert SRT → words.json
@@ -316,6 +321,11 @@ Plan-on-Opus, execute-on-kimi. Opus reads the word transcript + brand and writes
 (a content beat past the hook, used for the first-frame cover in Step 10):
 
 ```bash
+# box-compat: the Opus/kimi planning fallback (no subscription auth on-box) needs
+# ANTHROPIC_API_KEY; source from box env file when not already set. No-op off-box.
+[ -z "${ANTHROPIC_API_KEY:-}" ] && ANTHROPIC_API_KEY=$(grep ANTHROPIC_API_KEY /opt/cfw-agent/.env 2>/dev/null | cut -d= -f2-) || true
+export ANTHROPIC_API_KEY
+
 PLAN_PROMPT="You are planning a PREMIUM 9:16 talking-head reel edit (speaker full-frame, never cut).
 Output STRICT JSON ONLY (one object, no prose).
 Word transcript: $(cat "$W/words.json")
@@ -353,12 +363,12 @@ RULES:
 PLAN_JSON=$(env -u ANTHROPIC_BASE_URL -u ANTHROPIC_AUTH_TOKEN -u ANTHROPIC_API_KEY \
   -u ANTHROPIC_DEFAULT_OPUS_MODEL -u ANTHROPIC_DEFAULT_SONNET_MODEL -u ANTHROPIC_DEFAULT_HAIKU_MODEL \
   -u CLAUDE_CODE_SUBAGENT_MODEL \
-  timeout 240 claude --print "$PLAN_PROMPT" --dangerously-skip-permissions 2>/dev/null \
+  timeout 240 claude --print "$PLAN_PROMPT" 2>/dev/null \
   | python3 -c "import sys,re; m=re.search(r'\{.*\}', sys.stdin.read(), re.S); print(m.group(0) if m else '')")
 
 if ! echo "$PLAN_JSON" | python3 -c 'import json,sys; json.load(sys.stdin)' 2>/dev/null; then
   echo "[spotlight] Opus planning unavailable — falling back to kimi planning"
-  PLAN_JSON=$(claude --print "$PLAN_PROMPT" --dangerously-skip-permissions 2>/dev/null \
+  PLAN_JSON=$(claude --print "$PLAN_PROMPT" 2>/dev/null \
     | python3 -c "import sys,re; m=re.search(r'\{.*\}', sys.stdin.read(), __import__('re').S); print(m.group(0) if m else '')")
 fi
 echo "$PLAN_JSON" > "$W/plan.json"
@@ -535,6 +545,9 @@ open(f"{proj}/index.html", "w").write(fill(root, {
 print(f"assembled: {len(tkdivs)} graphics takeovers (captions deferred to Step 7), {dur}s")
 PY
 
+# box-compat: gpt-5.5 sometimes emits a double-hash hex (##0F172A) → white bg. Collapse it
+# before lint/render (BG + takeover content flow in from the LLM plan).
+sed -i 's/##/#/g' "$W/comp/index.html"
 cd "$W/comp" && npx hyperframes lint && npx hyperframes validate && \
   npx hyperframes render --output "$W/visuals.mp4" --fps 30 --quality high
 ffprobe -v error -select_streams v:0 -show_entries stream=width,height,duration -of csv=p=0 "$W/visuals.mp4"
@@ -662,6 +675,55 @@ run_skill c-reel-premium \
   CAP_TOP="1180" \
   CAPTIONS="${CAPTIONS:-on}" \
   SFX="${SFX:-on}"
+```
+
+### Step 7.5 — Overlay-FX beats (OPTIONAL — Director-placed, OFF by default)
+
+Default behavior is unchanged: a no-op unless the Director supplies `overlay_beats`. When set, the
+Director MAY drop 1–3 animated overlay graphics (pill / sticker / mini-flowchart) on top of the
+assembled reel at chosen beats, via `c-overlay-fx`. Each overlay renders to a transparent (alpha)
+clip and is `overlay`-composited over `polished.mp4` — the picture underneath is never re-encoded
+into the graphic.
+
+**The Director picks BOTH the moment AND a SAFE position from the map below.** An overlay must NEVER
+cover the speaker's face or the HyperFrames title/captions.
+
+**Safe-zone map — `spotlight` format (1080×1920):** the speaker fills the frame, so usable room is
+limited. **SAFE = the top margin/corners and the bottom margin/corners only** (roughly `y < 160` or
+`y > 1700`, hugging the edges) — and never under the burned caption band. Keep overlays small and in
+the corners; the mid-frame is always the face.
+
+```bash
+# overlay_beats: a JSON array the Director sets, e.g.
+#   [{"type":"sticker","text":"LIVE","position":{"x":80,"y":120},"start":1.5,"duration":2.0}]
+# Each spec also carries brand context. Empty/unset → skip entirely (default).
+OVERLAY_BEATS="${overlay_beats:-[]}"
+if [ "$(echo "$OVERLAY_BEATS" | python3 -c 'import sys,json; print(len(json.load(sys.stdin)))' 2>/dev/null || echo 0)" -gt 0 ]; then
+  OVERLAY_FX_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" "$HOME/.hermes/profiles" /Users/vasanth/Code/skills -maxdepth 5 -type d -name c-overlay-fx 2>/dev/null | head -1)
+  [ -z "$OVERLAY_FX_DIR" ] && { echo "[spotlight] overlay_beats set but c-overlay-fx not found — skipping"; OVERLAY_BEATS="[]"; }
+fi
+if [ "$(echo "$OVERLAY_BEATS" | python3 -c 'import sys,json; print(len(json.load(sys.stdin)))' 2>/dev/null || echo 0)" -gt 0 ]; then
+  CUR="$W/polished.mp4"
+  i=0
+  echo "$OVERLAY_BEATS" | python3 -c 'import sys,json;[print(json.dumps(o)) for o in json.load(sys.stdin)]' | while IFS= read -r spec; do
+    i=$((i+1))
+    echo "$spec" > "$W/overlay-$i.json"
+    OVPNG="$W/overlay-$i.mov"   # transparent alpha clip
+    node "$OVERLAY_FX_DIR/render-overlay.cjs" "$W/overlay-$i.json" "$OVPNG"
+    X=$(echo "$spec" | python3 -c 'import sys,json; print(json.load(sys.stdin)["position"]["x"])')
+    Y=$(echo "$spec" | python3 -c 'import sys,json; print(json.load(sys.stdin)["position"]["y"])')
+    ST=$(echo "$spec" | python3 -c 'import sys,json; print(json.load(sys.stdin)["start"])')
+    DU=$(echo "$spec" | python3 -c 'import sys,json; print(json.load(sys.stdin)["duration"])')
+    EN=$(python3 -c "print(${ST}+${DU})")
+    ffmpeg -y -i "$CUR" -itsoffset "$ST" -i "$OVPNG" \
+      -filter_complex "[0:v][1:v]overlay=${X}:${Y}:format=auto:enable='between(t,${ST},${EN})'[v]" \
+      -map "[v]" -map 0:a -c:v libx264 -pix_fmt yuv420p -preset medium -crf 19 \
+      -c:a copy -movflags +faststart "$W/polished-ov-$i.mp4"
+    CUR="$W/polished-ov-$i.mp4"
+  done
+  LAST=$(ls -1 "$W"/polished-ov-*.mp4 2>/dev/null | sort -V | tail -1)
+  [ -n "$LAST" ] && cp "$LAST" "$W/polished.mp4"
+fi
 ```
 
 ### Step 8 — CTA end-card (FINAL TAIL TAKEOVER — not an append)
@@ -863,3 +925,24 @@ the unbroken audio, then burn plain SRT captions. B-roll beats are handled the s
 - **Reuse before you render.** Check prior avatar renders before calling HeyGen.
 - **Reels trim audio by default** — the mandatory trim in Step 2 strips silent buffers. Un-trimmed
   audio is a defect.
+
+### Box-compat gotchas (Ubuntu 22.04 / Hermes — folded from on-box validation)
+
+- **No `--dangerously-skip-permissions`.** That flag is blocked for `root` on the box — drop it from
+  every `claude --print` call (Step 4 planning). The call still works without it.
+- **Source `GEMINI_API_KEY` before `cfw-transcribe`** (Step 3). cfw-transcribe's Gemini backend reads
+  it from the env; on-box it lives in `/opt/cfw-agent/.env`. The guard is a no-op off-box.
+- **Source `ANTHROPIC_API_KEY` before the Opus/kimi planner** (Step 4). On-box there is no subscription
+  auth, so the planner fallback needs the key from `/opt/cfw-agent/.env`. No-op off-box.
+- **`##` CSS guard.** gpt-5.5 occasionally emits a double-hash hex (`--bg: ##0F172A`) → white background.
+  After writing the generated HyperFrames comp (Step 5), collapse double-hash to single
+  (`sed -i 's/##/#/g' "$W/comp/index.html"`) before lint/render.
+- **Three.js linter no-op.** The HyperFrames linter false-flags any composition whose text contains the
+  literal "THREE" (e.g. a caption "THREE.") as a missing-Three.js error. Inject a harmless Three.js CDN
+  `<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>` into that
+  composition's `<head>` to satisfy the linter — it is never used at runtime.
+- **(ffprobe csv N/A here.)** Spotlight reads width/height with single-field `-of csv=p=0` calls (one
+  value each), which parse identically on Ubuntu — no `awk` rework needed. The multi-field `width,height`
+  ffprobe in Steps 5/6 is a diagnostic echo, not parsed into shell vars.
+- **(CTA fallback N/A here.)** The Step 8 CTA fallback is an ffmpeg `drawtext` card, not a HyperFrames
+  composition — so the "proper HyperFrames standalone" CTA patch does not apply to this core.

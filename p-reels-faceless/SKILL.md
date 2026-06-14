@@ -11,10 +11,10 @@ produces:
   format: 9:16 vertical video
   duration: 30-90s
 inputs: [script]
-dependsOn: [c-audio, c-broll-sync, c-typing-ui, c-reel-premium, c-ffmpeg, c-cloud-media, f-hyperframes, f-hyperframes-cli, f-gsap]
+dependsOn: [c-audio, c-broll-sync, c-typing-ui, c-reel-premium, c-ffmpeg, c-cloud-media, f-hyperframes, f-hyperframes-cli, f-gsap, c-overlay-fx]
 metadata:
   hermes:
-    vendored: [c-audio, c-reel-premium, c-broll-sync, c-typing-ui, c-ffmpeg, f-hyperframes, f-hyperframes-cli, f-gsap]
+    vendored: [c-audio, c-reel-premium, c-broll-sync, c-typing-ui, c-ffmpeg, f-hyperframes, f-hyperframes-cli, f-gsap, c-overlay-fx]
 ---
 
 # p-reels-faceless — Script → Premium Faceless Reel (optional b-roll, baked-in polish)
@@ -187,6 +187,10 @@ Verify duration fits `$TARGET`.
 
 ```bash
 # Fallback chain: cfw-transcribe (preferred) → mlx_whisper → whisper → STOP.
+# box-compat: cfw-transcribe (Gemini backend) needs GEMINI_API_KEY; source from box
+# env file when not already in the environment. Harmless no-op off-box.
+[ -z "${GEMINI_API_KEY:-}" ] && GEMINI_API_KEY=$(grep GEMINI_API_KEY /opt/cfw-agent/.env 2>/dev/null | cut -d= -f2-) || true
+export GEMINI_API_KEY
 if command -v cfw-transcribe >/dev/null 2>&1; then
   # Gemini cloud (default); MLX fast-path on macOS
   cfw-transcribe --input "$W/vo.mp3" --out "$W/vo.srt" --format srt
@@ -237,6 +241,10 @@ python3 -c "import json; d=json.load(open('$W/vo-words.json')); assert isinstanc
 For each b-roll clip, transcribe its audio to get cue words for `c-broll-sync` transcript-match:
 
 ```bash
+# box-compat: cfw-transcribe (Gemini backend) needs GEMINI_API_KEY; source from box
+# env file so the python subprocess below inherits it. Harmless no-op off-box.
+[ -z "${GEMINI_API_KEY:-}" ] && GEMINI_API_KEY=$(grep GEMINI_API_KEY /opt/cfw-agent/.env 2>/dev/null | cut -d= -f2-) || true
+export GEMINI_API_KEY
 # Build broll_cues.json: [{clip, duration, cues:[{text,start,end}]}]
 python3 - "$W" "$BROLL_CLIPS" <<'PY'
 import json, os, subprocess, sys, shlex
@@ -458,6 +466,9 @@ with open(dst, "w") as f:
             "<style>html,body{{margin:0;padding:0;width:1080px;height:1920px;overflow:hidden;}}</style>"
             f"</head><body>{tmpl}</body></html>")
 PY
+# box-compat: gpt-5.5 sometimes emits a double-hash hex (##0F172A) → white bg. Collapse it
+# before lint/render (brand accent + prompt content flow in from the scene spec).
+sed -i 's/##/#/g' "$WORK_GFX/beatN-typing/index.html"
 # Lint + render
 cd "$WORK_GFX/beatN-typing" && npx hyperframes lint && npx hyperframes render --output beatN-typing.mp4 --fps 30 --quality high
 ```
@@ -652,6 +663,57 @@ echo "[p-reels-faceless] WARNING: c-reel-premium not found; premium polish skipp
 
 ---
 
+### 12.5 — Overlay-FX beats (OPTIONAL — Director-placed, OFF by default)
+
+Default behavior is unchanged: a no-op unless the Director supplies `overlay_beats`. When set, the
+Director MAY drop 1–3 animated overlay graphics (pill / sticker / mini-flowchart) on top of the
+assembled reel at chosen beats, via `c-overlay-fx`. Each overlay renders to a transparent (alpha)
+clip and is `overlay`-composited over `premium.mp4` — the picture underneath is never re-encoded
+into the graphic.
+
+**The Director picks BOTH the moment AND a SAFE position from the map below.** An overlay must NEVER
+cover the active graphics text or the burned captions.
+
+**Safe-zone map — `faceless` format (1080×1920):** there is no face, so there is more room — but the
+full-frame graphics beat owns the center. **SAFE = the four corners and the lower third** (below the
+hero content, above the caption band), avoiding wherever the active beat's graphics text sits. Read
+the current beat's layout and keep the overlay clear of its hero element.
+
+```bash
+# overlay_beats: a JSON array the Director sets, e.g.
+#   [{"type":"pill","text":"STEP 1","position":{"x":120,"y":1500},"start":4.0,"duration":3.0}]
+# Each spec also carries brand context. Empty/unset → skip entirely (default).
+OVERLAY_BEATS="${overlay_beats:-[]}"
+if [ "$(echo "$OVERLAY_BEATS" | python3 -c 'import sys,json; print(len(json.load(sys.stdin)))' 2>/dev/null || echo 0)" -gt 0 ]; then
+  OVERLAY_FX_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" "$HOME/.hermes/profiles" /Users/vasanth/Code/skills -maxdepth 5 -type d -name c-overlay-fx 2>/dev/null | head -1)
+  [ -z "$OVERLAY_FX_DIR" ] && { echo "[p-reels-faceless] overlay_beats set but c-overlay-fx not found — skipping"; OVERLAY_BEATS="[]"; }
+fi
+if [ "$(echo "$OVERLAY_BEATS" | python3 -c 'import sys,json; print(len(json.load(sys.stdin)))' 2>/dev/null || echo 0)" -gt 0 ]; then
+  CUR="$W/premium.mp4"
+  i=0
+  echo "$OVERLAY_BEATS" | python3 -c 'import sys,json;[print(json.dumps(o)) for o in json.load(sys.stdin)]' | while IFS= read -r spec; do
+    i=$((i+1))
+    echo "$spec" > "$W/overlay-$i.json"
+    OVPNG="$W/overlay-$i.mov"   # transparent alpha clip
+    node "$OVERLAY_FX_DIR/render-overlay.cjs" "$W/overlay-$i.json" "$OVPNG"
+    X=$(echo "$spec" | python3 -c 'import sys,json; print(json.load(sys.stdin)["position"]["x"])')
+    Y=$(echo "$spec" | python3 -c 'import sys,json; print(json.load(sys.stdin)["position"]["y"])')
+    ST=$(echo "$spec" | python3 -c 'import sys,json; print(json.load(sys.stdin)["start"])')
+    DU=$(echo "$spec" | python3 -c 'import sys,json; print(json.load(sys.stdin)["duration"])')
+    EN=$(python3 -c "print(${ST}+${DU})")
+    $FF -y -i "$CUR" -itsoffset "$ST" -i "$OVPNG" \
+      -filter_complex "[0:v][1:v]overlay=${X}:${Y}:format=auto:enable='between(t,${ST},${EN})'[v]" \
+      -map "[v]" -map 0:a -c:v libx264 -pix_fmt yuv420p -preset medium -crf 19 \
+      -c:a copy -movflags +faststart "$W/premium-ov-$i.mp4"
+    CUR="$W/premium-ov-$i.mp4"
+  done
+  LAST=$(ls -1 "$W"/premium-ov-*.mp4 2>/dev/null | sort -V | tail -1)
+  [ -n "$LAST" ] && cp "$LAST" "$W/premium.mp4"
+fi
+```
+
+---
+
 ### 13 — First-frame cover rule (§2d — MANDATORY)
 
 > IG/TikTok use frame 1 of the MP4 as the default feed poster. The hook scene animates in from
@@ -805,6 +867,31 @@ rule, and premium polish are all applied. **There is no degradation in the no-br
 - **NEVER output an input URL as the result.** The final line is the R2 URL of the rendered reel.
 - **NEVER QA only beat 1.** The motion + foreground proof runs on EVERY graphics beat.
 - **NEVER use c-typing-ui pip-safe variant for this format.** Always use `full` — there is no PIP.
+
+---
+
+## Box-compat gotchas (Ubuntu 22.04 / Hermes — folded from on-box validation)
+
+- **Source `GEMINI_API_KEY` before `cfw-transcribe`** (Steps 3 and 4). cfw-transcribe's Gemini backend
+  reads it from the env; on-box it lives in `/opt/cfw-agent/.env`, not the shell. The guard
+  `[ -z "${GEMINI_API_KEY:-}" ] && GEMINI_API_KEY=$(grep ... /opt/cfw-agent/.env ...)` is a no-op
+  off-box. Step 4's cfw-transcribe runs inside a python subprocess, so the export must happen in that
+  step's bash before the heredoc (it inherits the env).
+- **`##` CSS guard.** gpt-5.5 occasionally emits a double-hash hex (`--bg: ##0F172A`) → white background.
+  After writing ANY generated HyperFrames HTML, collapse double-hash to single — `sed -i 's/##/#/g'`.
+  Applied in-skill to the typing-ui HTML (Step 7). **Every `delegate_task` graphics CHILD must do the
+  same** on its authored `index.html` before `npx hyperframes lint` (add `sed -i 's/##/#/g' index.html`
+  to the per-beat authoring step).
+- **Three.js linter no-op.** The HyperFrames linter false-flags any composition whose text contains the
+  literal "THREE" (e.g. a beat hero "THREE.") as a missing-Three.js error. Inject a harmless Three.js
+  CDN `<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>` into that
+  composition's `<head>` to satisfy the linter — it is never used at runtime. (Children authoring beat
+  HTML must apply this when their beat text contains "THREE".)
+- **(ffprobe csv / claude --print / CTA-HyperFrames patches N/A here.)** Faceless has no `read W H < <(...)`
+  multi-field ffprobe (the `width,height` ffprobe in Step 9 is a diagnostic echo), no direct
+  `claude --print` planning call (planning is via `c-broll-sync` + `delegate_task`), and no HyperFrames
+  CTA fallback (the outro in Step 11 is a generated/​supplied card) — so those three box patches do not
+  apply to this core.
 
 ---
 
