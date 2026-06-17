@@ -1,3 +1,21 @@
+---
+name: r-youtube-data-api
+description: >
+  Automate YouTube video metadata updates (title, description, tags, category) and custom
+  thumbnail uploads via the YouTube Data API v3 — capturing the first-24h SEO ranking window
+  that publishing tools like PostForMe drop on publish. Includes one-time OAuth setup and
+  troubleshooting for auth / permission failures. Trigger on "update youtube video", "upload
+  youtube thumbnail", "fix youtube auth", "youtube metadata", "youtube oauth", "youtube api
+  error", "refresh youtube token".
+when-to-use: >
+  Use when the user wants to update a YouTube video's metadata, upload a custom YouTube
+  thumbnail, authenticate with the YouTube Data API v3, refresh a YouTube OAuth token, or
+  debug why a YouTube metadata/thumbnail update failed. Not for uploading new videos — this
+  edits metadata + thumbnails on existing videos post-publish.
+kind: distribution
+visibility: catalog
+---
+
 # r-youtube-data-api
 
 ## Trigger

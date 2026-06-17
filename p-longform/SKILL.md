@@ -10,18 +10,37 @@ produces:
   dish: Longform Video
   format: 16:9 video
   duration: 5-20 min
-inputs: [script, format, broll_dir]
-dependsOn: [c-script, c-heygen, c-broll, c-html-gfx, c-audio, c-production, c-ffmpeg, c-ai-media, f-remotion]
+inputs: [script, format, broll_dir, talking_head_video, source, known_transcript, captions, outro]
+dependsOn: [c-script, c-heygen, c-broll, c-broll-sync, c-reel-premium, c-typing-ui, c-html-gfx, c-audio, c-production, c-ffmpeg, c-ai-media, f-remotion, f-hyperframes, f-hyperframes-cli, f-gsap, wowx-focus]
 ---
+
+
+
+> ## ⚡ Frame integrity + integrated CTA (MANDATORY — 2026-06-16)
+> - **Frame 0 is NEVER black.** The first frame must be a bright money-shot — the cover-freeze of the strongest illustrative beat (Step 10 cover rule). Verify `ffmpeg ... signalstats` → `YAVG > 30`. No black / hook-blank / fade-in opener.
+> - **The LAST frame is NEVER black.** The reel must end on content, not a fade-to-black or trailing blank. Verify the final frame `YAVG > 30`.
+> - **CTA is integrated by DEFAULT, not optional.** Every reel/VSL ends on a branded **CTA beat baked into the timeline** (offer line + handle/URL), as the final illustrative HyperFrames card. Do not ship a reel whose last beat is filler or black. (In p-reels-split this is the Step 9 CTA takeover; other recipes must add an equivalent closing CTA card.)
+
+> ## ⚡ HyperFrames = illustrative, NOT just titles (MANDATORY — 2026-06-16)
+> Every HyperFrames graphics scene MUST pair its title with an **illustrative animation that depicts the point** — never a bare kinetic title card. Examples: a 45-post feed grid staggering in (`back.out`), a count-up stat with day-dots, an animated waveform for "voice", platform chips popping in. Match the premium reference in `cfw-marketing/creatives/productions/restaurants-vsl/hyperframes` (`DIAG-calendar` feed-grid, `HF-*` motion) **and** `cfw-marketing/creatives/productions/fnb-split-screen-short/gen-rich-cards.py`: grid + glow + vignette background, GSAP eased + staggered elements, brand palette, depth (shadows/shine). **Make it as rich and premium as possible — a title-only card is a defect.**
 
 # p-longform — Unified Longform Video Pipeline
 
 Produces one 16:9 (1920×1080) H.264 MP4, 5–20 min, parameterized by `format`. Three formats share a single composite engine (c-ffmpeg) and diverge only in structure, visual layer, and narrative arc.
 
 > **SELF-IMPROVEMENT RULE — READ FIRST:**
-> 1. Before executing ANY step, read `LEARNINGS.md` in this same folder.
-> 2. Apply every item under **Active Feedback** as a non-negotiable rule.
-> 3. After completing the task, ask: "How did this go? Any corrections for next time?" Append feedback to `LEARNINGS.md`. Critical items go under **Active Feedback** with `[ACTIVE]` prefix.
+> 1. Before executing ANY step, read `LEARNINGS.md` in this same folder (GLOBAL — every brand).
+> 1b. **ALSO load the BRAND's production learnings from GBrain** (carried from p-vsl): fetch
+>     `mcp__brain-personal__get_page` slug **`projects/<brand>/productions/p-longform`** (disk mirror:
+>     `~/Code/Infra/brain-personal/projects/<brand>/productions/p-longform.md`) — this brand's flavor
+>     of the recipe + its hard-won fixes. For VSL work also check the legacy slug
+>     `projects/<brand>/productions/p-vsl` (pre-2026-06-17 brand learnings live there).
+> 2. Apply every item under **Active Feedback** (global) AND every brand learning as non-negotiable rules.
+> 3. After completing the task, ask: "How did this go? Any corrections for next time?" Then file by scope:
+>    - **Brand-specific** → `put_page` to GBrain `projects/<brand>/productions/p-longform` (append a dated
+>      entry; create if missing; dual-write the disk mirror).
+>    - **Recipe-level** (every brand) → append to this folder's `LEARNINGS.md`; critical items go under
+>      **Active Feedback** with the `[ACTIVE]` prefix.
 
 ---
 
@@ -107,6 +126,106 @@ The VSL is the primary conversion tool. Every section maps to a sales beat. Avat
 - CTA must appear on screen as a text card in the final 60 seconds.
 - GFX theme: brand dark + accent color (read `brand-ref.md` first). Not tutorial-blue.
 - B-roll: lifestyle/aspiration/pain imagery. Screen recordings are wrong for VSL — use c-ai-media or b-roll library.
+
+---
+
+#### VSL Render Engine (authoritative for `format=vsl` — merged from p-vsl 2026-06-17)
+
+> **This subsection supersedes the standalone `p-vsl` skill** (now deprecated). When `format=vsl`,
+> the engine below is the render path — it replaces the generic Step 6 manual b-roll table and the
+> Step 7 `pip_mode` global with transcript-synced beat planning + varied per-beat avatar grammar.
+> The demo/tutorial formats are unaffected and continue to use the shared pipeline below.
+
+Produces one **1920×1080** H.264 MP4 with a **varied avatar grammar** (the speaker is shown
+differently per beat, not one fixed layout), a **transcript-synced background** (b-roll where words
+match, HyperFrames motion graphics everywhere else), a **premium SFX + color-grade pass**, a
+**first-frame money-shot cover**, and a **per-frame vision-QA gate**. Source is a HeyGen avatar
+(default, green-screen) **or** an uploaded real talking-head clip (`source=uploaded`).
+
+**Layout (landscape, PIP bottom-right)** — per `c-ffmpeg/references/landscape-pip.md`:
+PIP card `384×330 @ x=1512, y=726`. Graphics templates reserve the bottom band; captions sit in the
+lower-left ~76% and never enter the PIP zone.
+
+**VSL engine inputs (beyond the Format Parameter Table):**
+
+| Param | Required | Default | Notes |
+|---|---|---|---|
+| `source` | No | `heygen` | `heygen` (render green-screen avatar) or `uploaded` (real talking-head clip). |
+| `talking_head_video` | If `source=uploaded` | — | Uploaded real clip (face + voice). PIP foreground + audio/duration master. |
+| `known_transcript` | No | — | Word-level transcript `[{text,start,end}]`. HeyGen path passes the script → skips Whisper. |
+| `broll_coverage_pct` | No | `35` | Transcript-synced b-roll coverage target (rest is HyperFrames). `0` = 100% graphics. |
+| `broll_clip_seconds` / `_min` / `_max` | No | `8` / `4` / `12` | Longform beat windows (longer than reels → fewer beats). |
+
+**VSL engine steps (override the generic Step 5V/6/7/8 when `format=vsl`):**
+
+1. **Resolve the avatar source → `AVATAR_SRC` + `SOURCE_KIND`.**
+   - `source=heygen` (default): use `source_video` if provided, else render green-screen via
+     `c-heygen` (background `#00FF00`, full TTS-clean script). The script IS the transcript →
+     pass as `known_transcript`.
+   - `source=uploaded`: localize the clip, probe, **silence-detect** (`volumedetect`; mean ~-20 dB =
+     real speech, ~-90 dB = STOP and ask for a new source), and **crop flat-white side-bands**
+     (left/right ONLY — never the top; the head must not be clipped). Mirror the white-band crop loop
+     from `p-reels-split` Step 1.5.
+
+2. **Loudnorm the audio master ONCE → `master.m4a`** (`loudnorm=I=-14:TP=-1.5:LRA=11`). This is the
+   ONLY loudnorm — the premium pass (step 7) uses `amix=normalize=0` and never re-normalizes.
+
+3. **Transcribe** with word timestamps (skip if `known_transcript` set). Same fallback chain as
+   `p-reels-pip`/`p-reels-split` Step 3 (cfw-transcribe → mlx_whisper → whisper; ≥20%-garbage gate;
+   `HF_HUB_OFFLINE=1` + cached `whisper-large-v3-turbo`). SRT/words JSON is ground truth for all
+   b-roll + beat timecodes.
+
+4. **Plan the background beat list with `c-broll-sync`** (`scripts/plan.js`) — places uploaded b-roll
+   where the transcript matches and HyperFrames motion graphics everywhere else, gapless. Validate
+   gapless coverage; extract `cover_at` (a content beat past the hook for the money-shot).
+
+5. **Avatar-grammar pass (the p-vsl signature).** Tag each beat `full` (avatar-front to camera) /
+   `pip` (bottom-right corner over the background) / `hidden` (background fullscreen, voice
+   continues). An OPUS planner picks the rhythm; a **deterministic fallback guarantees a valid plan**
+   (first beat + last ~12% = `full`; `broll` beats → `hidden`; `graphics` beats → `pip`; never 4+
+   identical in a row). **Reserve `full` for sales moments** (hook, key claims, offer, CTA). This
+   replaces the single global `pip_mode` — VSL presence is per-beat and varied.
+
+6. **Build the background track + composite per grammar (1920×1080).**
+   - `graphics` beats → LOCAL landscape HyperFrames templates (`motion-card-ls.html`,
+     `typing-scene-ls.html`, `hook-scene-ls.html`) via `f-hyperframes`/`c-typing-ui`. Every graphics
+     scene is **illustrative, not title-only** (see the mandate at the top of this file).
+   - `broll` beats → FIT+blurred-fill at 1920×1080. **Screen-recording / app-demo b-roll → apply
+     `wowx-focus` (cinematic Ken Burns) FIRST** (detect by `*screen*`/`*recording*`/`*demo*`/`*app*`/
+     `*walkthrough*` or near-zero motion) — flat captures look lifeless held still.
+   - Composite each beat by grammar: `hidden` = background only; `full` = keyed avatar (HeyGen:
+     two-pass `colorkey=0x00FF00`, zoom-then-crop `scale=2208:1242,crop=1920:1080:144:0` — never
+     crop+stretch) or uploaded clip FIT+blurred-fill full-frame; `pip` = background + avatar in the
+     bottom-right PIP card (rounded mask). Chroma-key ONLY on the HeyGen path — uploaded opaque clips
+     never go through `colorkey`. Concat silent segments, then mux `master.m4a` ONCE.
+   - **YAVG brightness gate** (sample t=1, mid, end; YAVG≈0 = black background = build failed —
+     fix before continuing).
+
+7. **`c-reel-premium` pass** (Steps P1–P4, landscape): **color grade + SFX always**; kinetic
+   captions only when `captions=on` (default off for longform — heavy for 20 min). Use the LOCAL
+   landscape templates `caption-overlay-ls.html` + `root-shell-polish-ls.html`; `CAP_TOP=820`,
+   captions left of x=1480 (clear the PIP). One pass, `amix=normalize=0` (NEVER re-loudnorm).
+
+8. **First-frame cover** (default on): extract the money-shot frame at `cover_at`, build a 0.4s
+   silent freeze (`anullsrc` via `-f lavfi -i`, NEVER `-af`), prepend via re-encoded concat. Keep
+   `cover.png` as the thumbnail Output. Frame 0 must be the money-shot, never black.
+
+9. **Tail CTA takeover** (does NOT extend the video) + optional `outro` concat — the video ENDS
+   when the speaker ends. Verify the CTA did not extend duration (±0.1s).
+
+10. **Vision-QA gate (non-negotiable).** Extract frames at 3/15/30/45/60/75/90% and **READ each**:
+    (a) background not black; (b) `full` beats show the whole face (not cropped/stretched);
+    (c) `pip` beats show the PIP card fully on-screen with margin; (d) graphics/captions never cover
+    the PIP; (e) background fills the frame (no pillarbox/letterbox/distortion); (f) captions legible
+    with brand accent (if on); (g) frame 0 is the money-shot, not black/hook. **Any fail → fix,
+    re-render, look again. Never ship a failing VSL.**
+
+**VSL engine gotchas (carried from p-vsl):** audio mastered once (step 2, premium uses
+`amix=normalize=0`); output-level seeking (`-i file -ss`) for accurate trims on 5+ min sources;
+FIT+blurred-fill for backgrounds + uploaded `full` beats (never bare letterbox); PIP bottom-right
+never covered; black background = build failed, never ship it; HyperFrames root = full HTML doc,
+strip `<template>` + comments, mapped font names (never `var(--font-*)`), run `lint` + `validate`
+before `render`; no `#` comments inside `filter_complex`.
 
 ---
 

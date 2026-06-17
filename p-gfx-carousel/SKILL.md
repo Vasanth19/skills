@@ -4,7 +4,9 @@ description: Render a swipeable multi-slide IMAGE carousel — N separate brand-
 when-to-use: Use when the user wants a multi-slide swipeable image carousel (2–10 ordered slides delivered as separate images). NOT for a single graphic (use p-gfx-image-posts) and NOT for a PDF document carousel (use p-linkedin-carousel).
 version: 1.0.0
 kind: pipeline
-visibility: catalog
+visibility: deprecated
+deprecated: true
+supersededBy: p-carousel
 produces:
   dish: Image Carousel
   format: 1080×1350 PNG slides (2–10)
@@ -12,6 +14,12 @@ produces:
 inputs: [brief]
 dependsOn: [c-html-gfx, c-cloud-media]
 ---
+
+> # ⛔ DEPRECATED (2026-06-16) — use **`p-carousel`**
+> `p-carousel` is the unified carousel recipe: it builds slides as AI image (`c-ai-media`),
+> HTML-GFX (`c-html-gfx`), or **HyperFrames** (`f-hyperframes`) — or a mix — and assembles a
+> carousel/PDF. This HTML-GFX-PNG-only recipe is superseded; kept for reference only. Do not
+> use for new work.
 
 # pipeline-gfx-carousel — Multi-Slide Image Carousel
 

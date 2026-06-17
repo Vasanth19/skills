@@ -1,0 +1,154 @@
+<template id="caption-overlay-ls-template">
+  <!--
+    p-vsl kinetic caption overlay — LANDSCAPE (1920x1080), FILLED never authored.
+    Landscape variant of c-reel-premium/templates/caption-overlay.html.
+    Lower-band captions constrained to the left ~76% (right:440px) so they clear
+    the bottom-right talking-head PIP (x>=1512). Same word-synced karaoke logic,
+    deterministic, every group hard-killed at group.end.
+
+    Placeholders:
+      DURATION    - full video duration (seconds)
+      CAP_TOP     - caption band top edge in px (landscape default ~820)
+      ACCENT      - brand accent hex (keyword color)
+      FG          - foreground text hex
+      GROUPS_JSON - JSON array of caption groups (same schema as the portrait core)
+  -->
+  <div
+    id="caption-overlay"
+    data-composition-id="caption-overlay"
+    data-width="1920"
+    data-height="1080"
+  >
+    <style>
+      #caption-overlay {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: transparent;
+        font-family: 'Oswald', sans-serif;
+      }
+      /* Lower band, left ~76% — clears the bottom-right PIP. NEVER left:50%+translate. */
+      #caption-overlay .cap-group {
+        position: absolute;
+        left: 0;
+        right: 440px;
+        top: {{CAP_TOP}}px;
+        height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+        column-gap: 0.42em;
+        row-gap: 0.05em;
+        padding: 0 80px;
+        text-align: center;
+        opacity: 0;
+        overflow: visible;
+      }
+      #caption-overlay .cap-word {
+        display: inline-block;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.01em;
+        line-height: 1.04;
+        color: {{FG}};
+        opacity: 0.42;
+        text-shadow: 0 4px 24px rgba(0, 0, 0, 0.75);
+        will-change: transform, opacity;
+      }
+      #caption-overlay .cap-word.em {
+        font-weight: 700;
+        color: {{ACCENT}};
+        margin: 0 0.06em;
+      }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script>
+      window.__timelines = window.__timelines || {};
+
+      var GROUPS = {{GROUPS_JSON}};
+      var ACCENT = "{{ACCENT}}";
+      var FG = "{{FG}}";
+
+      var root = document.getElementById("caption-overlay");
+
+      GROUPS.forEach(function (group, gi) {
+        var g = document.createElement("div");
+        g.className = "cap-group";
+        g.id = "cg-" + gi;
+        var text = group.words.map(function (w) { return w.w; }).join(" ");
+        var fit = window.__hyperframes && window.__hyperframes.fitTextFontSize
+          ? window.__hyperframes.fitTextFontSize(text.toUpperCase(), {
+              fontFamily: "Oswald",
+              fontWeight: 700,
+              maxWidth: 1180,
+              baseFontSize: 96,
+              minFontSize: 52,
+            })
+          : { fontSize: 80 };
+        g.style.fontSize = fit.fontSize + "px";
+        group.words.forEach(function (w, wi) {
+          var s = document.createElement("span");
+          s.className = "cap-word" + (w.em ? " em" : "");
+          s.id = "cw-" + gi + "-" + wi;
+          s.textContent = w.w;
+          g.appendChild(s);
+        });
+        root.appendChild(g);
+      });
+
+      var tl = gsap.timeline({ paused: true });
+
+      GROUPS.forEach(function (group, gi) {
+        var sel = "#cg-" + gi;
+        var style = group.style % 3;
+
+        if (style === 0) {
+          tl.fromTo(sel, { opacity: 0, scale: 0.9, y: 26 },
+            { opacity: 1, scale: 1, y: 0, duration: 0.3, ease: "back.out(1.7)" }, group.start);
+        } else if (style === 1) {
+          tl.fromTo(sel, { opacity: 0, x: -44 },
+            { opacity: 1, x: 0, duration: 0.28, ease: "power3.out" }, group.start);
+        } else {
+          tl.fromTo(sel, { opacity: 0, y: 54 },
+            { opacity: 1, y: 0, duration: 0.32, ease: "power4.out" }, group.start);
+        }
+
+        group.words.forEach(function (w, wi) {
+          var wsel = "#cw-" + gi + "-" + wi;
+          var at = Math.max(w.s, group.start + 0.02);
+          if (w.em) {
+            tl.fromTo(wsel, { scale: 0.72, opacity: 0.42 },
+              { scale: 1.16, opacity: 1, duration: 0.26, ease: "back.out(2.2)" }, at);
+            tl.to(wsel, {
+              textShadow: "0 0 26px " + ACCENT + "AA, 0 4px 24px rgba(0,0,0,0.75)",
+              duration: 0.2, ease: "power2.out",
+            }, at);
+            tl.to(wsel, { scale: 1.08, duration: 0.18, ease: "power2.inOut" }, at + 0.26);
+          } else {
+            tl.to(wsel, { opacity: 1, duration: 0.14, ease: "power1.out" }, at);
+          }
+        });
+
+        tl.to(sel, { opacity: 0, scale: 0.95, duration: 0.12, ease: "power2.in" },
+          Math.max(group.start + 0.12, group.end - 0.12));
+        tl.set(sel, { opacity: 0, visibility: "hidden" }, group.end);
+      });
+
+      GROUPS.forEach(function (group, gi) {
+        var el = document.getElementById("cg-" + gi);
+        if (!el) return;
+        tl.seek(Math.min(group.end + 0.01, {{DURATION}}));
+        var c = getComputedStyle(el);
+        if (c.opacity !== "0" && c.visibility !== "hidden") {
+          console.warn("[caption-lint] group " + gi + " still visible at t=" + (group.end + 0.01).toFixed(2) + "s");
+        }
+      });
+      tl.seek(0);
+
+      window.__timelines["caption-overlay"] = tl;
+    </script>
+  </div>
+</template>

@@ -1,628 +1,971 @@
 {
   "metadata": {
-    "version": "1.0",
-    "lastUpdated": "2026-05-09",
-    "totalSkills": 37,
+    "version": "1.1",
+    "lastUpdated": "2026-06-17",
+    "totalSkills": 68,
+    "activeSkills": 66,
     "catalog": "SKILLS-CATALOG.md",
-    "learnings": "LEARNINGS-INDEX.md"
+    "learnings": "LEARNINGS-INDEX.md",
+    "globalMandates": [
+      "HyperFrames graphics scenes must be illustrative animations (not title-only cards) \u2014 as rich/premium as possible (see DIAG-calendar / gen-rich-cards.py).",
+      "Frame 0 and the last frame are never black; CTA is integrated as the final beat of every reel/VSL."
+    ]
   },
   "skills": {
-    "p-avatar-short": {
-      "type": "pipeline",
-      "category": "short-form",
-      "format": "9:16 vertical",
-      "description": "Avatar PIP short with portrait composite",
-      "aiMethod": "HeyGen green-screen",
-      "inputs": ["brand", "script"],
-      "outputs": ["9:16 avatar PIP video"],
-      "duration": "30s-60s",
-      "dependencies": ["t-heygen", "c-studio-script", "c-ffmpeg", "c-studio-production"],
-      "checkpoints": ["script approval", "HeyGen job ID confirmation"],
-      "learningsFile": "p-avatar-short/LEARNINGS.md",
-      "activeFeedback": ["HeyGen render is user-triggered", "Green-screen quality verification required"]
+    "c-ab-scheduler": {
+      "type": "component",
+      "description": "Operate the CFW AB Scheduler \u2014 the unattended hourly worker that drains the cfw-social and cfw-agent backlog queues by running /ab-work-on-it on approved (status:ready) tasks, then pings when it hits a hard block. Use this to check what's running, approve/hold tasks, see and clear blockers (unblock), trigger an immediate run, read run logs, or explain/tune the system.",
+      "whenToUse": "Trigger on \"AB scheduler\", \"scheduler status\", \"what's the scheduler doing\", \"what will run next\", \"approve <task>\", \"hold <task>\", \"unhold\", \"what's blocked\", \"unblock <task>\", \"clear the blocker\", \"run the backlog now\", \"scheduler logs\", \"turn the scheduler on/off\", \"is the hourly task running\", \"BLOCKED.md\", \"why didn't my task run\", \"make a task ready\"."
     },
-    "p-avatar-screenshot-broll": {
-      "type": "pipeline",
-      "category": "short-form",
-      "format": "9:16 vertical",
-      "description": "Avatar PIP short with website screenshots",
-      "aiMethod": "HeyGen + Playwright screenshot",
-      "inputs": ["brand", "script", "website URL"],
-      "outputs": ["9:16 avatar PIP with screenshot b-roll"],
-      "duration": "30s-60s",
-      "dependencies": ["t-heygen", "c-web-capture", "c-ffmpeg"],
-      "checkpoints": ["screenshot plan review"],
-      "learningsFile": "p-avatar-screenshot-broll/LEARNINGS.md"
+    "c-ai-media": {
+      "type": "component",
+      "description": "AI image and video generation for the creative studio. Use for generating AI images (kie.ai GPT-4o image, z-image, Imagen 4), cinematic video scenes (kie.ai Seedance/Kling/WAN), and talking-head animation (kie.ai InfiniTalk).",
+      "visibility": "internal",
+      "whenToUse": "Trigger on AI image, generate image, create photo, photo post, GPT-4o image, z-image, cinematic scene, Seedance video, Kling video, WAN video, InfiniTalk, talking head animation, character scene, AI b-roll generation.",
+      "dependencies": [
+        "c-kie-ai"
+      ],
+      "requires": "python3",
+      "learningsFile": "c-ai-media/LEARNINGS.md"
     },
-    "p-gfx-short": {
-      "type": "pipeline",
-      "category": "short-form",
-      "format": "9:16 vertical",
-      "description": "Faceless GFX short with voiceover",
-      "aiMethod": "HTML graphics + ElevenLabs TTS",
-      "inputs": ["brand", "script"],
-      "outputs": ["9:16 GFX short with animated overlays"],
-      "duration": "15s-60s",
-      "dependencies": ["c-html-gfx", "c-studio-audio", "c-ffmpeg"],
-      "checkpoints": ["GFX preview"],
-      "learningsFile": "p-gfx-short/LEARNINGS.md"
+    "c-audio": {
+      "type": "component",
+      "description": "Audio production for the creative studio. Use for text-to-speech voiceover generation (ElevenLabs via Floe API), SFX generation, audio chunk splitting, speech-to-text transcription (MLX Whisper on Apple Silicon), and audio loudness normalization.",
+      "visibility": "internal",
+      "whenToUse": "Trigger on TTS, voiceover, ElevenLabs, script-to-audio, SFX, sound effect, transcribe, whisper, MLX, loudnorm, audio chunk, audio split, LUFS, voiceover generation.",
+      "requires": "ffmpeg, python3",
+      "learningsFile": "c-audio/LEARNINGS.md"
     },
-    "p-gfx-batch": {
+    "c-avatar-screenshot-broll": {
       "type": "pipeline",
-      "category": "short-form",
-      "format": "9:16 vertical",
-      "description": "Batch GFX short production (10+)",
-      "aiMethod": "HTML graphics (batch mode) + Ken Burns zoom",
-      "inputs": ["brand", "10+ script variants"],
-      "outputs": ["10+ GFX shorts (parallel)"],
-      "duration": "15s-60s per short",
-      "dependencies": ["c-html-gfx", "c-studio-audio", "c-ffmpeg"],
-      "checkpoints": ["batch preview"],
-      "learningsFile": "p-gfx-batch/LEARNINGS.md",
-      "parallelizable": true
+      "description": "Avatar-led longform video compositing pipeline for HeyGen/talking-head videos that need realistic website, product, docs, and GitHub screenshot b-roll. Use when creating or revising landscape educational videos with Remotion or HyperFrames, removing side bands from square avatar footage, adding hook text, using live screenshots with Ken Burns motion, keeping b-roll segments under 15 seconds, and verifying screenshot coverage and final MP4 quality.",
+      "visibility": "internal",
+      "dependencies": [
+        "c-ffmpeg",
+        "c-html-gfx",
+        "c-broll",
+        "c-heygen"
+      ],
+      "learningsFile": "c-avatar-screenshot-broll/LEARNINGS.md"
+    },
+    "c-banner": {
+      "type": "component",
+      "description": "Render a pixel-perfect social/platform banner (YouTube channel art, LinkedIn/Facebook cover) from brand style \u2014 HTML through headless Chrome, cropped to exact platform dimensions, compressed under the platform size limit. Reusable component invoked by image recipes; not an owner-facing pipeline.",
+      "visibility": "internal",
+      "whenToUse": "Trigger on c-banner, render banner, YouTube banner, channel art, LinkedIn banner, Facebook cover, platform banner, header image, cover image.",
+      "dependencies": [
+        "c-html-gfx",
+        "c-ffmpeg"
+      ],
+      "requires": "ffmpeg, chromium"
+    },
+    "c-brain": {
+      "type": "component",
+      "description": "How to use GBrain \u2014 the permanent, git-versioned knowledge base \u2014 across BOTH of its instances: `brain-personal` (life + business knowledge: projects, people, companies, decisions, SOPs) and `brain-competitive` (scraped community intelligence, patterns, gap analysis \u2014 Research-agent only, hard firewall). Load this whenever you need to STORE or RETRIEVE permanent knowledge, decide WHERE a piece of information or a file belongs, navigate either brain on disk, use the `brain-personal` / `brain-competitive` MCP tools or CLIs, or apply the project-repo-vs-GBrain litmus test. Covers both brains, their MCP tool surfaces, the firewall between them, recall/write order, the canonical vasanth-hq folder structure, and the \"where does X go?\" decision matrix."
+    },
+    "c-broll": {
+      "type": "component",
+      "description": "B-roll system \u2014 library management, script matching, placement planning, alignment verification, website-scroll capture (Playwright), clip extraction from video, R2 upload, and embedding b-roll into CFW content variants. The single building block for everything b-roll.",
+      "visibility": "internal",
+      "whenToUse": "Trigger on b-roll, c-broll, b-roll library, clip match, placement plan, c-broll plan, SRT alignment, c-broll archive, c-broll preview, c-broll log, c-broll timecards, script to clips, b-roll coverage, c-broll library update, c-broll image rationale, web capture, website scroll, Playwright capture, website b-roll, scroll recording, URL discovery, extract clip from video, b-roll upload, R2 upload broll, embed b-roll, CFW variant b-roll.",
+      "dependencies": [
+        "c-ffmpeg",
+        "c-cloud-media"
+      ],
+      "requires": "ffmpeg, node, chromium",
+      "learningsFile": "c-broll/LEARNINGS.md"
+    },
+    "c-broll-sync": {
+      "type": "component",
+      "description": "Transcript-synced b-roll beat planner. Takes a word-level transcript + optional b-roll clips + coverage params and emits an ordered JSON beat list where each beat is tagged broll(clip,in,out) or graphics(scene). Used by p-reels-pip, p-reels-spotlight, and p-reels-faceless as the background layout planner \u2014 this component plans, it does NOT render. Engine-agnostic.",
+      "version": "1.0.0",
+      "visibility": "internal",
+      "dependencies": [],
+      "requires": "node"
+    },
+    "c-cfw-social": {
+      "type": "component",
+      "description": "THE comprehensive reference for managing the CFW Social app itself. Covers the full Prisma data model (User, Brand, Workspace, Agent, Run, Output, Composition, Post, ApprovalToken, PlatformConnection, ContentSource, BrandInsight, etc.), entity relationships, run lifecycle (pending \u2192 running \u2192 done/failed), output states, approval workflow (send-for-approval \u2192 signed-token \u2192 inbox approve/reject/revoke), publishing system (post creation \u2192 scheduling \u2192 calendar \u2192 platform publish), brand management (setup, DNA, insights, social account OAuth, channel connections, API keys), workspace operations (CRUD, sources, assets, runs/outputs/posts listing), auth cascade (Better-Auth session \u2192 brand-key \u2192 master-key \u2192 signed-token \u2192 webhook HMAC), and admin operations (stuck run recovery, key rotation, billing changes, account deletion). Load this whenever you need to reason about, query, mutate, or debug the CFW Social app's data or operations.",
+      "whenToUse": "Trigger on: \"cfw social data model\", \"how does cfw-social work\", \"brand setup\", \"workspace management\", \"run lifecycle\", \"approval flow\", \"post scheduling\", \"cfw auth\", \"cfw-social admin\", \"recover stuck run\", \"platform connection\", \"social account oauth\", \"cfw-social Prisma\", \"content source\", \"brand insight\", \"composition status\", \"cfw-social publishing\", \"cfw-social billing\", \"cfw-social API key\", \"cfw-social channel connection\", \"what is a run in cfw\", \"what is a workspace in cfw\", \"how do approvals work\", \"cfw-social routes\", \"cfw-social middleware\", \"better-auth cfw\", \"cfw-social webhook\", \"stripe webhook cfw\", \"postforme webhook cfw\", \"telegram bot cfw\", \"discord bot cfw\", \"slack install cfw\", \"external agent call cfw\", \"call cfw api from agent\", \"api/v2 cfw\", \"cfw api key access\", \"programmatic api cfw\", \"how to call app.cfw.social\", \"cfw rest api\", \"brand secrets\", \"provider vault\", \"provider keys cfw\", \"quick publish\", \"posts/quick\", \"manage brand headlessly\", \"external agent manage brand\", \"create agent via api\", \"brand-key agent\".",
+      "learningsFile": "c-cfw-social/LEARNINGS.md"
+    },
+    "c-cfw-social-smoke-test": {
+      "type": "component",
+      "description": "Smoke-test every GET + POST handler on a running cfw-social instance with master-key auth; classifies expected status by auth mode (public / api-or-session / session / webhook / signed-token). Fast 5xx hunt across every route after deploy or route changes.",
+      "whenToUse": "Trigger on \"smoke test cfw-social\", \"smoke test the API\", \"check cfw-social endpoints\", \"is the server healthy\", \"did my route changes break anything\", \"test all GETs/POSTs\", \"cfw smoke\", \"verify cfw-social deploy\".",
+      "learningsFile": "c-cfw-social-smoke-test/LEARNINGS.md"
+    },
+    "c-cloud-media": {
+      "type": "component",
+      "description": "Media upload (via the CFW Social API \u2014 R2 is never exposed), CDN URL retrieval, and CFW Social API operations. Use for uploading b-roll clips / rendered videos / images and getting back a CDN URL, registering assets in CFW, fetching content/variants, updating variant scripts with b-roll tags, and finding stuck CFW workflow executions.",
+      "visibility": "internal",
+      "whenToUse": "Trigger on R2 upload, CDN upload, Cloudflare R2, cloud upload, CFW Social, register asset, fetch content, variant update, b-roll embed, CFW variant, CFW content, stuck execution, workflow execution, c-broll upload CDN, cloud media.",
+      "dependencies": [
+        "c-broll"
+      ],
+      "requires": "python3",
+      "learningsFile": "c-cloud-media/LEARNINGS.md"
+    },
+    "c-composio": {
+      "type": "component",
+      "description": "Call a connected Composio app (e.g. Google Drive) on behalf of the current brand. Executes one action (list_files, download_file, etc.) using the brand's vaulted Composio credentials, and returns structured JSON. Use this whenever a cook needs to read or download from a connected integration \u2014 NOT for uploading to CFW (use cfw-upload for that).",
+      "visibility": "internal",
+      "whenToUse": "Trigger whenever the Director needs to interact with a brand's connected Composio integration \u2014 reading Google Drive files, listing folder contents, downloading a file for use in a reel or carousel. Common triggers: \"list my drive files\", \"download the file from Google Drive\", \"what's in my Drive folder\", run_skill c-composio, composio, gdrive, google_drive action. Always run c-composio BEFORE any recipe that needs a local file from a connected cloud storage.",
+      "requires": "node",
+      "learningsFile": "c-composio/LEARNINGS.md"
+    },
+    "c-emil-design-eng": {
+      "type": "component",
+      "description": "This skill encodes Emil Kowalski's philosophy on UI polish, component design, animation decisions, and the invisible details that make software feel great."
+    },
+    "c-ffmpeg": {
+      "type": "component",
+      "description": "All FFmpeg video/audio operations for the creative studio. Use when compositing video, applying chroma key (green screen), building portrait/landscape layouts, trimming clips, concatenating segments, adjusting speed, adding zoompan/Ken Burns effects, normalizing audio loudness, detecting snap points, or running delivery quality checks.",
+      "visibility": "internal",
+      "whenToUse": "Trigger on any mention of c-ffmpeg, video composite, green screen, PIP, chroma key, concat, trim, speed adjust, loudnorm, zoompan, portrait layout, landscape layout, audio mixing, SFX mix, delivery checklist, or ffprobe verify.",
+      "requires": "ffmpeg",
+      "learningsFile": "c-ffmpeg/LEARNINGS.md"
+    },
+    "c-find-skill": {
+      "type": "component",
+      "description": "Discover and install Claude Code skills. Use when the user asks \"find a skill for X\", \"is there a skill that does X\", \"add a skill for X\", or wants to extend the agent with capabilities that may already exist. Checks /Users/vasanth/Code/skills/ first, then searches the ecosystem. Always installs to /Code/skills/ and symlinks \u2014 never downloads directly into .claude/skills/."
+    },
+    "c-gfx-batch": {
+      "type": "pipeline",
+      "description": "Batch GFX creation pipeline. Creates multiple HTML infographic overlay graphics from a script, screenshots them pixel-perfectly, and optionally converts to video clips with Ken Burns zoom.",
+      "visibility": "internal",
+      "dependencies": [
+        "c-ffmpeg",
+        "c-html-gfx"
+      ],
+      "learningsFile": "c-gfx-batch/LEARNINGS.md"
+    },
+    "c-heygen": {
+      "type": "component",
+      "description": "HeyGen avatar video rendering for the creative studio. Use for avatar green-screen renders, submitting via MCP or API, browser-based UI rendering, delegating to human via Discord, polling render status, downloading completed MP4s, and verifying green-screen quality.",
+      "visibility": "internal",
+      "whenToUse": "Trigger on HeyGen, avatar render, green screen render, talking head, avatar video, HeyGen API, HeyGen MCP, poll render, download avatar, verify green screen, avatar MP4.",
+      "requires": "python3",
+      "learningsFile": "c-heygen/LEARNINGS.md"
+    },
+    "c-hook": {
+      "type": "component",
+      "description": "Engine-agnostic hook-segment producer. Downloads a 4-7s creator clip (windowed yt-dlp), normalises to 1080\u00d71920/30fps/48k via scale-to-COVER, and returns a ready-to-prepend hook-clip.mp4 + metadata (duration, optional word transcript). The creator's audio is NEVER speed-adjusted or pitch-shifted \u2014 that natural voice is the entire scroll-stop value. Any reel core can optionally call this component and prepend its output before its own content.",
+      "version": "1.0.0",
+      "visibility": "internal",
+      "dependencies": [
+        "c-ffmpeg"
+      ],
+      "requires": "ffmpeg, yt-dlp, python3"
+    },
+    "c-html-gfx": {
+      "type": "component",
+      "description": "HTML graphics and screenshot generation for video overlays, banners, explainer slides, and Remotion-based motion graphics. Use when creating 1920x1080 GFX cards, YouTube/LinkedIn banners, animated explainer slides, or rendering React/TSX compositions with Remotion.",
+      "visibility": "internal",
+      "whenToUse": "Trigger on HTML GFX, GFX card, overlay graphic, video graphic, banner, YouTube banner, LinkedIn banner, explainer slide, HTML screenshot, headless Chrome screenshot, Remotion render, React video.",
+      "dependencies": [
+        "f-remotion"
+      ],
+      "requires": "ffmpeg, chromium",
+      "learningsFile": "c-html-gfx/LEARNINGS.md"
+    },
+    "c-kie-ai": {
+      "type": "component",
+      "description": "AI image and video generation via kie.ai and fal.ai. Use for FLUX image gen, Hailuo i2v, Sora-2, Kling, WAN, Seedance, Veo-3, GPT Image, Imagen 4, Z-Image, Grok-imagine, InfiniTalk, MiniMax video. Direct API calls \u2014 replaces FloeAPI as primary i2v provider.",
+      "visibility": "internal",
+      "whenToUse": "Trigger on kie.ai, KIE_AI_API_KEY, Hailuo video, hailuo i2v, Sora-2 video, Kling avatar, InfiniTalk, WAN video kie, Seedance kie, GPT image kie, Imagen 4 kie, Z-image, grok-imagine, image-to-video production, fal.ai, FAL_KEY, FLUX image, fal queue.",
+      "learningsFile": "c-kie-ai/LEARNINGS.md"
+    },
+    "c-learnloop": {
+      "type": "component",
+      "description": "LearnLoop platform API \u2014 create and manage courses, lessons, modules, library resources (gated and free), newsletter campaigns, community posts, bots, events, members, products, and admin settings. Use for any automation, seeding, or integration against a LearnLoop tenant.",
+      "whenToUse": "Trigger on: LearnLoop API, learnloop, create course, create lesson, gated library, library resource, newsletter subscriber, community bot, bot persona, community member, tenant admin API, LEARNLOOP_API_KEY, unlock resource, library lead, community post, RSVP event, create product, prompt library.",
+      "learningsFile": "c-learnloop/LEARNINGS.md"
+    },
+    "c-music": {
+      "type": "component",
+      "description": "Fetch a background-music track from the CFW music library to a local file, ready to pass as $audio_track to a reel/short recipe. Resolves a library cdnUrl (obtained from the list_music_tracks MCP tool) into a validated local .mp3 on disk. Enforces a host allowlist so only licensed library tracks are ever downloaded.",
+      "visibility": "internal",
+      "whenToUse": "Trigger whenever a pipeline needs background music / an audio_track and you have a library track cdnUrl from list_music_tracks (e.g. https://media.cfw.social/music/...). Run this BEFORE muxing \u2014 recipes mux a LOCAL file, not a URL. Also trigger on c-music, music library fetch, background music download, audio_track url.",
+      "requires": "ffmpeg, curl",
+      "learningsFile": "c-music/LEARNINGS.md"
+    },
+    "c-overlay-fx": {
+      "type": "component",
+      "description": "Renders small ANIMATED, TRANSPARENT overlay graphics (pill / sticker-badge / mini-flowchart / stat-card) as alpha-channel PNG sequences that reel cores composite on top of a finished reel via ffmpeg overlay filter. Proven motion envelope: slide-in \u2192 wiggle \u2192 hold \u2192 slide-out. All output is true alpha (clearRect, no drawBackground) \u2014 RGBA PNGs ready for `ffmpeg [reel][overlay]overlay=x:y:format=auto`.",
+      "version": "1.0.0",
+      "visibility": "internal",
+      "requires": [
+        "node >= 18",
+        "canvas ^3.2.3"
+      ]
+    },
+    "c-paperclip": {
+      "type": "component",
+      "description": "The main skill for managing the Paperclip control plane \u2014 the multi-agent orchestration system that runs Vasanth's AI workforce across every organization. Load this whenever you need to inspect, create, update, comment on, organize, cancel, or approve issues; work across multiple orgs/companies; understand how agents pick up and execute work (heartbeats, checkout, agent lifecycle, adapters, OpenClaw runtime); align the day's work to Paperclip-routed priorities; or reason about when and how to file tracked work. This is the primary \"manage my Paperclip system\" skill. Related: `/pc-impersonate` (run as a specific agent), `/board` (cross-org board view), `paperclip-create-agent` (hiring agents), `paperclip-converting-plans-to-tasks`."
+    },
+    "c-photo-enhance": {
+      "type": "component",
+      "description": "Free photo enhancement using ffmpeg filters. Applies named presets (cinematic, vibrant, warm, cool, bw, matte, sharp) to still images. Downloads source photo from any HTTP URL or R2, processes locally with ffmpeg, uploads result to R2. Zero API cost.",
+      "visibility": "internal",
+      "whenToUse": "Trigger on photo filter, enhance photo, image filter, color grade photo, cinematic photo, warm filter, cool filter, black and white photo, matte photo, sharpen image, photo enhancement, photo preset, filter photo, grade image.",
+      "learningsFile": "c-photo-enhance/LEARNINGS.md"
+    },
+    "c-production": {
+      "type": "component",
+      "description": "Production management for the creative studio. Use for creating production folder structures, running delivery checklists, updating the HTML dashboard, verifying output files, managing snap detection, extracting hook clips, and coordinating multi-step pipeline state.",
+      "visibility": "internal",
+      "whenToUse": "Trigger on production folder, create production, delivery checklist, dashboard update, snap detection, hook clip, c-ffmpeg verify, c-ffmpeg delivery, production structure, interim folder, finals folder, production state, step checkpoint, output verify.",
+      "dependencies": [
+        "c-broll",
+        "c-ffmpeg"
+      ],
+      "requires": "ffmpeg, python3",
+      "learningsFile": "c-production/LEARNINGS.md"
+    },
+    "c-reel-premium": {
+      "type": "component",
+      "description": "Premium polish pass for any assembled 9:16 reel \u2014 word-synced kinetic captions with accent-keyword pops, SFX (whoosh/impact/riser) at planned cues, and a cinematic grade. Runs AFTER a reel is assembled, regardless of how it was built (ffmpeg, HyperFrames, or Remotion), because the input is just the finished MP4 + a word transcript. Extracted from p-reels-fmt3 v0.5 so every p-reels-* format gets the same premium layer.",
+      "version": "1.0.0",
+      "visibility": "internal",
+      "dependencies": [
+        "f-hyperframes",
+        "f-hyperframes-cli",
+        "c-ffmpeg"
+      ],
+      "requires": "ffmpeg, node, chromium"
+    },
+    "c-replicate": {
+      "type": "component",
+      "description": "Replicate.ai model hosting \u2014 run open-source and commercial ML models via API. Use for FLUX, SDXL, video models, and any model hosted at c-replicate.com/models.",
+      "visibility": "internal",
+      "whenToUse": "Trigger on c-replicate, c-replicate.ai, REPLICATE_API_TOKEN, run model c-replicate, FLUX c-replicate, SDXL c-replicate.",
+      "learningsFile": "c-replicate/LEARNINGS.md"
+    },
+    "c-research": {
+      "type": "component",
+      "description": "Dual-provider web research for the creative studio. Prefers Perplexity sonar-pro when available; falls back to Firecrawl search automatically. Use for strategy research, trend discovery, cited web research, competitive intelligence, and grounding content ideas with real-world findings. Returns structured cited findings with source URLs in a consistent format regardless of provider.",
+      "visibility": "internal",
+      "whenToUse": "Trigger on research, strategy research, Perplexity, sonar, web research, firecrawl, topic research, find sources, trend analysis, competitive research, fact check, grounded insights, market research, content strategy research, what is happening with.",
+      "learningsFile": "c-research/LEARNINGS.md"
+    },
+    "c-script": {
+      "type": "component",
+      "description": "Script writing and processing for the creative studio. Use for writing VSL longform scripts, short-form scripts, TTS preprocessing (cleaning scripts for ElevenLabs/HeyGen), voice style adaptation, duration estimation, hook extraction, and rewriting scripts to hit target duration.",
+      "visibility": "internal",
+      "whenToUse": "Trigger on script, write script, VSL script, short script, TTS clean, preprocess script, voice adapt, script duration, hook extract, script rewrite, word count, speaking rate, TTS text, script analyze, script value segments, short-form script, longform script.",
+      "learningsFile": "c-script/LEARNINGS.md"
+    },
+    "c-taste-skill": {
+      "type": "component",
+      "description": "Anti-slop frontend skill for landing pages, portfolios, and redesigns. The agent reads the brief, infers the right design direction, and ships interfaces that do not look templated. Real design systems when applicable, audit-first on redesigns, strict pre-flight check."
+    },
+    "c-thumbnail": {
+      "type": "component",
+      "description": "Render YouTube/social thumbnail variants from an avatar VIDEO (auto frame-pick + green-screen cutout) or an avatar/generated frame + topic \u2014 bold HTML-GFX layouts at 1280x720 through headless Chrome, compressed under 2 MB. Produces N variants for selection. Reusable component invoked by image recipes; not an owner-facing pipeline.",
+      "visibility": "internal",
+      "whenToUse": "Trigger on c-thumbnail, make thumbnail, YouTube thumbnail, thumbnail variants, click-through image, video cover, thumbnail from frame, thumbnail from avatar video, thumbnail from my HeyGen render.",
+      "dependencies": [
+        "c-html-gfx",
+        "c-ffmpeg"
+      ],
+      "requires": "ffmpeg, chromium"
+    },
+    "c-typing-ui": {
+      "type": "component",
+      "description": "HyperFrames scene component that renders a dark chat/terminal card which types a prompt char-by-char with a blinking cursor, plus hook title cards. Designed to replace the Remotion fmt6/rmtn-fmt5 typing UI. Use when a reel beat calls for a graphics(scene) of type \"typing\" (interactive prompt reveal) or \"hook\" (kinetic title card). Supports 9:16 full-frame and PIP-safe variants. All content is data-driven via props \u2014 nothing is hardcoded.",
+      "version": "1.0.0",
+      "visibility": "internal",
+      "dependencies": [
+        "f-hyperframes",
+        "f-hyperframes-cli",
+        "f-gsap"
+      ],
+      "requires": "node, chromium, ffmpeg"
+    },
+    "c-website-to-hyperframes": {
+      "type": "pipeline",
+      "description": "Capture a website and create a HyperFrames video from it. Use when: (1) a user provides a URL and wants a video, (2) someone says \"capture this site\", \"turn this into a video\", \"make a promo from my site\", (3) the user wants a social ad, product tour, or any video based on an existing website, (4) the user shares a link and asks for any kind of video content. Even if the user just pastes a URL \u2014 this is the skill to use.",
+      "visibility": "internal",
+      "dependencies": [
+        "f-hyperframes",
+        "f-hyperframes-cli"
+      ]
+    },
+    "f-gsap": {
+      "type": "framework",
+      "description": "GSAP animation reference for HyperFrames. Covers gsap.to(), from(), fromTo(), easing, stagger, defaults, timelines (gsap.timeline(), position parameter, labels, nesting, playback), and performance (transforms, will-change, quickTo). Use when writing GSAP animations in HyperFrames compositions.",
+      "visibility": "internal"
+    },
+    "f-hyperframes": {
+      "type": "framework",
+      "description": "Create video compositions, animations, title cards, overlays, captions, voiceovers, audio-reactive visuals, and scene transitions in HyperFrames HTML. Use when asked to build any HTML-based video content, add captions or subtitles synced to audio, generate text-to-speech narration, create audio-reactive animation (beat sync, glow, pulse driven by music), add animated text highlighting (marker sweeps, hand-drawn circles, burst lines, scribble, sketchout), or add transitions between scenes (crossfades, wipes, reveals, shader transitions). Covers composition authoring, timing, media, and the full video production workflow. For CLI commands (init, lint, preview, render, transcribe, tts) see the f-hyperframes-cli skill.",
+      "visibility": "internal",
+      "dependencies": [
+        "f-gsap",
+        "f-hyperframes-cli"
+      ],
+      "requires": "node, chromium"
+    },
+    "f-hyperframes-cli": {
+      "type": "framework",
+      "description": "HyperFrames CLI tool \u2014 hyperframes init, lint, preview, render, transcribe, tts, doctor, browser, info, upgrade, compositions, docs, benchmark. Use when scaffolding a project, linting or validating compositions, previewing in the studio, rendering to video, transcribing audio, generating TTS, or troubleshooting the HyperFrames environment.",
+      "visibility": "internal",
+      "dependencies": [
+        "f-hyperframes"
+      ],
+      "requires": "node, ffmpeg"
+    },
+    "f-hyperframes-registry": {
+      "type": "framework",
+      "description": "Install and wire registry blocks and components into HyperFrames compositions. Use when running hyperframes add, installing a block or component, wiring an installed item into index.html, or working with hyperframes.json. Covers the add command, install locations, block sub-composition wiring, component snippet merging, and registry discovery.",
+      "visibility": "internal",
+      "dependencies": [
+        "f-hyperframes"
+      ]
+    },
+    "f-remotion": {
+      "type": "framework",
+      "description": "Best practices for Remotion - Video creation in React",
+      "visibility": "internal",
+      "requires": "node, chromium"
+    },
+    "notebooklm": {
+      "type": "component",
+      "description": "Complete API for Google NotebookLM - full programmatic access including features not in the web UI. Create notebooks, add sources, generate all artifact types, download in multiple formats. Activates on explicit /notebooklm or intent like \"create a podcast about X\", \"install notebooklm\", \"add notebooklm to cowork\""
+    },
+    "onboard-brand": {
+      "type": "component",
+      "description": "Stand up a brand-new CFW Social brand end-to-end with nothing but the prod master key. One call to /api/v1/brand/setup creates the Brand + DNA + default Workspace + the full agent crew (Director \"Aria\" + specialists) + a default brand API key, and uploads the logo + character sheet to R2. Then it places the brand on the Hermes box (hermesBoxId) and connects a Telegram bot so the brand's Director starts polling. After it runs, you DM the new brand's bot to test content end-to-end. Pure HTTP + master key \u2014 drop it into any Hermes.",
+      "whenToUse": "Trigger on: onboard a brand, create a new brand, set up a new client, stand up a brand, new CFW brand, provision a brand, onboard <name>, create brand and connect telegram, admin onboarding, birth a brand."
     },
     "p-ai-character": {
       "type": "pipeline",
-      "category": "short-form",
-      "format": "9:16 vertical",
-      "description": "AI character short (human/plush/mascot/fantasy)",
-      "aiMethod": "Higgsfield Cinema + Veo talking head",
-      "inputs": ["brand", "script", "style (human/plush/mascot/fantasy)"],
-      "outputs": ["9:16 AI character video"],
-      "duration": "15s-60s",
-      "dependencies": ["c-ai-media", "c-studio-script", "c-ffmpeg"],
-      "checkpoints": ["character reference approval"],
+      "description": "AI character animated short pipeline. Produces a 9:16 short using Gemini character-consistent scene images animated via Hailuo i2v. Works for any character type \u2014 human, plush toy (Labubu/Tiny Tales style), mascot, or fantasy. No dialogue \u2014 visual storytelling with music. Requires 6-attribute character lock audit before any generation.",
+      "visibility": "catalog",
+      "inputs": [
+        "story_concept"
+      ],
+      "dependencies": [
+        "c-ai-media",
+        "c-ffmpeg",
+        "c-music"
+      ],
+      "produces": {
+        "dish": "AI Character Short",
+        "format": "9:16 vertical video",
+        "duration": "30-60s"
+      },
       "learningsFile": "p-ai-character/LEARNINGS.md"
     },
-    "p-hook-reel": {
+    "p-ai-image": {
       "type": "pipeline",
-      "category": "short-form",
-      "format": "9:16 vertical",
-      "description": "Hook-jacked reel with brand continuation",
-      "aiMethod": "B-roll compositing",
-      "inputs": ["viral hook", "brand content"],
-      "outputs": ["9:16 hook + brand CTA reel"],
-      "duration": "15s-60s",
-      "dependencies": ["c-broll", "c-ffmpeg", "c-studio-production"],
-      "checkpoints": ["hook authenticity check"],
-      "learningsFile": "p-hook-reel/LEARNINGS.md"
+      "description": "Generate one or many AI images for social posts via Gemini/Nanobanana (c-ai-media), fal.ai/kie.ai FLUX (c-kie-ai), or Replicate (c-replicate) \u2014 and optionally render a YouTube/social thumbnail from a generated frame (c-thumbnail). Trigger on \"make an AI image\", \"generate image\", \"AI image post\", \"single image\", \"image batch\", \"thumbnail from an AI image\".",
+      "version": "0.1.0",
+      "visibility": "catalog",
+      "whenToUse": "Use when the user wants ONE or a small batch of generated/AI images (a photo-style scene, an illustration, a character). Not for HTML/explainer graphics (use p-gfx-image-posts) and not for video.",
+      "inputs": [
+        "prompt",
+        "count",
+        "provider"
+      ],
+      "dependencies": [
+        "c-ai-media",
+        "c-kie-ai",
+        "c-replicate",
+        "c-ffmpeg",
+        "c-thumbnail"
+      ],
+      "produces": {
+        "dish": "AI Image Post",
+        "format": "image (single or multi)",
+        "duration": "n/a"
+      }
     },
-    "p-viral-reel": {
+    "p-carousel": {
       "type": "pipeline",
-      "category": "short-form",
-      "format": "9:16 vertical",
-      "description": "Viral reel recreation (avatar or AI-generated)",
-      "aiMethod": "HeyGen green-screen OR Higgsfield+Veo",
-      "inputs": ["source URL", "brand", "style (avatar or ai-generated)"],
-      "outputs": ["9:16 viral recreation"],
-      "duration": "15s-60s",
-      "dependencies": ["t-heygen", "c-ai-media", "c-studio-script", "c-ffmpeg"],
-      "checkpoints": ["script adaptation approval"],
-      "learningsFile": "p-viral-reel/LEARNINGS.md",
-      "activeFeedback": [
-        "avatar style is production-ready",
-        "ai-generated style needs Higgsfield/Veo API update"
-      ]
+      "description": "Multi-slide carousel for any platform. Writes slide content, then builds each slide as an AI image (c-ai-media), an HTML-GFX card (c-html-gfx), or a HyperFrames composition (f-hyperframes) \u2014 or a mix \u2014 assembles into a carousel/PDF, and drafts the caption. Trigger on \"make a carousel\", \"LinkedIn carousel\", \"Instagram carousel\", \"slide deck post\", \"multi-slide post\".",
+      "visibility": "catalog",
+      "inputs": [
+        "topic"
+      ],
+      "dependencies": [
+        "c-script",
+        "c-ai-media",
+        "c-html-gfx",
+        "f-hyperframes"
+      ],
+      "produces": {
+        "dish": "LinkedIn Carousel",
+        "format": "PDF carousel",
+        "duration": "n/a"
+      },
+      "learningsFile": "p-carousel/LEARNINGS.md"
+    },
+    "p-clone-reel": {
+      "type": "pipeline",
+      "description": "Clone-a-viral pipeline \u2014 adapt a winning viral video into your brand voice on your topic. Downloads a viral source video, transcribes it, adapts the script to brand voice, and delivers a 9:16 short in the viral format using an avatar PIP (HeyGen green-screen).",
+      "visibility": "catalog",
+      "inputs": [
+        "source_url"
+      ],
+      "dependencies": [
+        "c-script",
+        "c-heygen",
+        "c-html-gfx",
+        "c-audio",
+        "c-production",
+        "c-ffmpeg"
+      ],
+      "produces": {
+        "dish": "Viral Reel Recreation",
+        "format": "9:16 vertical video",
+        "duration": "30-60s"
+      },
+      "learningsFile": "p-clone-reel/LEARNINGS.md"
+    },
+    "p-gfx-carousel": {
+      "type": "pipeline",
+      "description": "Render a swipeable multi-slide IMAGE carousel \u2014 N separate brand-styled 1080\u00d71350 PNG slides (cover \u2192 content \u2192 CTA) for Instagram/LinkedIn. Renders ALL slides in one deterministic pass via headless chromium and uploads each to R2. Trigger on \"carousel\", \"carousel post\", \"swipe post\", \"X-slide carousel\", \"Instagram carousel\", \"LinkedIn carousel\".",
+      "version": "1.0.0",
+      "visibility": "deprecated",
+      "whenToUse": "Use when the user wants a multi-slide swipeable image carousel (2\u201310 ordered slides delivered as separate images). NOT for a single graphic (use p-gfx-image-posts) and NOT for a PDF document carousel (use p-linkedin-carousel).",
+      "inputs": [
+        "brief"
+      ],
+      "dependencies": [
+        "c-html-gfx",
+        "c-cloud-media"
+      ],
+      "produces": {
+        "dish": "Image Carousel",
+        "format": "1080\u00d71350 PNG slides (2\u201310)",
+        "duration": "n/a"
+      },
+      "deprecated": true,
+      "supersededBy": "p-carousel",
+      "learningsFile": "p-gfx-carousel/LEARNINGS.md"
+    },
+    "p-gfx-image": {
+      "type": "pipeline",
+      "description": "Generate one or many HTML-GFX explainer images (brand-styled, navy/green) from a topic or script via c-html-gfx \u2014 single cards, multi-image batches, or platform banners (c-banner; replaces p-banner). Trigger on \"make explainer image\", \"graphic post\", \"GFX image\", \"infographic post\", \"make a banner\", \"channel art\".",
+      "version": "0.1.0",
+      "visibility": "catalog",
+      "whenToUse": "Use when the user wants ONE or a FEW brand-styled static images (not a video, not a multi-step carousel PDF). Each image is a self-contained HTML composition rendered to PNG/JPG.",
+      "inputs": [
+        "topic",
+        "count"
+      ],
+      "dependencies": [
+        "c-html-gfx",
+        "c-ffmpeg",
+        "c-banner"
+      ],
+      "produces": {
+        "dish": "GFX Image Post",
+        "format": "image (single or multi)",
+        "duration": "n/a"
+      }
+    },
+    "p-hf-reel": {
+      "type": "pipeline",
+      "description": "Faceless HyperFrames Reel \u2014 a 9:16 vertical reel (~20-40s) where an ElevenLabs cloned-voice voiceover carries the narrative and the visuals are a TRUE f-hyperframes HTML/GSAP motion-graphics composition (animated text beats synced to the VO, GSAP transitions), NOT static cards and NOT an ffmpeg slideshow. Optional user-supplied b-roll clips are woven in as short 1-2s accent inserts inside the composition. No recorded person, no avatar. Renders via the hyperframes CLI, muxes the VO, uploads to R2, and returns the R2 public URL. Trigger on \"faceless hyperframes reel\", \"motion-graphics reel with voiceover\", \"animated reel no avatar\", \"hf reel\", \"make a vertical reel where the graphics are animated and a voiceover narrates\", \"faceless reel from a script\".",
+      "version": "1.0.0",
+      "visibility": "catalog",
+      "whenToUse": "Use when the user wants a faceless (no avatar, no recorded person) 9:16 vertical reel where a brand-voice ElevenLabs voiceover narrates and the visuals are genuinely animated HTML/GSAP motion graphics (text beats, charts, transitions) authored in HyperFrames \u2014 optionally weaving in short user-supplied b-roll accent clips. NOT for talking-head reels, NOT for static-card slideshows, NOT for footage-with-PIP (use p-reels-fmt1 for that).",
+      "inputs": [
+        "topic",
+        "voiceover_script",
+        "broll_clips"
+      ],
+      "dependencies": [
+        "c-audio",
+        "f-hyperframes",
+        "f-hyperframes-cli",
+        "c-ffmpeg"
+      ],
+      "produces": {
+        "dish": "Faceless HyperFrames Reel",
+        "format": "9:16 vertical video",
+        "duration": "20-40s"
+      },
+      "learningsFile": "p-hf-reel/LEARNINGS.md"
+    },
+    "p-longform": {
+      "type": "pipeline",
+      "description": "Unified longform video production pipeline \u2014 VSL, demo, or tutorial/educational. Script \u2192 talking-head avatar (HeyGen) + b-roll + GFX cards + Remotion/HTML slides \u2192 finished 16:9 video. Trigger on \"make a VSL\", \"make a longform\", \"demo video\", \"tutorial video\", \"long-form video\", \"educational video\", \"walkthrough video\".",
+      "version": "1.0.0",
+      "visibility": "catalog",
+      "whenToUse": "Use for any longform video (>2 min). Pass `format` to pick the structure \u2014 vsl (sales-letter beats: hook\u2192problem\u2192agitation\u2192solution\u2192proof\u2192offer\u2192CTA), demo (product/feature walkthrough, screen-recording-led), or tutorial (step-by-step educational with layered Remotion/HTML visuals).",
+      "inputs": [
+        "script",
+        "format",
+        "broll_dir",
+        "talking_head_video",
+        "source",
+        "known_transcript",
+        "captions",
+        "outro"
+      ],
+      "dependencies": [
+        "c-script",
+        "c-heygen",
+        "c-broll",
+        "c-broll-sync",
+        "c-reel-premium",
+        "c-typing-ui",
+        "c-html-gfx",
+        "c-audio",
+        "c-production",
+        "c-ffmpeg",
+        "c-ai-media",
+        "f-remotion",
+        "f-hyperframes",
+        "f-hyperframes-cli",
+        "f-gsap",
+        "wowx-focus"
+      ],
+      "produces": {
+        "dish": "Longform Video",
+        "format": "16:9 video",
+        "duration": "5-20 min"
+      }
+    },
+    "p-reels-faceless": {
+      "type": "pipeline",
+      "description": "Turn a script into a fully-rendered premium faceless reel \u2014 TTS voiceover in the brand voice, then the visual track is full-frame HyperFrames motion-graphics (per-beat animated compositions: charts, terminals, typing-UI cards, diagrams, checklists) with OPTIONAL transcript-synced b-roll filling up to the coverage budget, plus baked-in kinetic captions, SFX, cinematic grade, CTA takeover, and a first-frame cover freeze for IG/TikTok feed. NO talking head, NO avatar. Replaces p-reels-fmt4 and adds optional b-roll (the hf-fmt5 way) plus the typing-UI graphics vocabulary. Trigger on \"faceless reel from this script\", \"no-avatar explainer with b-roll\", \"script to premium animated reel\", \"faceless short with stock footage and motion graphics\".",
+      "version": "1.0.0",
+      "visibility": "catalog",
+      "whenToUse": "Use when you want a faceless 9:16 vertical reel \u2014 brand TTS voiceover over full-frame graphics, with optional b-roll clips filling some beats transcript-synced while remaining beats get real animated HyperFrames compositions. If no b-roll is supplied, the entire visual track is brand motion-graphics (preserving fmt4 behavior exactly). Never use for PIP layout (p-reels-pip) or uploaded talking-head (p-reels-spotlight). Prefer this over p-reels-fmt4 for all new cooks \u2014 it is the direct replacement.",
+      "inputs": [
+        "script"
+      ],
+      "dependencies": [
+        "c-audio",
+        "c-broll-sync",
+        "c-typing-ui",
+        "c-reel-premium",
+        "c-ffmpeg",
+        "c-cloud-media",
+        "f-hyperframes",
+        "f-hyperframes-cli",
+        "f-gsap",
+        "c-overlay-fx"
+      ],
+      "produces": {
+        "dish": "Faceless Premium Reel",
+        "format": "9:16 vertical video",
+        "duration": "30-90s"
+      },
+      "hermes": {
+        "vendored": [
+          "c-audio",
+          "c-reel-premium",
+          "c-broll-sync",
+          "c-typing-ui",
+          "c-ffmpeg",
+          "f-hyperframes",
+          "f-hyperframes-cli",
+          "f-gsap",
+          "c-overlay-fx"
+        ]
+      },
+      "learningsFile": "p-reels-faceless/LEARNINGS.md"
+    },
+    "p-reels-pip": {
+      "type": "pipeline",
+      "description": "Turn an uploaded talking-head video into a premium 9:16 reel where the speaker sits as a rounded bottom-center picture-in-picture over a full-frame transcript-synced background (uploaded b-roll where the words match, generated HyperFrames motion graphics elsewhere). The clip's own voice is the single audio bed \u2014 never cut, never replaced. Trigger on \"make a reel from my talking-head video\", \"PIP reel from my uploaded video\", \"bottom PIP reel\", \"my video as the PIP with a graphics background\", \"talking head over motion graphics matched to what I say\", \"transcript-synced background with my face as PIP\".",
+      "version": "1.0.0",
+      "visibility": "catalog",
+      "whenToUse": "Use when the user UPLOADS their own talking-head clip (real face + real voice \u2014 NOT a HeyGen avatar) and wants a 9:16 reel where that clip sits as a rounded bottom-center PIP over a transcript-synced background. The background uses uploaded b-roll where clips match the spoken words, and generated HyperFrames motion graphics everywhere else. Use p-reels-spotlight for full-frame (speaker fills frame) and p-reels-faceless for no talking head. Provider wrappers (p-reels-pip-heygen) delegate to this skill \u2014 do NOT use those when the user has already uploaded a clip.",
+      "inputs": [
+        "talking_head_video",
+        "broll",
+        "known_transcript",
+        "outro"
+      ],
+      "dependencies": [
+        "c-ffmpeg",
+        "c-audio",
+        "c-reel-premium",
+        "c-broll-sync",
+        "c-typing-ui",
+        "f-hyperframes",
+        "f-hyperframes-cli",
+        "f-gsap",
+        "c-overlay-fx"
+      ],
+      "produces": {
+        "dish": "Uploaded Talking-Head PIP Reel",
+        "format": "9:16 vertical video",
+        "duration": "20-60s"
+      },
+      "hermes": {
+        "vendored": [
+          "c-reel-premium",
+          "c-broll-sync",
+          "c-typing-ui",
+          "c-ffmpeg",
+          "c-audio",
+          "f-hyperframes",
+          "f-hyperframes-cli",
+          "f-gsap",
+          "c-overlay-fx"
+        ]
+      }
+    },
+    "p-reels-pip-heygen": {
+      "type": "pipeline",
+      "description": "Make a bottom-PIP reel from a SCRIPT using a HeyGen avatar \u2014 generates the talking-head video via HeyGen, then delegates ALL compositing to p-reels-pip. Provider work only; no ffmpeg compositing in this skill. Trigger on \"make a PIP reel from a script with my avatar\", \"HeyGen PIP reel\", \"script to bottom-PIP reel via avatar\", \"generate avatar reel with PIP layout\".",
+      "version": "1.0.0",
+      "visibility": "catalog",
+      "whenToUse": "Use when the user has a SCRIPT (not an uploaded clip) and wants a bottom-center PIP reel using a HeyGen avatar. This wrapper handles ONLY provider work (generating or reusing the HeyGen render). All compositing, captions, grade, and SFX are handled by p-reels-pip. Do NOT use this when the user has already uploaded a talking-head clip \u2014 use p-reels-pip directly in that case. For a full-frame (spotlight) avatar reel use p-reels-spotlight-heygen.",
+      "inputs": [
+        "script",
+        "broll",
+        "avatar_id",
+        "voice_id",
+        "known_transcript"
+      ],
+      "dependencies": [
+        "c-heygen",
+        "p-reels-pip"
+      ],
+      "produces": {
+        "dish": "HeyGen Avatar PIP Reel",
+        "format": "9:16 vertical video",
+        "duration": "20-60s"
+      },
+      "hermes": {
+        "vendored": [
+          "c-heygen"
+        ],
+        "delegates_to": "p-reels-pip"
+      }
+    },
+    "p-reels-split": {
+      "type": "pipeline",
+      "description": "Turn an uploaded talking-head video into a premium 9:16 reel with a clean 50/50 vertical split \u2014 the TOP half (y 0\u2192960) holds transcript-synced motion graphics and b-roll; the BOTTOM half (y 960\u21921920) is the speaker's face, scaled to fill the zone (blurred-fill if the aspect ratio mismatches). The talking head's own voice is the single audio bed. This is the \"split-screen\" archetype: neither face overlaps graphics, nor is the face reduced to a small inset. Trigger on \"split-screen reel\", \"top graphics bottom face\", \"50/50 reel\", \"split-screen talking head\", \"face on the bottom half\", \"graphics on top face on bottom\".",
+      "version": "1.1.0",
+      "visibility": "catalog",
+      "whenToUse": "Use when the user uploads their own talking-head clip (real face + real voice \u2014 NOT a HeyGen avatar) and wants a 9:16 reel where the face occupies the full bottom half and transcript-synced graphics / b-roll occupy the full top half. NO overlap between the two zones. Distinct from: p-reels-spotlight (full-frame face, no graphics split), p-reels-pip (small rounded PIP inset over a full-frame background), p-reels-faceless (no talking head at all). The split is always 50/50 \u2014 960px each half on a 1080\u00d71920 canvas.",
+      "inputs": [
+        "talking_head_video",
+        "broll",
+        "known_transcript",
+        "outro",
+        "broll_style",
+        "bottom_cutzoom"
+      ],
+      "dependencies": [
+        "c-ffmpeg",
+        "c-audio",
+        "c-reel-premium",
+        "c-broll-sync",
+        "c-typing-ui",
+        "f-hyperframes",
+        "f-hyperframes-cli",
+        "f-gsap",
+        "c-overlay-fx",
+        "wowx-motions"
+      ],
+      "produces": {
+        "dish": "Uploaded Talking-Head Split-Screen Reel",
+        "format": "9:16 vertical video",
+        "duration": "20-60s"
+      },
+      "hermes": {
+        "vendored": [
+          "c-reel-premium",
+          "c-broll-sync",
+          "c-typing-ui",
+          "c-ffmpeg",
+          "c-audio",
+          "f-hyperframes",
+          "f-hyperframes-cli",
+          "f-gsap",
+          "c-overlay-fx",
+          "wowx-motions"
+        ]
+      }
+    },
+    "p-reels-split-heygen": {
+      "type": "pipeline",
+      "description": "Make a 50/50 split-screen reel from a SCRIPT using a HeyGen avatar \u2014 generates the talking-head video (ElevenLabs v3 voice \u2192 HeyGen v3 Avatar III, 16:9 1080p), then delegates ALL compositing to p-reels-split (graphics top half, face bottom half). Provider work only; no ffmpeg compositing in this skill. Trigger on \"make a split-screen reel from a script with my avatar\", \"HeyGen split-screen reel\", \"script to 50/50 reel via avatar\", \"graphics-on-top face-on-bottom reel from a script\".",
+      "version": "1.0.0",
+      "visibility": "catalog",
+      "whenToUse": "Use when the user has a SCRIPT (not an uploaded clip) and wants a 50/50 split-screen reel (transcript-synced graphics in the TOP half, avatar face in the BOTTOM half) using a HeyGen avatar. This wrapper handles ONLY provider work (generating or reusing the HeyGen render via ElevenLabs v3 + HeyGen v3 Avatar III). All split/cut-zoom compositing, captions, grade, SFX, and CTA are handled by p-reels-split. Do NOT use this when the user has already recorded or uploaded a talking-head clip \u2014 use p-reels-split directly in that case. For a bottom-PIP avatar reel use p-reels-pip-heygen; for a full-frame avatar reel use p-reels-spotlight-heygen.",
+      "inputs": [
+        "script",
+        "voice",
+        "avatar_id",
+        "broll",
+        "broll_style",
+        "bottom_cutzoom",
+        "known_transcript"
+      ],
+      "dependencies": [
+        "c-heygen",
+        "p-reels-split"
+      ],
+      "produces": {
+        "dish": "HeyGen Avatar Split-Screen Reel",
+        "format": "9:16 vertical video",
+        "duration": "20-60s"
+      },
+      "hermes": {
+        "vendored": [
+          "c-heygen"
+        ],
+        "delegates_to": "p-reels-split"
+      }
+    },
+    "p-reels-spotlight": {
+      "type": "pipeline",
+      "description": "Full-frame premium reel \u2014 speaker fills the frame on ONE continuous never-cut voice bed, kinetic word-synced captions + SFX + cinematic grade ride over the whole reel, motion-graphics takeovers (and optional transcript-synced b-roll) cover the picture at planned beats, first-frame cover poster is baked in. Replaces p-reels-fmt3 and adds optional b-roll takeovers. Trigger on \"premium talking-head edit\", \"viral caption edit of my video\", \"kinetic captions + b-roll over my talking head\", \"full-frame reel with b-roll cutaways\", \"make a premium reel from this clip\", \"agency-style edit with graphics and b-roll\", \"spotlight reel\".",
+      "version": "1.0.0",
+      "visibility": "catalog",
+      "whenToUse": "Use when the user uploads a talking-head clip (or wants a HeyGen avatar) and wants the speaker full-frame the whole time with premium kinetic captions, optional b-roll takeover beats, and a baked-in feed-poster cover. NOT for PIP layouts (speaker in a bottom inset \u2014 use p-reels-pip). NOT faceless (no talking head \u2014 use p-reels-faceless). The `broll[]` parameter is optional \u2014 omit it and this skill behaves identically to p-reels-fmt3.",
+      "inputs": [
+        "talking_head_video",
+        "broll",
+        "script"
+      ],
+      "dependencies": [
+        "c-reel-premium",
+        "c-broll-sync",
+        "c-typing-ui",
+        "f-hyperframes",
+        "f-hyperframes-cli",
+        "c-ffmpeg",
+        "c-cloud-media",
+        "c-overlay-fx"
+      ],
+      "produces": {
+        "dish": "Premium Spotlight Reel",
+        "format": "9:16 vertical video",
+        "duration": "20-60s"
+      },
+      "hermes": {
+        "vendored": [
+          "c-overlay-fx",
+          "c-reel-premium",
+          "c-broll-sync",
+          "c-typing-ui",
+          "f-hyperframes",
+          "f-hyperframes-cli",
+          "c-ffmpeg",
+          "c-cloud-media"
+        ]
+      }
+    },
+    "p-reels-spotlight-heygen": {
+      "type": "pipeline",
+      "description": "Full-frame premium reel from a script via HeyGen avatar \u2014 generates the talking-head video via HeyGen, then delegates ALL compositing to p-reels-spotlight. Provider work only; no ffmpeg compositing in this skill. Trigger on \"HeyGen spotlight reel\", \"full-frame avatar reel from script\", \"script to premium reel via avatar\", \"generate HeyGen reel full frame\", \"avatar kinetic-captions reel from script\".",
+      "version": "1.0.0",
+      "visibility": "catalog",
+      "whenToUse": "Use when the user has a SCRIPT (not an uploaded clip) and wants a full-frame premium spotlight reel (speaker fills the frame) using a HeyGen avatar. This wrapper handles ONLY provider work (generating or reusing the HeyGen render). All compositing, kinetic captions, b-roll takeovers, grade, and SFX are handled by p-reels-spotlight. Do NOT use this when the user has already uploaded a talking-head clip \u2014 use p-reels-spotlight directly in that case. For a bottom-PIP avatar reel use p-reels-pip-heygen.",
+      "inputs": [
+        "script",
+        "broll",
+        "avatar_id",
+        "voice_id",
+        "known_transcript"
+      ],
+      "dependencies": [
+        "c-heygen",
+        "p-reels-spotlight"
+      ],
+      "produces": {
+        "dish": "HeyGen Avatar Spotlight Reel",
+        "format": "9:16 vertical video",
+        "duration": "20-60s"
+      },
+      "hermes": {
+        "vendored": [
+          "c-heygen"
+        ],
+        "delegates_to": "p-reels-spotlight"
+      }
     },
     "p-snap-bg-swap": {
       "type": "pipeline",
-      "category": "short-form",
-      "format": "9:16 vertical",
-      "description": "Finger-snap background swap reel",
-      "aiMethod": "B-roll background replacement",
-      "inputs": ["original video", "new background b-roll"],
-      "outputs": ["9:16 snap BG swap effect"],
-      "duration": "15s-60s",
-      "dependencies": ["c-broll", "c-ffmpeg"],
-      "checkpoints": ["snap timing verification"],
+      "description": "Finger-snap background swap reel pipeline. Detects snap points in audio, composites the avatar on alternating backgrounds, and assembles a viral snap-transition format short.",
+      "visibility": "catalog",
+      "inputs": [
+        "source_video"
+      ],
+      "dependencies": [
+        "c-ai-media",
+        "c-production",
+        "c-ffmpeg"
+      ],
+      "produces": {
+        "dish": "Snap BG-Swap Reel",
+        "format": "9:16 vertical video",
+        "duration": "30-60s"
+      },
       "learningsFile": "p-snap-bg-swap/LEARNINGS.md"
+    },
+    "p-voiceover": {
+      "type": "pipeline",
+      "description": "Audio production recipe \u2014 turn a script into a finished voiceover (ElevenLabs TTS), transcribe an uploaded recording into a clean transcript, or convert a rough voice memo into a structured script. Trigger on \"make a voiceover\", \"voice this script\", \"turn this into audio\", \"narrate this\", \"transcribe this\", \"transcribe my recording\", \"turn my voice memo into a script\", \"what did I say in this clip\".",
+      "version": "1.0.0",
+      "visibility": "catalog",
+      "whenToUse": "Use when the user wants audio produced or processed \u2014 a script read aloud as a voiceover, an uploaded audio/video recording transcribed into clean text, or a rough voice memo turned into a structured short-form script. This is the Voice specialist's (Sage's) primary recipe; it composes c-audio (TTS, transcription, loudness) and c-script (TTS cleaning, structuring) into deliverable outputs.",
+      "inputs": [
+        "script_text",
+        "audio_or_video_upload"
+      ],
+      "dependencies": [
+        "c-audio",
+        "c-script",
+        "c-cloud-media"
+      ],
+      "produces": {
+        "dish": "Voiceover & Transcript",
+        "format": "mp3 audio / structured text",
+        "duration": "15s\u201310min audio"
+      }
     },
     "p-vsl": {
       "type": "pipeline",
-      "category": "long-form",
-      "format": "16:9 landscape",
-      "description": "Full VSL longform with avatar PIP + b-roll + captions",
-      "aiMethod": "HeyGen avatar PIP + b-roll compositing",
-      "inputs": ["brand", "script (5-15 min)"],
-      "outputs": ["16:9 VSL: avatar + b-roll + SFX + captions + loudnorm"],
-      "duration": "5-15 min",
+      "description": "Full VSL longform production pipeline. Produces one 16:9 (1920\u00d71080) landscape sales video with a varied avatar grammar (avatar-front / b-roll-fullscreen / corner-PIP), transcript-synced b-roll + HyperFrames motion graphics, premium SFX + color grade, optional kinetic captions, and a vision-QA gate. Self-contained executable pipeline \u2014 runs headless. Source is either a HeyGen green-screen avatar render (default) or an uploaded talking-head clip.",
+      "version": "1.0.0",
+      "visibility": "deprecated",
+      "whenToUse": "Use to produce a longform 16:9 landscape VSL / sales video (5\u201320 min). The speaker is either a HeyGen avatar (default, rendered green-screen) or an uploaded real talking-head clip (`source=uploaded`). The pipeline alternates avatar-front, b-roll-fullscreen, and corner-PIP segments over a transcript-synced background. For 9:16 vertical reels use p-reels-pip / p-reels-spotlight / p-reels-faceless instead.",
+      "inputs": [
+        "script",
+        "talking_head_video",
+        "broll",
+        "known_transcript",
+        "outro"
+      ],
       "dependencies": [
-        "t-heygen",
-        "c-studio-script",
-        "c-studio-audio",
+        "c-script",
+        "c-heygen",
+        "c-broll-sync",
+        "c-reel-premium",
+        "c-typing-ui",
+        "c-ffmpeg",
+        "c-audio",
         "c-broll",
         "c-ai-media",
-        "c-html-gfx",
-        "c-web-capture",
-        "c-ffmpeg",
-        "c-studio-production"
+        "wowx-focus",
+        "f-hyperframes",
+        "f-hyperframes-cli",
+        "f-gsap"
       ],
-      "checkpoints": [
-        "script approval (MANDATORY)",
-        "b-roll plan review (MANDATORY)",
-        "delivery checklist (12-point)"
-      ],
-      "learningsFile": "p-vsl/LEARNINGS.md",
-      "activeFeedback": [
-        "Script approval is mandatory checkpoint",
-        "B-roll plan review required before asset generation",
-        "Delivery checklist all 12 points required"
-      ]
-    },
-    "p-demo": {
-      "type": "pipeline",
-      "category": "long-form",
-      "format": "16:9 landscape or 9:16",
-      "description": "Short/long/avatar demo from raw assets",
-      "aiMethod": "Asset reuse (no new AI generation)",
-      "inputs": ["raw footage or script", "brand"],
-      "outputs": ["16:9 or 9:16 demo video"],
-      "duration": "varies",
-      "dependencies": ["c-ffmpeg", "c-studio-production"],
-      "learningsFile": "p-demo/LEARNINGS.md"
-    },
-    "c-html-gfx": {
-      "type": "tool",
-      "category": "graphics",
-      "description": "HTML graphics, banners, explainer slides, headless Chrome screenshots",
-      "outputs": ["PNG/JPG graphics (1920x1080, 1080x1080, or custom)"],
-      "gfxTypes": [
-        "pipeline-diagram",
-        "cost-table",
-        "prompt-template",
-        "scene-progression",
-        "comparison-table",
-        "linking-diagram",
-        "callout-card",
-        "hero-stat",
-        "terminal-sim",
-        "category-grid",
-        "custom"
-      ],
-      "colorPalette": {
-        "purple": "#a78bfa",
-        "green": "#22c55e",
-        "yellow": "#fcd34d",
-        "red": "#f87171",
-        "blue": "#60a5fa",
-        "orange": "#f59e0b",
-        "bg": "#0f172a",
-        "surface": "#1e293b"
+      "produces": {
+        "dish": "VSL",
+        "format": "16:9 video",
+        "duration": "5-20 min"
       },
-      "learningsFile": "c-html-gfx/LEARNINGS.md",
-      "activeFeedback": [
-        "Mandatory post-render Unicode check",
-        "Window size accounting: Chrome reserves ~140px on macOS"
-      ]
-    },
-    "c-ai-media": {
-      "type": "tool",
-      "category": "ai-generation",
-      "description": "AI image/video generation (multiple models)",
-      "aiMethods": {
-        "Gemini": "Fast text-to-image, in-context learning",
-        "Higgsfield Cinema": "Cinematic video generation",
-        "RunPod InfiniteTalk": "Talking head from image + audio",
-        "Veo": "High-quality video generation",
-        "Replicate": "Custom model hub access"
+      "hermes": {
+        "vendored": [
+          {
+            "name": "c-script",
+            "load": ".hub/c-script/SKILL.md"
+          },
+          {
+            "name": "c-heygen",
+            "load": ".hub/c-heygen/SKILL.md"
+          },
+          {
+            "name": "c-broll-sync",
+            "load": ".hub/c-broll-sync/SKILL.md"
+          },
+          {
+            "name": "c-reel-premium",
+            "load": ".hub/c-reel-premium/SKILL.md"
+          },
+          {
+            "name": "c-typing-ui",
+            "load": ".hub/c-typing-ui/SKILL.md"
+          },
+          {
+            "name": "c-ffmpeg",
+            "load": ".hub/c-ffmpeg/SKILL.md"
+          },
+          {
+            "name": "c-audio",
+            "load": ".hub/c-audio/SKILL.md"
+          },
+          {
+            "name": "c-broll",
+            "load": ".hub/c-broll/SKILL.md"
+          },
+          {
+            "name": "c-ai-media",
+            "load": ".hub/c-ai-media/SKILL.md"
+          },
+          {
+            "name": "wowx-focus",
+            "load": ".hub/wowx-focus/SKILL.md"
+          },
+          {
+            "name": "f-hyperframes",
+            "load": ".hub/f-hyperframes/SKILL.md"
+          },
+          {
+            "name": "f-hyperframes-cli",
+            "load": ".hub/f-hyperframes-cli/SKILL.md"
+          },
+          {
+            "name": "f-gsap",
+            "load": ".hub/f-gsap/SKILL.md"
+          }
+        ],
+        "progressive": true
       },
-      "outputs": ["AI images/videos"],
-      "learningsFile": "c-ai-media/LEARNINGS.md"
+      "deprecated": true,
+      "supersededBy": "p-longform",
+      "learningsFile": "p-vsl/LEARNINGS.md"
     },
-    "c-ffmpeg": {
-      "type": "tool",
-      "category": "video-compositing",
-      "description": "All FFmpeg operations: composite, chroma key, PIP, portrait/landscape, concat, trim, speed, Ken Burns, loudnorm, snap detection",
-      "capabilities": [
-        "chroma key (0x00FF00 two-pass)",
-        "portrait/landscape layout",
-        "PIP compositing",
-        "audio-per-segment sync",
-        "video trimming & concatenation",
-        "speed adjustment",
-        "Ken Burns zoom",
-        "loudness normalization (-14 LUFS)",
-        "snap point detection",
-        "ffprobe verification"
-      ],
-      "learningsFile": "c-ffmpeg/LEARNINGS.md",
-      "activeFeedback": [
-        "Chroma key always 0x00FF00 (two-pass)",
-        "Never crop-and-stretch avatar",
-        "Audio-per-segment architecture mandatory",
-        "No # comments inside filter_complex strings",
-        "Gap-free b-roll windows"
-      ]
+    "pc-board": {
+      "type": "component",
+      "description": "Board member's assistant \u2014 summarize all Paperclip orgs, create issues, monitor completion, and sponsor local agents to drive work forward. No browser tabs needed.",
+      "whenToUse": "board brief, board summary, create issue, spawn agent, trigger agent, sponsor work, monitor issues, issue status, what's blocked, what's running, approve, cross-org view, morning brief"
     },
-    "t-heygen": {
-      "type": "tool",
-      "category": "avatar-rendering",
-      "description": "HeyGen avatar green-screen rendering, status polling, download",
-      "inputs": ["script", "voice ID", "background color"],
-      "outputs": ["green-screen MP4 avatar video"],
-      "checkpoints": ["user-triggered job submission", "polling for completion"],
-      "learningsFile": "t-heygen/LEARNINGS.md"
+    "r-brand-content-pipeline": {
+      "type": "component",
+      "description": "Brand-aware content pipeline. Given a brand + topic + asset, drafts per-platform copy, creates a LearnLoop CTA URL via c-learnloop, schedules the post across configured platforms via r-social-post-postforme, and files a single canonical post page in the brand's brain project. Reads `.config/posting-pipeline.yaml` from the brand repo for cadence, CTA provider, approval gate, voice source. Stateless \u2014 caller passes brand + inputs; skill composes existing c-/r- skills, never duplicates them.",
+      "whenToUse": "Trigger on: post for <brand>, schedule <brand> content, new mgg post, new cfw post, brand content pipeline, brand-aware post, mr growth guide post, mgg, cfw social post, gsai content, pragmatic ai lab post, draft brand post, ship a post.",
+      "learningsFile": "r-brand-content-pipeline/LEARNINGS.md"
     },
-    "c-studio-audio": {
-      "type": "tool",
-      "category": "audio-processing",
-      "description": "TTS voiceover (ElevenLabs Floe API), SFX, MLX Whisper transcription, loudnorm",
-      "capabilities": {
-        "TTS": "ElevenLabs Floe API (16+ voices, natural prosody)",
-        "Transcription": "MLX Whisper (SRT output)",
-        "SFX": "Sound effects library mixing",
-        "Loudnorm": "Audio loudness normalization"
-      },
-      "outputs": [".mp3 voiceover", ".srt transcription", "normalized audio"],
-      "learningsFile": "c-studio-audio/LEARNINGS.md",
-      "activeFeedback": [
-        "ElevenLabs Floe API wrapper is stable",
-        "MLX Whisper: segment audio if >30 min for better accuracy"
-      ]
-    },
-    "c-studio-script": {
-      "type": "tool",
-      "category": "script-preparation",
-      "description": "Voice adaptation, TTS preprocessing, duration analysis, phonetic readiness",
-      "inputs": ["draft markdown or plain text script"],
-      "outputs": ["TTS-clean script + duration estimate"],
-      "baseline": "150 wpm",
-      "learningsFile": "c-studio-script/LEARNINGS.md"
-    },
-    "c-broll": {
-      "type": "tool",
-      "category": "asset-library",
-      "description": "B-roll library management, script matching, placement planning, alignment verification",
-      "capabilities": [
-        "library search (check before generating)",
-        "script-to-timeline matching",
-        "landscape PIP placement planning",
-        "segment-level asset assignment",
-        "timecode alignment (via SRT)",
-        "quality guard (≥4 unique, ≥80% coverage)"
-      ],
-      "outputs": ["b-roll segment plan (.md)", "reusable asset archive"],
-      "learningsFile": "c-broll/LEARNINGS.md",
-      "activeFeedback": [
-        "Check library first",
-        "B-roll plan quality guard: ≥4 unique assets, ≥80% coverage"
-      ]
-    },
-    "c-web-capture": {
-      "type": "tool",
-      "category": "asset-capture",
-      "description": "Playwright website scroll capture, URL discovery",
-      "inputs": ["URL", "scroll settings (optional)"],
-      "outputs": ["MP4 video of webpage scroll (1920x1080, 12s default)"],
-      "learningsFile": "c-web-capture/LEARNINGS.md"
-    },
-    "c-studio-production": {
-      "type": "tool",
-      "category": "production-workflow",
-      "description": "Production folder structure, delivery checklist (12-point), hook extraction, snap detection",
-      "capabilities": [
-        "standardized folder structure",
-        "12-point delivery checklist",
-        "hook extraction/analysis",
-        "snap-point detection",
-        "final naming convention (ls-{category}01-{description}.mp4)"
-      ],
-      "outputs": ["final/ls-{category}01-{description}.mp4"],
-      "learningsFile": "c-studio-production/LEARNINGS.md"
-    },
-    "c-cloud-media": {
-      "type": "tool",
-      "category": "storage-cdn",
-      "description": "Cloudflare R2 upload, CDN management, video library lookup",
-      "capabilities": [
-        "R2 bucket upload",
-        "CDN distribution",
-        "video library search",
-        "public URL generation"
-      ],
-      "learningsFile": "c-cloud-media/LEARNINGS.md"
-    },
-    "t-replicate": {
-      "type": "tool",
-      "category": "ai-generation",
-      "description": "Replicate model hub access, custom AI model running",
-      "learningsFile": "t-replicate/LEARNINGS.md"
-    },
-    "t-kie-ai": {
-      "type": "tool",
-      "category": "integration",
-      "description": "AI image/video generation via kie.ai and fal.ai",
-      "learningsFile": "t-kie-ai/LEARNINGS.md"
-    },
-    "c-learnloop": {
-      "type": "tool",
-      "category": "integration",
-      "description": "LearnLoop API (courses, lessons, bots, library, newsletter, members, events, products, admin)",
-      "learningsFile": "c-learnloop/LEARNINGS.md"
-    },
-    "p-gfx-short": {
-      "type": "pipeline",
-      "category": "short-form",
-      "format": "9:16 vertical",
-      "description": "Faceless GFX short with voiceover",
-      "aiMethod": "HTML graphics + TTS",
-      "inputs": ["brand", "script"],
-      "outputs": ["9:16 GFX short"],
-      "learningsFile": "p-gfx-short/LEARNINGS.md"
-    },
-    "p-linkedin-carousel": {
-      "type": "pipeline",
-      "category": "graphics",
-      "format": "PDF carousel",
-      "description": "Multi-page PDF carousel optimized for LinkedIn",
-      "aiMethod": "PDF generation (no AI)",
-      "inputs": ["5-10 slide content"],
-      "outputs": ["PDF carousel"],
-      "learningsFile": "p-linkedin-carousel/LEARNINGS.md"
-    },
-    "p-banner": {
-      "type": "pipeline",
-      "category": "graphics",
-      "format": "Platform-specific dimensions",
-      "description": "Platform social media banners (Instagram, TikTok, YouTube, etc.)",
-      "aiMethod": "HTML graphics (no AI)",
-      "inputs": ["brand assets"],
-      "outputs": ["platform banners"],
-      "learningsFile": "p-banner/LEARNINGS.md"
-    },
-    "p-thumbnail": {
-      "type": "pipeline",
-      "category": "graphics",
-      "format": "1280x720 (YouTube)",
-      "description": "YouTube thumbnail variants for CTR testing",
-      "aiMethod": "Static image (no AI)",
-      "inputs": ["video or script"],
-      "outputs": ["thumbnail variants (1280x720)"],
-      "learningsFile": "p-thumbnail/LEARNINGS.md"
-    },
-    "p-broll": {
-      "type": "pipeline",
-      "category": "asset-library",
-      "description": "B-roll library operations (capture, extract, upload)",
-      "operations": ["capture", "extract", "upload"],
-      "learningsFile": "p-broll/LEARNINGS.md"
-    },
-    "p-broll-media": {
-      "type": "pipeline",
-      "category": "asset-library",
-      "description": "Embed b-roll into CFW content variant",
-      "learningsFile": "p-broll-media/LEARNINGS.md"
-    },
-    "p-manual-execution": {
-      "type": "pipeline",
-      "category": "utilities",
-      "description": "Recover stuck CFW executions",
-      "learningsFile": "p-manual-execution/LEARNINGS.md"
+    "r-ig-comments": {
+      "type": "component",
+      "description": "Fetch Instagram posts and comments via Composio, then AI-generate and post replies. Use when the user wants to review IG comments, respond to them, moderate them, or run a comment engagement session. Trigger on phrases like \"respond to IG comments\", \"reply to Instagram comments\", \"manage Instagram comments\", \"fetch my IG posts\"."
     },
     "r-social-post-outstand": {
-      "type": "workflow",
-      "category": "social-publishing",
-      "description": "Post, schedule, fetch analytics, manage comments across 10 platforms",
-      "platforms": [
-        "X",
-        "LinkedIn",
-        "Instagram",
-        "Facebook",
-        "Threads",
-        "TikTok",
-        "YouTube",
-        "Bluesky",
-        "Pinterest",
-        "Google Business"
-      ],
-      "pricing": "$0.50/month per account + $0.01/post",
-      "api": "Outstand.so REST API",
-      "auth": "OUTSTAND_API_KEY (env var or .gsai/secret)",
-      "learningsFile": "r-social-post-outstand/LEARNINGS.md",
-      "activeFeedback": [
-        "Auth order: environment variable → fallback .gsai/secret",
-        "Always list accounts first before creating posts"
-      ]
+      "type": "component",
+      "description": "Post, schedule, fetch analytics, and manage comments across 10 social platforms (X, LinkedIn, Instagram, Facebook, Threads, TikTok, YouTube, Bluesky, Pinterest, Google Business) via the Outstand.so unified REST API. Usage-based ($0.50/month/account + $0.01/post). Alternative to r-social-post-postforme and r-social-post-upload. Requires OUTSTAND_API_KEY.",
+      "learningsFile": "r-social-post-outstand/LEARNINGS.md"
     },
     "r-social-post-postforme": {
-      "type": "workflow",
-      "category": "social-publishing",
-      "description": "Post across 9 platforms via PostForMe",
-      "platforms": [
-        "X",
-        "LinkedIn",
-        "Instagram",
-        "Facebook",
-        "Threads",
-        "TikTok",
-        "YouTube",
-        "Pinterest",
-        "Google Business"
-      ],
-      "api": "PostForMe REST API",
-      "learningsFile": "r-social-post-postforme/LEARNINGS.md",
-      "limitation": "Cannot chain threads (no in_reply_to_tweet_id field)"
+      "type": "component",
+      "description": "Publish, schedule, and fetch results for social posts across 9 platforms (TikTok, Instagram, Facebook, X, LinkedIn, YouTube, Pinterest, Bluesky, Threads) via the PostForMe unified REST API. Use for organic distribution of finished creative assets and for pulling per-account publish results and analytics. Scripts expect POSTFORME_API_KEY; brand-specific social account IDs live in each brand repo at `.config/r-social-post-postforme.yaml`.",
+      "learningsFile": "r-social-post-postforme/LEARNINGS.md"
     },
     "r-social-post-upload": {
-      "type": "workflow",
-      "category": "social-publishing",
-      "description": "Post via Upload-Post with multi-brand support",
-      "api": "Upload-Post API",
+      "type": "component",
+      "description": "Schedule and publish social posts across 10+ platforms (TikTok, Instagram, YouTube, LinkedIn, Facebook, X, Threads, Pinterest, Bluesky, Reddit, Google Business) via the Upload-Post multi-brand API. Alternative to r-social-post-postforme with multi-brand/profile support. Requires UPLOAD_POST_API_KEY.",
       "learningsFile": "r-social-post-upload/LEARNINGS.md"
     },
     "r-x-thread": {
-      "type": "workflow",
-      "category": "social-publishing",
-      "description": "Native X API v2 thread posting with chaining",
-      "platform": "X (Twitter only)",
-      "method": "inReplyToStatusId chaining",
-      "auth": [
-        "X_API_KEY",
-        "X_API_SECRET",
-        "X_ACCESS_TOKEN",
-        "X_ACCESS_TOKEN_SECRET"
-      ],
-      "learningsFile": "r-x-thread/LEARNINGS.md",
-      "activeFeedback": [
-        "OAuth credentials are separate from PostForMe",
-        "Chaining via inReplyToStatusId"
-      ]
+      "type": "component",
+      "description": "Post a multi-tweet thread to X (Twitter) via X API v2, chaining each tweet as a reply to the previous one \u2014 exactly as n8n does via inReplyToStatusId. Use for all MGG X thread publishing. PostForMe cannot chain threads (no in_reply_to_tweet_id field); this skill fills that gap.",
+      "learningsFile": "r-x-thread/LEARNINGS.md"
     },
     "r-youtube-data-api": {
-      "type": "workflow",
-      "category": "social-publishing",
-      "description": "YouTube video metadata & detail updates",
-      "capabilities": [
-        "fetch video metadata",
-        "update video titles/descriptions",
-        "update thumbnails"
-      ],
-      "limitation": "Metadata updates only (no revenue or audience demographics)",
-      "api": "YouTube Data API v3",
-      "learningsFile": "r-youtube-data-api/LEARNINGS.md"
+      "type": "distribution",
+      "description": "Automate YouTube video metadata updates (title, description, tags, category) and custom thumbnail uploads via the YouTube Data API v3 \u2014 capturing the first-24h SEO ranking window that publishing tools like PostForMe drop on publish. Includes one-time OAuth setup and troubleshooting for auth / permission failures. Trigger on \"update youtube video\", \"upload youtube thumbnail\", \"fix youtube auth\", \"youtube metadata\", \"youtube oauth\", \"youtube api error\", \"refresh youtube token\".",
+      "visibility": "catalog",
+      "whenToUse": "Use when the user wants to update a YouTube video's metadata, upload a custom YouTube thumbnail, authenticate with the YouTube Data API v3, refresh a YouTube OAuth token, or debug why a YouTube metadata/thumbnail update failed. Not for uploading new videos \u2014 this edits metadata + thumbnails on existing videos post-publish."
     },
-    "c-cfw-social-smoke-test": {
-      "type": "tool",
-      "category": "qa-testing",
-      "description": "Smoke-test runner for cfw-social HTTP API — hits every route with master-key auth and reports pass/fail by auth mode. Hand-curated routes.json manifest.",
-      "learningsFile": "c-cfw-social-smoke-test/LEARNINGS.md",
-      "activeFeedback": [
-        "routes.json must be hand-updated after route changes (bump _version)",
-        "Auto-discovers workspaceId via /workspaces/list if not provided"
-      ]
-    },
-    "c-cfw-social": {
-      "type": "tool",
-      "category": "app-management",
-      "description": "Comprehensive management guide for the CFW Social app — Prisma data model, entity relationships, run/output/composition lifecycle, approval workflows, publishing system, auth cascade, admin operations.",
-      "learningsFile": "c-cfw-social/LEARNINGS.md"
-    }
-  },
-  "searchIndexes": {
-    "by_output_type": {
-      "short-form-9-16": [
-        "p-avatar-short",
-        "p-avatar-screenshot-broll",
-        "p-gfx-short",
-        "p-gfx-batch",
-        "p-ai-character",
-        "p-hook-reel",
-        "p-viral-reel",
-        "p-snap-bg-swap"
-      ],
-      "long-form-16-9": [
-        "p-vsl",
-        "p-longform",
-        "p-demo"
-      ],
-      "images-graphics": [
-        "c-html-gfx",
-        "c-ai-media",
-        "p-gfx-batch",
-        "p-thumbnail",
-        "p-banner",
-        "p-linkedin-carousel"
-      ],
-      "audio": [
-        "c-studio-audio",
-        "c-studio-script"
-      ],
-      "publishing": [
-        "r-social-post-outstand",
-        "r-social-post-postforme",
-        "r-social-post-upload",
-        "r-x-thread",
-        "r-youtube-data-api"
-      ]
-    },
-    "by_ai_method": {
-      "heygen-green-screen": [
-        "p-avatar-short",
-        "p-avatar-screenshot-broll",
-        "p-viral-reel (--style avatar)",
-        "t-heygen"
-      ],
-      "higgsfield-cinema": [
-        "p-ai-character",
-        "p-viral-reel (--style ai-generated)"
-      ],
-      "veo-talking-head": [
-        "p-ai-character",
-        "p-viral-reel (--style ai-generated)"
-      ],
-      "html-graphics": [
-        "c-html-gfx",
-        "p-gfx-short",
-        "p-gfx-batch",
-        "p-banner",
-        "p-linkedin-carousel"
-      ],
-      "gemini-ai": [
-        "c-ai-media"
-      ],
-      "elevenlabs-tts": [
-        "c-studio-audio",
-        "p-gfx-short",
-        "p-longform"
-      ],
-      "mlx-whisper-transcription": [
-        "c-studio-audio",
-        "p-vsl",
-        "p-viral-reel"
-      ],
-      "b-roll-compositing": [
-        "c-broll",
-        "p-vsl",
-        "p-hook-reel",
-        "p-snap-bg-swap"
-      ],
-      "ffmpeg-compositing": [
-        "c-ffmpeg",
-        "p-avatar-short",
-        "p-vsl",
-        "all video pipelines"
-      ]
-    },
-    "by_platforms": {
-      "x": [
-        "r-social-post-outstand",
-        "r-social-post-postforme",
-        "r-x-thread"
-      ],
-      "linkedin": [
-        "r-social-post-outstand",
-        "r-social-post-postforme",
-        "p-linkedin-carousel"
-      ],
-      "instagram": [
-        "r-social-post-outstand",
-        "r-social-post-postforme"
-      ],
-      "tiktok": [
-        "r-social-post-outstand",
-        "r-social-post-postforme"
-      ],
-      "youtube": [
-        "r-social-post-outstand",
-        "r-social-post-postforme",
-        "r-youtube-data-api",
-        "p-thumbnail"
-      ]
-    },
-    "by_checkpoints": {
-      "user-triggered-render": [
-        "p-avatar-short (HeyGen job ID)",
-        "p-viral-reel (source download confirmation)"
-      ],
-      "approval-gates": [
-        "p-vsl (script approval, b-roll plan review)",
-        "p-gfx-short (GFX preview)"
-      ],
-      "quality-checks": [
-        "c-ffmpeg (ffprobe verify)",
-        "c-html-gfx (Unicode/charset check)",
-        "p-vsl (12-point delivery checklist)"
-      ]
+    "wowx-motions": {
+      "type": "component",
+      "description": "Apply a cinematic camera MOTION to a B-roll video clip \u2014 push-in/focus, pull-out, pans, ken-burns, plus pseudo-3D tilt, orbit, and idle sway. Use when an agent needs to make flat/static B-roll feel alive and premium. One command, pure FFmpeg (no browser/GPU/3D), works on any aspect ratio/fps, preserves audio, fully deterministic. Trigger on \"add motion to this b-roll\", \"ken burns this clip\", \"make this footage cinematic\", \"punch in / zoom in on this video\", \"pan across this clip\", \"tilt / orbit this clip\", \"animate this still/clip\"."
     }
   }
 }

@@ -2,19 +2,29 @@
 name: p-reels-split
 description: Turn an uploaded talking-head video into a premium 9:16 reel with a clean 50/50 vertical split — the TOP half (y 0→960) holds transcript-synced motion graphics and b-roll; the BOTTOM half (y 960→1920) is the speaker's face, scaled to fill the zone (blurred-fill if the aspect ratio mismatches). The talking head's own voice is the single audio bed. This is the "split-screen" archetype: neither face overlaps graphics, nor is the face reduced to a small inset. Trigger on "split-screen reel", "top graphics bottom face", "50/50 reel", "split-screen talking head", "face on the bottom half", "graphics on top face on bottom".
 when-to-use: Use when the user uploads their own talking-head clip (real face + real voice — NOT a HeyGen avatar) and wants a 9:16 reel where the face occupies the full bottom half and transcript-synced graphics / b-roll occupy the full top half. NO overlap between the two zones. Distinct from: p-reels-spotlight (full-frame face, no graphics split), p-reels-pip (small rounded PIP inset over a full-frame background), p-reels-faceless (no talking head at all). The split is always 50/50 — 960px each half on a 1080×1920 canvas.
-version: 1.0.0
+version: 1.1.0
 kind: pipeline
 visibility: catalog
 produces:
   dish: Uploaded Talking-Head Split-Screen Reel
   format: 9:16 vertical video
   duration: 20-60s
-inputs: [talking_head_video, broll, known_transcript, outro]
-dependsOn: [c-ffmpeg, c-audio, c-reel-premium, c-broll-sync, c-typing-ui, f-hyperframes, f-hyperframes-cli, f-gsap, c-overlay-fx]
+inputs: [talking_head_video, broll, known_transcript, outro, broll_style, bottom_cutzoom]
+dependsOn: [c-ffmpeg, c-audio, c-reel-premium, c-broll-sync, c-typing-ui, f-hyperframes, f-hyperframes-cli, f-gsap, c-overlay-fx, wowx-motions]
 metadata:
   hermes:
-    vendored: [c-reel-premium, c-broll-sync, c-typing-ui, c-ffmpeg, c-audio, f-hyperframes, f-hyperframes-cli, f-gsap, c-overlay-fx]
+    vendored: [c-reel-premium, c-broll-sync, c-typing-ui, c-ffmpeg, c-audio, f-hyperframes, f-hyperframes-cli, f-gsap, c-overlay-fx, wowx-motions]
 ---
+
+
+
+> ## ⚡ Frame integrity + integrated CTA (MANDATORY — 2026-06-16)
+> - **Frame 0 is NEVER black.** The first frame must be a bright money-shot — the cover-freeze of the strongest illustrative beat (Step 10 cover rule). Verify `ffmpeg ... signalstats` → `YAVG > 30`. No black / hook-blank / fade-in opener.
+> - **The LAST frame is NEVER black.** The reel must end on content, not a fade-to-black or trailing blank. Verify the final frame `YAVG > 30`.
+> - **CTA is integrated by DEFAULT, not optional.** Every reel/VSL ends on a branded **CTA beat baked into the timeline** (offer line + handle/URL), as the final illustrative HyperFrames card. Do not ship a reel whose last beat is filler or black. (In p-reels-split this is the Step 9 CTA takeover; other recipes must add an equivalent closing CTA card.)
+
+> ## ⚡ HyperFrames = illustrative, NOT just titles (MANDATORY — 2026-06-16)
+> Every HyperFrames graphics scene MUST pair its title with an **illustrative animation that depicts the point** — never a bare kinetic title card. Examples: a 45-post feed grid staggering in (`back.out`), a count-up stat with day-dots, an animated waveform for "voice", platform chips popping in. Match the premium reference in `cfw-marketing/creatives/productions/restaurants-vsl/hyperframes` (`DIAG-calendar` feed-grid, `HF-*` motion) **and** `cfw-marketing/creatives/productions/fnb-split-screen-short/gen-rich-cards.py`: grid + glow + vignette background, GSAP eased + staggered elements, brand palette, depth (shadows/shine). **Make it as rich and premium as possible — a title-only card is a defect.**
 
 # p-reels-split — 50/50 Split-Screen Reel from Uploaded Talking-Head Video
 
@@ -36,6 +46,8 @@ Produces one 9:16 (1080×1920) H.264 MP4 with two equal zones:
 
 The clip's own voice is the single continuous audio bed. No TTS, no replacement audio.
 
+> **Have a SCRIPT instead of a clip?** This core is source-agnostic — `talking_head_video` works for a manually-recorded clip OR a HeyGen avatar render. If you're starting from a script (no clip yet), use **`p-reels-split-heygen`**, which generates the avatar (ElevenLabs v3 → HeyGen v3 Avatar III, 16:9) and then delegates straight back here.
+
 **Layout vs. the other cores:**
 
 | Core | Face position | Graphics position |
@@ -56,6 +68,8 @@ The clip's own voice is the single continuous audio bed. No TTS, no replacement 
 | `known_transcript` | No | — | Pre-computed word-level transcript `[{text,start,end}]`. Skips Step 3 transcription. |
 | `outro` | No | off | Optional outro mp4 appended via concat after the main reel. |
 | `bottom_fit` | No | `cover` | `cover` = scale-to-COVER-crop the face into 1080×960 (portrait sources read best; top/bottom of source may crop slightly). `fit` = scale-to-FIT + blurred-fill side gaps (face always whole, no cropping). |
+| `broll_style` | No | `card` | TOP-zone b-roll rendering. `card` (default) = `wowx-motions` STAGE — floats the clip as a rounded, shadowed card on a brand-colour canvas with camera motion (`card-focus` / alternating `card-orbit`). Best for flat screen-recordings / app demos. `blurred-fill` = legacy boxblur-bg + fit-fg (use only when a full-bleed look is wanted). |
+| `bottom_cutzoom` | No | `false` | When `true`, the bottom (talking-head) zone is split at the beat boundaries and each segment alternates zoom — wide (~1.0) on b-roll beats, punched-in (~1.10–1.14) on graphics beats — giving a zoom-cut on every beat. Adds short-form energy to a single continuous read (e.g. a HeyGen avatar). `false` = one static cover-fill. |
 
 ### c-broll-sync coverage params (passthrough)
 
@@ -142,6 +156,7 @@ SKILL_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" "$HOME/.hermes/pr
 BROLL_SYNC_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" "$HOME/.hermes/profiles" /Users/vasanth/Code/skills -maxdepth 5 -type d -name c-broll-sync 2>/dev/null | head -1)
 PREMIUM_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" "$HOME/.hermes/profiles" /Users/vasanth/Code/skills -maxdepth 5 -type d -name c-reel-premium 2>/dev/null | head -1)
 TYPING_UI_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" "$HOME/.hermes/profiles" /Users/vasanth/Code/skills -maxdepth 5 -type d -name c-typing-ui 2>/dev/null | head -1)
+WOWX_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" "$HOME/.hermes/profiles" /Users/vasanth/Code/skills -maxdepth 5 -type d -name wowx-motions 2>/dev/null | head -1)
 
 BROLL_COVERAGE_PCT="${broll_coverage_pct:-30}"
 BROLL_CLIP_SECS="${broll_clip_seconds:-4}"
@@ -149,6 +164,17 @@ BROLL_MIN_SECS="${broll_min_seconds:-2}"
 BROLL_MAX_SECS="${broll_max_seconds:-6}"
 BROLL_ORDER="${broll_order:-transcript-match}"
 BROLL_REUSE="${broll_reuse:-false}"
+BROLL_STYLE="${broll_style:-card}"          # card (wowx canvas-wrap) | blurred-fill
+BOTTOM_CUTZOOM="${bottom_cutzoom:-false}"    # zoom-cut the face on every beat
+# Brand canvas colour for broll_style=card (from brand.json; fallback dark navy). Hex WITHOUT '#'.
+BRAND_BG=$(python3 -c "import json;print(json.load(open('$W/brand.json')).get('bg','0F172A').lstrip('#'))" 2>/dev/null || echo 0F172A)
+export BROLL_STYLE WOWX_DIR BRAND_BG BOTTOM_CUTZOOM   # Step 6/7 Python read these from env
+# Short-form fixed-cadence tip: for a beat every Ns set broll_clip_seconds=N + broll_min_seconds=N
+# + broll_max_seconds=N (e.g. 5/5/5). If c-broll-sync still emits uneven beats, post-rewrite
+# beat_list.json onto a fixed N-second grid alternating broll/graphics before Step 6.
+
+# Transcription (Step 3): prefer a CACHED mlx model + offline mode to avoid HF-auth download
+# failures — `export HF_HUB_OFFLINE=1` and use whisper-large-v3-turbo (cached) over whisper-small.
 
 # Split geometry — NEVER change these
 SPLIT_H=960    # top zone height = bottom zone height = canvas_height / 2
@@ -435,23 +461,39 @@ TW, TH_PX = 1080, 960
 if beat["kind"] == "broll":
     b = beat["broll"]
     clip_path = os.path.join(W, "src", b["clip"])
-    # BLURRED-FILL into 1080×960:
-    #   split [0:v] first → [a] bg chain, [b] fg chain (avoids fatal double-read of [0:v])
-    #   [bg] scale to COVER 1080×960, boxblur, setsar
-    #   [fg] scale to FIT inside 1080×960 (whole clip visible, no crop)
-    #   overlay fg centred on bg
-    subprocess.run([FF,
-        "-ss", str(b["in"]), "-to", str(b["out"]), "-i", clip_path,
-        "-vf", (
-            f"[0:v]split[_a][_b];"
-            f"[_a]scale={TW}:{TH_PX}:force_original_aspect_ratio=increase,crop={TW}:{TH_PX},"
-            f"boxblur=40:2,setsar=1[bg];"
-            f"[_b]scale={TW}:{TH_PX}:force_original_aspect_ratio=decrease,setsar=1[fg];"
-            f"[bg][fg]overlay=(W-w)/2:(H-h)/2,format=yuv420p,fps=30[bv]"
-        ),
-        "-map", "[bv]",
-        "-an", "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-y", out
-    ], check=True)
+    # broll_style switch (read from exported env): "card" = wowx canvas-wrap, else blurred-fill.
+    BROLL_STYLE = os.environ.get("BROLL_STYLE", "card")
+    WOWX_DIR    = os.environ.get("WOWX_DIR", "")
+    BRAND_BG    = os.environ.get("BRAND_BG", "0F172A")
+    if BROLL_STYLE == "card" and WOWX_DIR:
+        # CANVAS-WRAP (wowx-motions STAGE): float the clip as a rounded, shadowed card on the
+        # brand canvas with camera motion. Best for flat app/screen-recordings — far more
+        # premium + legible than blurred-fill. Alternate card-focus / card-orbit for variety.
+        trimmed = f"{W}/top_beats/_wxin{i}.mp4"
+        subprocess.run([FF, "-ss", str(b["in"]), "-to", str(b["out"]),
+            "-i", clip_path, "-an", "-y", trimmed], check=True)
+        motion = "card-orbit" if (i % 4 == 2) else "card-focus"
+        subprocess.run(["python3", f"{WOWX_DIR}/wowx_motion.py", trimmed, "-m", motion, out,
+            "--bg", f"0x{BRAND_BG}", "--canvas", f"{TW}x{TH_PX}",
+            "--card-scale", "0.86", "--corner-radius", "0.04", "--intensity", "1.1"], check=True)
+    else:
+        # BLURRED-FILL into 1080×960 (legacy full-bleed):
+        #   split [0:v] first → [a] bg chain, [b] fg chain (avoids fatal double-read of [0:v])
+        #   [bg] scale to COVER 1080×960, boxblur, setsar
+        #   [fg] scale to FIT inside 1080×960 (whole clip visible, no crop)
+        #   overlay fg centred on bg
+        subprocess.run([FF,
+            "-ss", str(b["in"]), "-to", str(b["out"]), "-i", clip_path,
+            "-vf", (
+                f"[0:v]split[_a][_b];"
+                f"[_a]scale={TW}:{TH_PX}:force_original_aspect_ratio=increase,crop={TW}:{TH_PX},"
+                f"boxblur=40:2,setsar=1[bg];"
+                f"[_b]scale={TW}:{TH_PX}:force_original_aspect_ratio=decrease,setsar=1[fg];"
+                f"[bg][fg]overlay=(W-w)/2:(H-h)/2,format=yuv420p,fps=30[bv]"
+            ),
+            "-map", "[bv]",
+            "-an", "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-y", out
+        ], check=True)
 else:
     scene = beat.get("scene", {})
     scene_type = scene.get("type", "")
@@ -585,26 +627,57 @@ The loudnormed audio is muxed in here so the vstack step has audio on the bottom
 ```bash
 BOTTOM_FIT="${bottom_fit:-cover}"   # cover | fit
 
-# Fix: split [0:v] before forking into bg/fg chains to avoid fatal double-read of [0:v].
-if [ "$BOTTOM_FIT" = "fit" ]; then
-  # scale-to-FIT + blurred-fill (face always whole, no cropping)
-  FC_BOTTOM="[0:v]split[_a][_b];[_a]scale=1080:960:force_original_aspect_ratio=increase,crop=1080:960,boxblur=40:2,setsar=1[bg];[_b]scale=1080:960:force_original_aspect_ratio=decrease,setsar=1[fg];[bg][fg]overlay=(W-w)/2:(H-h)/2,format=yuv420p,fps=30[bv]"
+if [ "${BOTTOM_CUTZOOM:-false}" = "true" ]; then
+  # CUT-ZOOM: split the face at beat boundaries, alternate zoom per beat — wide 1.0x on b-roll
+  # beats, punched-in 1.4x on graphics beats — for a hard zoom-cut on every beat. Audio is the
+  # single loudnormed bed, muxed after the silent concat (lip-sync preserved; only framing cuts).
+  mkdir -p "$W/av"
+  python3 - "$W/beat_list.json" "$W" "$TH_CLEAN" "$FF" <<'PY'
+import json, os, subprocess, sys
+bl=json.load(open(sys.argv[1]))["beats"]; W,TH,FF=sys.argv[2],sys.argv[3],sys.argv[4]
+WIDE, TIGHT = 1.0, 1.4   # b-roll beat = wide ; graphics beat = punched-in
+# Probe source dims so the zoom crops from FULL-RES source (sharp) and is TOP-ANCHORED
+# (head stays at the top; crop comes off the bottom — never crop the forehead).
+import subprocess as _sp
+SW,SH=[int(x) for x in _sp.run(["ffprobe","-v","error","-select_streams","v:0",
+    "-show_entries","stream=width,height","-of","csv=p=0:s=x",TH],capture_output=True,text=True).stdout.strip().split("x")]
+BASE_W=min(SW, SH*1080/960)   # widest 1.125-aspect crop that fits the source
+lines=[]
+for k,b in enumerate(bl):
+    z = WIDE if b["kind"]=="broll" else TIGHT
+    cw=int(round(BASE_W/z/2))*2; ch=int(round(cw*960/1080/2))*2
+    x=int((SW-cw)/2); y=0          # centered horizontally, TOP-anchored vertically
+    seg=f"{W}/av/s{k}.mp4"
+    subprocess.run([FF,"-y","-ss",str(b["start"]),"-to",str(b["end"]),"-i",TH,"-an",
+        "-vf",f"crop={cw}:{ch}:{x}:{y},scale=1080:960:flags=lanczos,setsar=1,fps=30,format=yuv420p",
+        "-c:v","libx264","-preset","slow","-crf","17",seg],check=True)
+    lines.append(f"file 'av/s{k}.mp4'")
+open(f"{W}/av_concat.txt","w").write("\n".join(lines)+"\n")
+print(f"cut-zoom: {len(bl)} segments (1.0x↔1.4x)")
+PY
+  $FF -y -f concat -safe 0 -i "$W/av_concat.txt" -an -c:v libx264 -preset medium -crf 19 -pix_fmt yuv420p "$W/av/bottom-video.mp4"
+  $FF -y -i "$W/av/bottom-video.mp4" -i "$W/voice-bed.aac" -map 0:v -map 1:a -c:v copy -c:a aac -b:a 192k -ar 48000 -ac 2 -shortest "$W/bottom-all.mp4"
 else
-  # cover (default): scale-to-COVER-crop — face fills 1080×960, portrait sources read well
-  FC_BOTTOM="[0:v]scale=1080:960:force_original_aspect_ratio=increase,crop=1080:960,setsar=1,format=yuv420p,fps=30[bv]"
+  # Fix: split [0:v] before forking into bg/fg chains to avoid fatal double-read of [0:v].
+  if [ "$BOTTOM_FIT" = "fit" ]; then
+    # scale-to-FIT + blurred-fill (face always whole, no cropping)
+    FC_BOTTOM="[0:v]split[_a][_b];[_a]scale=1080:960:force_original_aspect_ratio=increase,crop=1080:960,boxblur=40:2,setsar=1[bg];[_b]scale=1080:960:force_original_aspect_ratio=decrease,setsar=1[fg];[bg][fg]overlay=(W-w)/2:(H-h)/2,format=yuv420p,fps=30[bv]"
+  else
+    # cover (default): scale-to-COVER-crop — face fills 1080×960, portrait sources read well
+    FC_BOTTOM="[0:v]scale=1080:960:force_original_aspect_ratio=increase,crop=1080:960,setsar=1,format=yuv420p,fps=30[bv]"
+  fi
+  $FF -y -i "$TH_CLEAN" -i "$W/voice-bed.aac" \
+    -filter_complex "$FC_BOTTOM" \
+    -map "[bv]" -map 1:a \
+    -c:v libx264 -preset medium -crf 19 -pix_fmt yuv420p -r 30 \
+    -c:a aac -b:a 192k -ar 48000 -ac 2 \
+    -shortest "$W/bottom-all.mp4"
 fi
-
-$FF -y -i "$TH_CLEAN" -i "$W/voice-bed.aac" \
-  -filter_complex "$FC_BOTTOM" \
-  -map "[bv]" -map 1:a \
-  -c:v libx264 -preset medium -crf 19 -pix_fmt yuv420p -r 30 \
-  -c:a aac -b:a 192k -ar 48000 -ac 2 \
-  -shortest "$W/bottom-all.mp4"
 
 # Note: -shortest clips to the shorter of the two inputs (TH_CLEAN video vs voice-bed.aac).
 # Since voice-bed.aac was derived from TH_CLEAN, durations should match within ±0.05s.
 BOTTOM_DUR=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$W/bottom-all.mp4")
-echo "[p-reels-split] bottom track duration: ${BOTTOM_DUR}s (fit_mode=$BOTTOM_FIT)"
+echo "[p-reels-split] bottom track duration: ${BOTTOM_DUR}s (fit_mode=$BOTTOM_FIT cutzoom=${BOTTOM_CUTZOOM:-false})"
 ```
 
 ### Step 7.5 — Trim top-all.mp4 to match bottom-all.mp4 duration
@@ -980,6 +1053,14 @@ Clean up `$W` after the URL is confirmed.
 - **HyperFrames template height = 960.** `data-width="1080" data-height="960"` on the root div and `html,body { width:1080px; height:960px; }` in CSS. The `--width`/`--height` CLI flags are NOT supported by hyperframes CLI — canvas size is controlled via the HTML/data-attrs only.
 - **Root composition = FULL HTML doc.** Bare fragment → `Unexpected token '*'`. `<template>` wrapper stripped before standalone render. HTML comments stripped before lint.
 - **`window.__timelines["root"] = tl`** — dict form, NOT `.push()`.
+- **`broll_style=card` (default) wraps b-roll in the canvas via `wowx-motions`.** Flat app/screen-recordings read far better as a rounded, shadowed card on the brand bg with camera motion than as blurred-fill. Requires `WOWX_DIR` + `BRAND_BG` exported; falls back to blurred-fill if `wowx-motions` isn't found. Pass `broll_style=blurred-fill` for the old full-bleed look.
+- **`bottom_cutzoom=true` gives a zoom-cut every beat** — wide 1.0x on b-roll beats, punched-in **1.4x** on graphics beats. Great for short-form energy and for a single continuous read (HeyGen avatar). It only changes framing, never the audio (single muxed bed). Tune the `WIDE`/`TIGHT` constants in the Step 7 Python.
+  - **TOP-ANCHORED zoom (mandatory):** the crop is anchored at `y=0` (head stays at the top, crop comes off the bottom) — NEVER centered, which eats the forehead.
+  - **Crop from FULL-RES source, not a pre-downscaled frame:** crop the zoom window directly from the source's native pixels then `scale=...:flags=lanczos`. Downscaling to the zone first and then upscaling the zoom = visible pixelation. (And generate the HeyGen avatar at **`aspect_ratio:"16:9"` 1080p**, never 9:16 — 9:16 letterboxes to ~1080×608 and pixelates after the zoom.)
+- **Short-form = fixed beat cadence.** For "a beat every N seconds," set `broll_clip_seconds=broll_min_seconds=broll_max_seconds=N` (e.g. 5). If `c-broll-sync` still returns uneven beats, post-rewrite `beat_list.json` onto a fixed N-second grid alternating `broll`/`graphics` before Step 6 — this is what makes a true 5s-cadence reel.
+- **Transcription is offline-first.** `whisper-small` can fail to download on HF auth; `export HF_HUB_OFFLINE=1` and use a cached model (`mlx-community/whisper-large-v3-turbo`). Fix obvious ASR slips in the SRT before building `transcript.json`.
+- **Premium captions have a deterministic fallback.** When the Step 9.5 `claude --print` planner is unavailable, build the plan directly from `transcript.json`: 2–4 word groups, cycle `style` 0/1/2 (never adjacent-equal), emphasise the longest word per group, full-duration coverage. Reproducible and auth-free.
+- **HeyGen avatars ARE a valid source** despite the "when-to-use" wording. Drop the render in as `talking_head_video` and pass `known_transcript` (or transcribe its audio in Step 3). The continuous TTS read becomes the master audio; the top-zone beats + `bottom_cutzoom` supply the visual variety the MCP render lacks (the MCP has no scene-split / pacing / audio-enhance controls).
 
 ### Box-compat gotchas (Ubuntu 22.04 / Hermes — folded from on-box validation)
 

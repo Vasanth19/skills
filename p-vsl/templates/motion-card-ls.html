@@ -1,0 +1,157 @@
+<template id="motion-card-ls">
+<!--
+  p-vsl motion-card template — LANDSCAPE (1920x1080).
+  Landscape variant of p-reels-pip/templates/motion-card.html.
+  PIP-SAFE: the talking-head PIP sits bottom-right (x>=1512, y>=726). All content
+  stays in the upper band (above y=680) so it never collides with the PIP card.
+  Placeholders filled by p-vsl Step 7 before standalone render.
+
+  Gotchas (do NOT re-derive — same as the portrait core):
+  - Lives inside <template> as a source fragment. The build step strips the
+    <template> wrapper + HTML comments and wraps the content in a full HTML doc.
+  - data-composition-id="root" is BAKED IN here (unlike the portrait core which
+    injects it) so the build step is uniform across all three landscape graphics.
+  - ACCENT/BG/FG are 6-digit hex WITHOUT '#' — template prepends '#'.
+  - TITLE_HTML may carry <span class="accent">WORD</span> — NOT html-escaped.
+  - EYEBROW and GHOST are html.escape()'d by the caller.
+  - Use bare getComputedStyle(el); never Math.random(); GSAP repeat finite.
+  - window.__timelines["root"] = tl (dict form, NOT .push()).
+-->
+<style>
+  :root {
+    --bg:       #{{BG}};
+    --accent:   #{{ACCENT}};
+    --fg:       #{{FG}};
+    --pip-band: 400px;    /* reserved bottom zone — content ends at y=680 */
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  .mc-root {
+    position: absolute;
+    inset: 0;
+    width: 1920px;
+    height: 1080px;
+    background: var(--bg);
+    overflow: hidden;
+    font-family: Inter, sans-serif;
+  }
+
+  .mc-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 120px 120px;
+    pointer-events: none;
+  }
+
+  /* Glow bleed from upper-left */
+  .mc-glow {
+    position: absolute;
+    top: -120px;
+    left: -120px;
+    width: 720px;
+    height: 720px;
+    background: radial-gradient(circle, color-mix(in srgb, var(--accent) 18%, transparent) 0%, transparent 70%);
+    pointer-events: none;
+    opacity: 0;
+  }
+
+  /* Content zone: y=0 -> (1080 - pip-band) = y=680 */
+  .mc-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: var(--pip-band);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 80px 120px 40px;
+    gap: 28px;
+    overflow: hidden;
+  }
+
+  .mc-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  .mc-ghost {
+    position: absolute;
+    top: 38%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: Oswald, sans-serif;
+    font-size: 360px;
+    font-weight: 900;
+    text-transform: uppercase;
+    color: var(--fg);
+    opacity: 0.04;
+    letter-spacing: -0.04em;
+    white-space: nowrap;
+    pointer-events: none;
+    max-width: 1920px;
+    overflow: hidden;
+  }
+
+  .mc-title {
+    font-family: Oswald, sans-serif;
+    font-size: 118px;
+    font-weight: 900;
+    line-height: 1.0;
+    text-transform: uppercase;
+    color: var(--fg);
+    opacity: 0;
+    transform: translateY(24px);
+    max-width: 1400px;   /* keep long titles clear of the bottom-right PIP */
+  }
+
+  .mc-title .accent { color: var(--accent); }
+
+  .mc-rule {
+    width: 0;
+    height: 5px;
+    background: var(--accent);
+    border-radius: 3px;
+  }
+</style>
+
+<div class="mc-root" data-composition-id="root" data-start="0" data-duration="{{DURATION}}" data-width="1920" data-height="1080">
+  <div class="mc-grid"></div>
+  <div class="mc-glow" id="mc-glow"></div>
+  <div class="mc-ghost">{{GHOST}}</div>
+  <div class="mc-content">
+    <div class="mc-eyebrow" id="mc-eyebrow">{{EYEBROW}}</div>
+    <div class="mc-title" id="mc-title">{{TITLE_HTML}}</div>
+    <div class="mc-rule" id="mc-rule"></div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var gsap = window.__gsap || window.gsap;
+  if (!gsap) { console.error('[motion-card-ls] gsap not found'); return; }
+
+  var dur = parseFloat("{{DURATION}}") || 6.0;
+  var tl = gsap.timeline({ paused: true });
+
+  tl
+    .to("#mc-eyebrow", { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" }, 0.1)
+    .to("#mc-title",   { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" }, 0.25)
+    .to("#mc-rule",    { width: 180, duration: 0.4, ease: "power2.out" },         0.55)
+    .to("#mc-glow",    { opacity: 0.8, duration: 0.6, ease: "power1.out" },       0.0);
+
+  if (!window.__timelines) window.__timelines = {};
+  window.__timelines["root"] = tl;
+})();
+</script>
+</template>

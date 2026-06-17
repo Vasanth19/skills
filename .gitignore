@@ -10,3 +10,7 @@ node_modules/
 skills-lock.json
 .claude/knowledge/_sessions/
 .DS_Store
+
+# local skills.json backups
+skills.json.bak.*
+__pycache__/

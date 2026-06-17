@@ -1,0 +1,84 @@
+<!doctype html>
+<!--
+  p-vsl POLISH-PASS root shell — LANDSCAPE (1920x1080), FILLED never authored.
+  Landscape variant of c-reel-premium/templates/root-shell-polish.html.
+  Plays the already-assembled VSL full-frame on track 0 and rides the kinetic
+  caption overlay on track 9. Rendered SILENT — the video's already-mastered
+  audio + SFX are muxed back in ffmpeg afterward (the pass never touches audio).
+  MUST stay a full HTML document.
+  Placeholders: DURATION, VIDEO_SRC (relative path to reel-in.mp4).
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #000;
+      }
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #000;
+      }
+      #root > video {
+        position: absolute;
+        inset: 0;
+        width: 1920px;
+        height: 1080px;
+        object-fit: cover;
+        z-index: 0;
+      }
+      #root .caption-slot {
+        position: absolute;
+        inset: 0;
+        z-index: 100;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="premium-polish"
+      data-start="0"
+      data-duration="{{DURATION}}"
+      data-width="1920"
+      data-height="1080"
+    >
+      <video
+        id="reel"
+        data-start="0"
+        data-duration="{{DURATION}}"
+        data-track-index="0"
+        src="{{VIDEO_SRC}}"
+        muted
+        playsinline
+      ></video>
+
+      <div
+        id="captions"
+        class="caption-slot"
+        data-composition-id="caption-overlay"
+        data-composition-src="compositions/caption-overlay.html"
+        data-start="0"
+        data-duration="{{DURATION}}"
+        data-width="1920"
+        data-height="1080"
+        data-track-index="9"
+      ></div>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      window.__timelines["premium-polish"] = gsap.timeline({ paused: true });
+    </script>
+  </body>
+</html>

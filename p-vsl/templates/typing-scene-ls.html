@@ -1,0 +1,225 @@
+<template id="typing-scene-ls">
+<!--
+  p-vsl typing scene — LANDSCAPE (1920x1080).
+  Landscape variant of c-typing-ui/templates/typing-scene.html.
+  The claude-style card sits in the LEFT/CENTER band (x 80..1240) so the
+  bottom-right talking-head PIP (x>=1512, y>=726) is never covered.
+  data-composition-id="root" baked in; registers window.__timelines["root"]
+  for a uniform p-vsl build step. Placeholders: DURATION, LABEL, PROMPT,
+  TYPING_SPEED, ACCENT (hex no #), BOTTOM_TAG.
+-->
+<div
+  data-composition-id="root"
+  data-start="0"
+  data-duration="{{DURATION}}"
+  data-width="1920"
+  data-height="1080"
+>
+  <style>
+    [data-composition-id="root"] {
+      --bg-navy:     #0F172A;
+      --bg-card:     #0B1220;
+      --bg-card-hdr: #141A2A;
+      --bg-card-bdr: #334155;
+      --bg-bubble:   #121A2C;
+      --accent:      #{{ACCENT}};
+      --violet:      #8B5CF6;
+      --text-white:  #F8FAFC;
+      --text-muted:  #94A3B8;
+      --text-dim:    #64748B;
+
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      background: var(--bg-navy);
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+
+    [data-composition-id="root"] .ts-glow {
+      position: absolute;
+      left: 620px; top: 50%;
+      width: 1400px; height: 1400px;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(circle,
+        color-mix(in srgb, var(--accent) 14%, transparent) 0%, transparent 60%);
+      pointer-events: none;
+      will-change: opacity;
+    }
+
+    [data-composition-id="root"] .ts-label {
+      position: absolute;
+      top: 90px;
+      left: 80px;
+      width: 1160px;
+      text-align: left;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 30px;
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      will-change: transform, opacity;
+    }
+
+    /* Card lives in the left/center band, clear of the bottom-right PIP */
+    [data-composition-id="root"] .ts-card {
+      position: absolute;
+      top: 170px;
+      left: 80px;
+      width: 1160px;
+      background: var(--bg-card);
+      border: 2px solid var(--bg-card-bdr);
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+      will-change: transform, opacity;
+    }
+
+    [data-composition-id="root"] .ts-titlebar {
+      display: flex; align-items: center; gap: 14px;
+      padding: 20px 28px;
+      background: var(--bg-card-hdr);
+      border-bottom: 1px solid var(--bg-card-bdr);
+    }
+    [data-composition-id="root"] .ts-logo {
+      width: 44px; height: 44px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--violet), var(--accent));
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-white); font-size: 24px; font-weight: 900;
+      font-family: 'Inter', sans-serif; flex-shrink: 0;
+    }
+    [data-composition-id="root"] .ts-app-name {
+      color: var(--text-white); font-size: 30px; font-weight: 800;
+      letter-spacing: -0.5px; font-family: 'Inter', sans-serif;
+    }
+    [data-composition-id="root"] .ts-new-chat {
+      margin-left: auto; color: var(--text-muted);
+      font-size: 22px; font-weight: 600; letter-spacing: 0.1em;
+      text-transform: uppercase; font-family: 'JetBrains Mono', monospace;
+    }
+
+    [data-composition-id="root"] .ts-body { padding: 30px 30px 36px; }
+    [data-composition-id="root"] .ts-user-row {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+    }
+    [data-composition-id="root"] .ts-avatar {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: #06B6D4; display: flex; align-items: center; justify-content: center;
+      font-size: 24px; font-weight: 900; color: var(--bg-navy);
+      font-family: 'Inter', sans-serif; flex-shrink: 0;
+    }
+    [data-composition-id="root"] .ts-username {
+      color: var(--text-muted); font-size: 24px; font-weight: 700;
+      font-family: 'Inter', sans-serif;
+    }
+    [data-composition-id="root"] .ts-bubble {
+      padding: 30px 32px;
+      background: var(--bg-bubble);
+      border: 1px solid var(--bg-card-bdr);
+      border-radius: 22px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 34px;
+      color: var(--text-white);
+      line-height: 1.45;
+      letter-spacing: -0.5px;
+      min-height: 360px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    [data-composition-id="root"] .ts-cursor {
+      display: inline-block; color: var(--violet);
+      font-family: 'JetBrains Mono', monospace; font-size: 36px;
+      will-change: opacity;
+    }
+
+    [data-composition-id="root"] .ts-bottom-tag {
+      position: absolute;
+      top: 980px;
+      left: 80px;
+      width: 1160px;
+      text-align: left;
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 24px; font-weight: 700;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      will-change: opacity;
+    }
+  </style>
+
+  <div class="ts-glow" id="ts-glow"></div>
+  <div class="ts-label" id="ts-label">The prompt &middot; paste this</div>
+
+  <div class="ts-card" id="ts-card">
+    <div class="ts-titlebar">
+      <div class="ts-logo">C</div>
+      <div class="ts-app-name">{{LABEL}}</div>
+      <div class="ts-new-chat">new chat</div>
+    </div>
+    <div class="ts-body">
+      <div class="ts-user-row">
+        <div class="ts-avatar">@</div>
+        <div class="ts-username">you</div>
+      </div>
+      <div class="ts-bubble" id="ts-bubble">
+        <span id="ts-typed"></span><span class="ts-cursor" id="ts-cursor">&#9611;</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="ts-bottom-tag" id="ts-bottom-tag">{{BOTTOM_TAG}}</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    window.__timelines = window.__timelines || {};
+
+    var DURATION     = parseFloat("{{DURATION}}");
+    var TYPING_SPEED = parseFloat("{{TYPING_SPEED}}" || "1.0");
+    var PROMPT_TEXT  = "{{PROMPT}}";
+    var BOTTOM_TAG   = "{{BOTTOM_TAG}}";
+
+    ;(function() {
+      var tmp = document.createElement("textarea");
+      tmp.innerHTML = PROMPT_TEXT;
+      PROMPT_TEXT = tmp.value;
+    })();
+
+    var tagEl = document.getElementById("ts-bottom-tag");
+    if (tagEl && BOTTOM_TAG.trim() === "") tagEl.style.display = "none";
+
+    var proxy = { n: 0 };
+    var typedEl = document.getElementById("ts-typed");
+    function updateTyped() {
+      if (!typedEl) return;
+      typedEl.textContent = PROMPT_TEXT.slice(0, Math.round(proxy.n));
+    }
+
+    var tl = gsap.timeline({ paused: true });
+
+    tl.fromTo("#ts-card", { y: 30, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.6, ease: "power3.out" }, 0.1);
+    tl.fromTo("#ts-label", { y: 14, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.5, ease: "power2.out" }, 0.05);
+    tl.fromTo("#ts-glow", { scale: 0.85, opacity: 0 },
+      { scale: 1.0, opacity: 1, duration: 0.8, ease: "power2.out" }, 0);
+
+    var typeStart = 0.5;
+    var typeEnd = Math.max(typeStart + 0.5, DURATION * 0.88 / TYPING_SPEED);
+    typeEnd = Math.min(typeEnd, DURATION - 0.4);
+    tl.to(proxy, { n: PROMPT_TEXT.length, duration: typeEnd - typeStart,
+      ease: "none", onUpdate: updateTyped }, typeStart);
+
+    var blinkPeriod = 0.35;
+    var blinkCycles = Math.ceil(DURATION / blinkPeriod) - 1;
+    tl.to("#ts-cursor", { opacity: 0, duration: blinkPeriod, ease: "steps(1)",
+      repeat: blinkCycles, yoyo: true }, 0.5);
+
+    if (tagEl && BOTTOM_TAG.trim() !== "") {
+      tl.fromTo("#ts-bottom-tag", { opacity: 0 },
+        { opacity: 1, duration: 0.4, ease: "power2.out" }, 0.7);
+    }
+
+    window.__timelines["root"] = tl;
+  </script>
+</div>
+</template>
