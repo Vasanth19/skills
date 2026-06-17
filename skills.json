@@ -523,7 +523,7 @@
         "f-hyperframes",
         "f-hyperframes-cli",
         "f-gsap",
-        "wowx-focus"
+        "wowx-motions"
       ],
       "produces": {
         "dish": "Longform Video",

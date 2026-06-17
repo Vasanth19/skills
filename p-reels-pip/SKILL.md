@@ -964,7 +964,7 @@ $FF -y -ss "$COVER_AT" -i "$W/polished.mp4" -frames:v 1 -q:v 2 "$W/cover.png"
 
 # 2. Make a 0.4s freeze clip (1080×1920, 30fps, silent stereo) matching reel specs
 # BUG FIX: anullsrc MUST be a proper lavfi input (-f lavfi -i), NOT an -af filter.
-# Using -af "anullsrc=..." attaches a filter to the image's (absent) audio stream,
+# Using -af with an anullsrc filter attaches it to the image's (absent) audio stream,
 # producing no audio stream → the concat drops audio entirely.
 $FF -y -loop 1 -t 0.4 -i "$W/cover.png" \
   -f lavfi -t 0.4 -i "anullsrc=r=48000:cl=stereo" \

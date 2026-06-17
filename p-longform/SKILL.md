@@ -11,7 +11,7 @@ produces:
   format: 16:9 video
   duration: 5-20 min
 inputs: [script, format, broll_dir, talking_head_video, source, known_transcript, captions, outro]
-dependsOn: [c-script, c-heygen, c-broll, c-broll-sync, c-reel-premium, c-typing-ui, c-html-gfx, c-audio, c-production, c-ffmpeg, c-ai-media, f-remotion, f-hyperframes, f-hyperframes-cli, f-gsap, wowx-focus]
+dependsOn: [c-script, c-heygen, c-broll, c-broll-sync, c-reel-premium, c-typing-ui, c-html-gfx, c-audio, c-production, c-ffmpeg, c-ai-media, f-remotion, f-hyperframes, f-hyperframes-cli, f-gsap, wowx-motions]
 ---
 
 
@@ -191,7 +191,7 @@ lower-left ~76% and never enter the PIP zone.
      `typing-scene-ls.html`, `hook-scene-ls.html`) via `f-hyperframes`/`c-typing-ui`. Every graphics
      scene is **illustrative, not title-only** (see the mandate at the top of this file).
    - `broll` beats → FIT+blurred-fill at 1920×1080. **Screen-recording / app-demo b-roll → apply
-     `wowx-focus` (cinematic Ken Burns) FIRST** (detect by `*screen*`/`*recording*`/`*demo*`/`*app*`/
+     `wowx-motions` (cinematic Ken Burns / camera push) FIRST** (detect by `*screen*`/`*recording*`/`*demo*`/`*app*`/
      `*walkthrough*` or near-zero motion) — flat captures look lifeless held still.
    - Composite each beat by grammar: `hidden` = background only; `full` = keyed avatar (HeyGen:
      two-pass `colorkey=0x00FF00`, zoom-then-crop `scale=2208:1242,crop=1920:1080:144:0` — never
