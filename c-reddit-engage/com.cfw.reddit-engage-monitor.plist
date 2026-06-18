@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  c-reddit-engage daily health monitor. Runs once/day at 22:30 (after the 18:00 session).
+  Pings (macOS notification) only on problems: removals, NOT_LOGGED_IN, post failures.
+  Always appends a digest line to ~/.gsai/secrets/reddit-engage-digest.log.
+
+  Activate:
+    cp ~/Code/skills/c-reddit-engage/com.cfw.reddit-engage-monitor.plist ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/com.cfw.reddit-engage-monitor.plist
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.cfw.reddit-engage-monitor</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/bin/node</string>
+    <string>/Users/vasanth/Code/skills/c-reddit-engage/monitor.mjs</string>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict><key>Hour</key><integer>22</integer><key>Minute</key><integer>30</integer></dict>
+  </array>
+
+  <key>StandardOutPath</key>
+  <string>/Users/vasanth/.gsai/secrets/reddit-engage-monitor.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/vasanth/.gsai/secrets/reddit-engage-monitor.err.log</string>
+  <key>RunAtLoad</key>
+  <false/>
+</dict>
+</plist>
