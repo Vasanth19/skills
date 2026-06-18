@@ -83,7 +83,7 @@ Write full copy per slide:
 ```bash
 cd <production>
 [ -d node_modules/playwright ] || npm i playwright >/dev/null 2>&1
-# render.mjs auto-discovers every <section class="slide" id="..."> and shoots each at 2x.
+# render.mjs auto-discovers every <section class="slide" id="sN"> and shoots each at 2x.
 WIDTH=1080 HEIGHT=1350 SCALE=2 node render.mjs        # HEIGHT=1080 for 1:1
 ```
 → Output: `slides/slide-<id>.png` (retina, sharp).
@@ -103,8 +103,8 @@ Do NOT proceed to assembly with a slide that has not passed.
 ### Step 6 — Assemble PDF
 
 ```bash
-# stitch the approved slide PNGs in order — NO text drawing, the PNGs are final
-convert "slides/slide-1.png" "slides/slide-2.png" ... "final/carousel-<topic-slug>.pdf"
+# stitch the approved slide PNGs in slide order (ls -v = natural sort) — NO text drawing
+convert $(ls -v slides/slide-*.png) "final/carousel-<topic-slug>.pdf"
 ```
 → Output: `final/carousel-<topic-slug>.pdf` + the individual `slides/*.png` (for platforms that take images).
 
