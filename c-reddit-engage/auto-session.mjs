@@ -37,7 +37,8 @@ const SECRETS = path.join(os.homedir(), '.gsai/secrets');
 const LOG = path.join(SECRETS, 'reddit-engage-auto.log');
 const OFF = path.join(SECRETS, 'reddit-engage.OFF');
 
-const SUBS = (process.env.SUBS || 'SaaS,Entrepreneur,startups,SideProject,indiehackers').split(',').map(s => s.trim());
+// r/SaaS deliberately excluded — its AI-content automod removed this account's comments.
+const SUBS = (process.env.SUBS || 'indiehackers,Entrepreneur,startups,SideProject').split(',').map(s => s.trim());
 const N = parseInt(process.env.N_PER_SESSION || '3', 10);
 const ACTIVE_START = parseInt(process.env.ACTIVE_START || '7', 10);
 const ACTIVE_END = parseInt(process.env.ACTIVE_END || '22', 10);
@@ -74,13 +75,21 @@ WRITE LIKE A HUMAN — these patterns get auto-removed as "AI content", NEVER us
   testament, realm, seamless, moreover, furthermore.
 - NO list-of-three, no "Firstly/Secondly", no summarizing the post, no "great post".
 
-DO: one specific concrete detail or first-hand experience; one clear opinion with mild emotion;
-vary sentence length, fragments ok, contractions, lowercase start is fine; slightly imperfect
-beats polished. Sound like someone typing fast who actually knows this, not a summary of it.`;
+PERSONAL COLOR: light, vague relatability is fine ("yeah this is super common", "seen this play
+out a lot"). But do NOT invent SPECIFIC fake history — no naming a product you "built/shipped",
+no made-up metrics (MRR, user/customer counts), no detailed backstories that would contradict
+each other across comments. When in doubt, react to the post instead of inventing yourself.
+
+DO: react to something SPECIFIC in this post (a detail, the real tradeoff, the gap in their plan);
+or ask one genuine question; or give an opinion from general reasoning. One clear point with mild
+emotion. Vary sentence length, fragments ok, contractions, lowercase start fine. Slightly
+imperfect beats polished. Sound like a sharp person reacting to the post, not a summary of it.`;
 
 // Patterns that betray AI writing — reject any draft containing them.
 const TELL_WORDS = /\b(delve|nestled|boast|meticulous|leverage|foster|robust|crucial|pivotal|testament|realm|tapestry|underscore|seamless|moreover|furthermore)\b/i;
 const TELL_NOTJUST = /\b(it'?s not just|isn'?t (just )?\w+,? it'?s|not\s+\w+,?\s+but rather)\b/i;
+// Hard-block only the heaviest, checkable fabrications (specific product ownership + fake metrics).
+const TELL_FAKE_METRIC = /\bmy (startup|saas|mrr)\b|\$\d[\d,]*\s*(k|mrr|\/mo)?\b.*\bi (made|hit|earned)\b/i;
 
 function draftComment(thread) {
   const prompt = `${DRAFT_SYSTEM}
@@ -100,6 +109,7 @@ function validComment(t) {
   if (/[—–]/.test(t)) return { ok: false, why: 'em-dash tell' };
   if (TELL_WORDS.test(t)) return { ok: false, why: 'tell-word' };
   if (TELL_NOTJUST.test(t)) return { ok: false, why: 'not-just-X-its-Y tell' };
+  if (TELL_FAKE_METRIC.test(t)) return { ok: false, why: 'fake metric/ownership' };
   return { ok: true };
 }
 

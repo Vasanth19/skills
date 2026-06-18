@@ -89,12 +89,23 @@ async function cmdLogin() {
   const ctx = await launch(false);
   const page = ctx.pages()[0] || await ctx.newPage();
   await page.goto('https://www.reddit.com/login/', { waitUntil: 'domcontentloaded' });
-  console.error('A browser window is open. Log into Reddit by hand (solve any captcha).');
-  console.error('When the front page shows you logged in, press ENTER here to save the session…');
-  await new Promise((res) => process.stdin.once('data', res));
-  const name = await whoami(page);
+  console.error('A Reddit login window is open. Log in by hand (solve any captcha).');
+  console.error('Waiting up to 5 min for you to finish — auto-saves the moment you are logged in…');
+  // Poll the same-origin auth probe WITHOUT navigating away from the login page.
+  const deadline = Date.now() + 5 * 60 * 1000;
+  let name = null;
+  while (Date.now() < deadline) {
+    await page.waitForTimeout(3000);
+    try {
+      name = await page.evaluate(async () => {
+        try { const r = await fetch('/api/me.json', { credentials: 'include' }); const j = await r.json(); return j?.data?.name || null; }
+        catch { return null; }
+      });
+    } catch { /* mid-navigation; retry */ }
+    if (name) break;
+  }
   await ctx.close();
-  if (!name) die('Still NOT logged in — session not saved.', 3);
+  if (!name) die('No login detected within 5 min — session not saved. Re-run to retry.', 3);
   console.log(JSON.stringify({ ok: true, loggedInAs: name, profile: PROFILE }));
 }
 
