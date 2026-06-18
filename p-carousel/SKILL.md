@@ -1,31 +1,28 @@
 ---
 name: p-carousel
-description: Multi-slide carousel for any platform. Writes slide content, then builds each slide as an AI image (c-ai-media), an HTML-GFX card (c-html-gfx), or a HyperFrames composition (f-hyperframes) — or a mix — assembles into a carousel/PDF, and drafts the caption. Trigger on "make a carousel", "LinkedIn carousel", "Instagram carousel", "slide deck post", "multi-slide post".
+description: Multi-slide carousel for any platform, built as RICH premium HTML cards. Writes slide copy, authors one HTML document (premium template — brand palette, depth, type hierarchy), renders each slide to PNG via headless Chromium, runs the c-vision-qa look-and-fix gate on every slide, assembles a PDF, and drafts the caption. Trigger on "make a carousel", "LinkedIn carousel", "Instagram carousel", "slide deck post", "multi-slide post".
 disable-model-invocation: true
 argument-hint: "[brand] [production-name] [topic]"
 allowed-tools: Bash, Read, Write
 kind: pipeline
 visibility: catalog
-providers: kie
 produces:
   dish: LinkedIn Carousel
   format: PDF carousel
   duration: n/a
 inputs: [topic]
-dependsOn: [c-script, c-ai-media, c-html-gfx, f-hyperframes]
+dependsOn: [c-script, c-vision-qa]
+requires: node, chromium
 ---
 
 
 
-> ## ⚡ Frame integrity + integrated CTA (MANDATORY — 2026-06-16)
-> - **Frame 0 is NEVER black.** The first frame must be a bright money-shot — the cover-freeze of the strongest illustrative beat (Step 10 cover rule). Verify `ffmpeg ... signalstats` → `YAVG > 30`. No black / hook-blank / fade-in opener.
-> - **The LAST frame is NEVER black.** The reel must end on content, not a fade-to-black or trailing blank. Verify the final frame `YAVG > 30`.
-> - **CTA is integrated by DEFAULT, not optional.** Every reel/VSL ends on a branded **CTA beat baked into the timeline** (offer line + handle/URL), as the final illustrative HyperFrames card. Do not ship a reel whose last beat is filler or black. (In p-reels-split this is the Step 9 CTA takeover; other recipes must add an equivalent closing CTA card.)
+> ## ⚡ PREMIUM HTML CARDS + VISION QA (MANDATORY — 2026-06-17)
+> - **Slides are authored as RICH HTML and rendered to PNG via headless Chromium.** Use `template.html` in this skill as the quality floor — premium type hierarchy, depth (shadows, rounded cards), generous margins. **NOT** AI-generated background images with text drawn on top. **NOT** bare title-on-plain-background cards. A flat, templated-looking card is a defect.
+> - **Inject the brand palette + fonts** (`get_brand_dna`) into the template's CSS vars. **Never** ship generic `#3b82f6` / `#333` / stock colors — off-brand color is a QA failure.
+> - **EVERY rendered slide MUST pass `c-vision-qa` before assembly.** Render → look → fix the HTML → re-render → look again, until every slide PASSes. An unseen slide is a defect. The cover slide is the brightest, strongest beat; no black or blank first/last slide.
 
-> ## ⚡ HyperFrames = illustrative, NOT just titles (MANDATORY — 2026-06-16)
-> Every HyperFrames graphics scene MUST pair its title with an **illustrative animation that depicts the point** — never a bare kinetic title card. Examples: a 45-post feed grid staggering in (`back.out`), a count-up stat with day-dots, an animated waveform for "voice", platform chips popping in. Match the premium reference in `cfw-marketing/creatives/productions/restaurants-vsl/hyperframes` (`DIAG-calendar` feed-grid, `HF-*` motion) **and** `cfw-marketing/creatives/productions/fnb-split-screen-short/gen-rich-cards.py`: grid + glow + vignette background, GSAP eased + staggered elements, brand palette, depth (shadows/shine). **Make it as rich and premium as possible — a title-only card is a defect.**
-
-# pipeline-linkedin-carousel — LinkedIn PDF Carousel
+# pipeline-carousel — Premium HTML Carousel (PDF)
 
 
 > **SELF-IMPROVEMENT RULE — READ FIRST:**
@@ -36,7 +33,9 @@ dependsOn: [c-script, c-ai-media, c-html-gfx, f-hyperframes]
 > 5. Summarize the feedback into 1–3 bullet points and append to `LEARNINGS.md` with today's date.
 > 6. If feedback is critical (affects correctness or quality), add it to the **Active Feedback** section so it applies on every future run.
 
-Produces a LinkedIn-optimized carousel PDF with AI images and caption copy.
+Produces a premium, on-brand carousel PDF (rich HTML cards) + caption copy. The agent
+authors the HTML and renders it — exactly the workflow that produces hand-quality cards —
+then proves quality with the `c-vision-qa` gate before anything is delivered.
 
 ## Arguments
 
@@ -45,70 +44,81 @@ Produces a LinkedIn-optimized carousel PDF with AI images and caption copy.
 | brand | Yes | — | Brand slug |
 | production_name | Yes | — | Folder name |
 | topic | Yes | — | Carousel topic / hook |
-| num_slides | No | `7` | Number of slides (cover + content + CTA) |
-| style | No | `whiteboard` | `whiteboard` or `corporate` |
-| aspect_ratio | No | `4:5` | `4:5` or `1:1` |
+| num_slides | No | `5` | Number of slides (cover + content + CTA) |
+| aspect_ratio | No | `4:5` | `4:5` (1080×1350) or `1:1` (1080×1080) |
 
 ## Steps
 
 ### Step 1 — Outline ⛔ CHECKPOINT
 
-Write carousel outline:
+Write the carousel outline:
 - Slide 1: Cover (hook headline)
-- Slides 2–N-1: Content (one insight per slide, progressive reveal)
-- Slide N: CTA (follow + offer)
+- Slides 2 … N-1: Content (one insight per slide, progressive reveal)
+- Slide N: CTA (follow + offer + handle/URL)
 
 Headline copy: short, scroll-stopping, value-front.
 **Gate: User approves outline.**
 
-### Step 2 — Slide Content
+### Step 2 — Slide Copy
 
-Write full copy for each slide:
-- Headline: ≤8 words
+Write full copy per slide:
+- Headline: ≤ 8 words
 - Body: 2–3 sentences max
-- Visual cue: what image/graphic supports this slide
+- Visual idea: the layout/illustration that supports this slide (a step list, a stat,
+  a before→after, a code/window mock, a node diagram — NOT just a title)
 
-### Step 3 — AI Image Generation ⛔ CHECKPOINT
+### Step 3 — Author the premium HTML
 
-→ Skill: `c-ai-media` → read `brand-ref.md` first
-→ Generate one image per slide based on visual cue
-→ Style: `$style` (whiteboard/corporate)
-→ Aspect: `$aspect_ratio`
-→ Output: `interim/broll/gfx/slide-{N}.png`
+→ Copy `template.html` (this skill folder) to `<production>/carousel.html`.
+→ **Brand it:** read `get_brand_dna` and overwrite the `:root` CSS vars (`--accent`,
+  `--ink`, `--bg`, `--card`, `--line`, `--muted`) + fonts with the brand's palette/type.
+→ **One `<section class="slide" id="sN">` per slide** (N = 1…num_slides). Use the
+  component classes in the template (`.window`, `.step`, `.pill`, `.callout`, `.cta-key`,
+  `.node`) to give each slide real layout + depth — match the visual idea from Step 2.
+→ Keep the set consistent: same fonts, accent, card style, margin rhythm across all slides.
+→ Set the slide size for `$aspect_ratio` (the template's `--w`/`--h` vars: 1080×1350 for 4:5, 1080×1080 for 1:1).
 
-**Gate: User reviews all slide images.**
+### Step 4 — Render to PNG
 
-Regenerate any rejected images before PDF assembly.
-
-### Step 4 — PDF Assembly
-
-→ ImageMagick: combine text overlay + AI image per slide
 ```bash
-for N in $(seq 1 $num_slides); do
-  convert -size {W}x{H} xc:white \
-    slide-{N}.png -geometry +0+0 -composite \
-    -font "brand-font.ttf" -pointsize 48 \
-    -draw "text 60,80 '{headline}'" \
-    -pointsize 28 -draw "text 60,160 '{body}'" \
-    slide-{N}-final.png
-done
-
-# Combine to PDF
-convert slide-*.png carousel.pdf
+cd <production>
+[ -d node_modules/playwright ] || npm i playwright >/dev/null 2>&1
+# render.mjs auto-discovers every <section class="slide" id="..."> and shoots each at 2x.
+WIDTH=1080 HEIGHT=1350 SCALE=2 node render.mjs        # HEIGHT=1080 for 1:1
 ```
-→ Output: `final/sq-carousel01-{topic-slug}.pdf`
+→ Output: `slides/slide-<id>.png` (retina, sharp).
 
-### Step 5 — LinkedIn Caption
+### Step 5 — Vision QA gate ⛔ (MANDATORY look-and-fix loop)
 
-→ Skill: `c-script` → write LinkedIn post copy:
-- Hook line (matches cover slide)
+→ Skill: `c-vision-qa` — run it on the rendered slides:
+```bash
+bash .hub/c-vision-qa/scripts/precheck.sh slides/*.png --aspect 1080x1350
+```
+Then READ every slide PNG and score it against the c-vision-qa rubric (clipping, contrast,
+margins, premium hierarchy, on-brand palette, charset, set consistency).
+→ **Any FAIL → fix the HTML for that slide → re-render (Step 4) → re-run this gate.**
+Loop until every slide PASSes (max 3 iterations, then surface remaining issues to the owner).
+Do NOT proceed to assembly with a slide that has not passed.
+
+### Step 6 — Assemble PDF
+
+```bash
+# stitch the approved slide PNGs in order — NO text drawing, the PNGs are final
+convert "slides/slide-1.png" "slides/slide-2.png" ... "final/carousel-<topic-slug>.pdf"
+```
+→ Output: `final/carousel-<topic-slug>.pdf` + the individual `slides/*.png` (for platforms that take images).
+
+### Step 7 — Caption
+
+→ Skill: `c-script` — write the post copy:
+- Hook line (matches the cover slide)
 - Tease slides 2–3 (don't give it all away)
 - CTA: "Save this + follow for more"
 - 3–5 relevant hashtags
 
-### Step 6 — Deliver ⛔ CHECKPOINT
+### Step 8 — Deliver ⛔ CHECKPOINT
 
-Deliver: PDF + caption `.txt`
+Deliver: PDF + slide PNGs + caption `.txt`.
 **Gate: User approves caption before scheduling.**
 
 ## Self-Improvement Feedback Loop
@@ -119,4 +129,3 @@ After completing this skill's task:
 3. Append to `LEARNINGS.md` in this folder with the date.
 4. If feedback is critical (affects correctness or quality), add it to the **Active Feedback** section at the top of `LEARNINGS.md`.
 5. Mark critical feedback with `[ACTIVE]` prefix so it is visually distinct.
-
