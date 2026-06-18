@@ -26,6 +26,34 @@ metadata:
 > ## ⚡ HyperFrames = illustrative, NOT just titles (MANDATORY — 2026-06-16)
 > Every HyperFrames graphics scene MUST pair its title with an **illustrative animation that depicts the point** — never a bare kinetic title card. Examples: a 45-post feed grid staggering in (`back.out`), a count-up stat with day-dots, an animated waveform for "voice", platform chips popping in. Match the premium reference in `cfw-marketing/creatives/productions/restaurants-vsl/hyperframes` (`DIAG-calendar` feed-grid, `HF-*` motion) **and** `cfw-marketing/creatives/productions/fnb-split-screen-short/gen-rich-cards.py`: grid + glow + vignette background, GSAP eased + staggered elements, brand palette, depth (shadows/shine). **Make it as rich and premium as possible — a title-only card is a defect.**
 
+> ## ⚡ LOCKED FORMAT — identical for EVERY brand (MANDATORY — 2026-06-18)
+> This is the approved house format for ALL brands (mr-growth-guide, cfw-social, b-vasanth, demo
+> brands — everyone). The **structure below never changes**. The ONLY things that vary per brand are
+> the **background color, font/accent colors, and some visualizations** — pulled from the brand's
+> visual identity. Everything else is fixed at 100%. Reference builds: the MGG navy "Claude Opus
+> free on AWS" reel + `cfw-marketing/creatives/productions/fnb-split-screen-short/`.
+>
+> 1. **9:16 1080×1920, hard 50/50 split at y=960 (`vstack`, never overlay).**
+> 2. **Top zone = 5-second beat grid** alternating illustrative HyperFrames cards ↔ b-roll. B-roll
+>    is **wrapped as a rounded card with a brand-accent border on the brand bg** (not full-bleed).
+> 3. **CARDS MUST FILL THE FULL 960px ZONE** — eyebrow + title up top, illustration **vertically
+>    centered and enlarged** to occupy the middle/lower zone. A card with content crammed at the top
+>    and a black void below is a **defect**. (Chips: large, stacked, ~680px wide. Bignum: ~340–380px.)
+> 4. **Bottom zone = HeyGen Avatar III.** If the avatar is a **greenscreen** render, chroma-key
+>    (`chromakey`+`despill`) and place it on the **SAME brand background** as the cards so top+bottom
+>    read as one designed piece.
+> 5. **CAPTIONS = BIG, AT THE SEAM.** Word-synced kinetic captions, **~86px Montserrat Bold**,
+>    centered, positioned **at the split line (`\an5\pos(540,~1012)`)**, with **ONE accent-color
+>    keyword per chunk** and a fade+pop entrance. NOT tiny, NOT floating high in the top zone. This
+>    big seam caption is the signature of the format (the fnb "REAL BAKERY'S" treatment).
+> 6. **Premium pass:** brand grade (`eq`+`unsharp`), whoosh SFX at every beat seam + a pop on the
+>    hook, audio **loudnorm to −14 LUFS / −1.5 dBTP** (raw HeyGen is ~−22 LUFS).
+> 7. **Avatar cut-zoom** optional polish: ~1.0× on b-roll beats, ~1.1–1.4× punch-in on card beats.
+>
+> **Per-brand variables ONLY:** bg color, accent/font colors, specific visualizations. Pull from the
+> brand's `.config/brand.yaml` / visual identity. Cross-brand SOP: `brain-personal →
+> vasanth-hq/sops/short-form-reel-recipe`.
+
 # p-reels-split — 50/50 Split-Screen Reel from Uploaded Talking-Head Video
 
 Produces one 9:16 (1080×1920) H.264 MP4 with two equal zones:
