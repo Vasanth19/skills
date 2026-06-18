@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  c-reddit-engage unattended scheduler.
+  2 sessions/day at 10:00 and 18:00 local (nothing overnight); 2 comments/session (~4/day).
+  AUTO_POST=1 means LIVE posting. To go dry-run first, delete that env pair (drafts are logged, nothing posts).
+  Kill switch:  touch ~/.gsai/secrets/reddit-engage.OFF   (each session exits immediately while present)
+
+  Activate:
+    cp ~/Code/skills/c-reddit-engage/com.cfw.reddit-engage.plist ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/com.cfw.reddit-engage.plist
+  Deactivate:
+    launchctl unload ~/Library/LaunchAgents/com.cfw.reddit-engage.plist
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.cfw.reddit-engage</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/bin/node</string>
+    <string>/Users/vasanth/Code/skills/c-reddit-engage/auto-session.mjs</string>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <key>AUTO_POST</key>
+    <string>1</string>
+    <key>N_PER_SESSION</key>
+    <string>2</string>
+    <key>CLAUDE_BIN</key>
+    <string>/Applications/cmux.app/Contents/Resources/bin/claude</string>
+  </dict>
+
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict><key>Hour</key><integer>10</integer><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Hour</key><integer>18</integer><key>Minute</key><integer>0</integer></dict>
+  </array>
+
+  <key>StandardOutPath</key>
+  <string>/Users/vasanth/.gsai/secrets/reddit-engage-launchd.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/vasanth/.gsai/secrets/reddit-engage-launchd.err.log</string>
+  <key>RunAtLoad</key>
+  <false/>
+</dict>
+</plist>
