@@ -11,10 +11,10 @@ produces:
   format: 9:16 vertical video
   duration: 30-90s
 inputs: [script]
-dependsOn: [c-audio, c-broll-sync, c-typing-ui, c-reel-premium, c-ffmpeg, c-cloud-media, f-hyperframes, f-hyperframes-cli, f-gsap, c-overlay-fx]
+dependsOn: [c-audio, c-broll-sync, c-typing-ui, c-reel-premium, c-ffmpeg, c-cloud-media, f-hyperframes, f-hyperframes-cli, f-gsap, c-overlay-fx, c-shorts-qa-gate]
 metadata:
   hermes:
-    vendored: [c-audio, c-reel-premium, c-broll-sync, c-typing-ui, c-ffmpeg, f-hyperframes, f-hyperframes-cli, f-gsap, c-overlay-fx]
+    vendored: [c-audio, c-reel-premium, c-broll-sync, c-typing-ui, c-ffmpeg, f-hyperframes, f-hyperframes-cli, f-gsap, c-overlay-fx, c-shorts-qa-gate]
 ---
 
 
@@ -405,7 +405,7 @@ delegate_task({
   "tasks": [
     {
       "goal": "Author + render ONE 1080x1920 animated HyperFrames composition for beat 0 (hook); return its MP4 path.",
-      "context": "WORK_GFX=<abs_path>/work/gfx | index=0 slug=hook | start=0.0 end=4.2 | data-duration=4.2 | script_line=<this beat VO line> | scene_type=hook | BRAND (verbatim JSON): <brand.json contents> | typing_ui_dir=<TYPING_UI_DIR> | RULES: read f-hyperframes/SKILL.md, follow p-reels-faceless Visual doctrine (FOREGROUND HERO; gsap.from() ends-visible; AMBIENT MOTION full window; SVG-only icons; ghost=beat index; Oswald+JetBrains Mono; no remote URLs). For scene_type=hook or scene_type=typing-ui: use c-typing-ui templates from typing_ui_dir (standalone render — strip <template> wrapper, wrap in full HTML doc; use FULL variant for faceless). For scene_type=standard or omitted: author a brand motion-graphic (chart/terminal/checklist/stat/diagram). RUN: npx hyperframes init beatN-slug --non-interactive -> author index.html -> npx hyperframes lint (0 errors REQUIRED) -> npx hyperframes render --output beatN-slug.mp4 --fps 30 --quality high. RETURN: absolute MP4 path + confirm lint=0. ONLY touch your own beat folder.",
+      "context": "WORK_GFX=<abs_path>/work/gfx | index=0 slug=hook | start=0.0 end=4.2 | data-duration=4.2 | script_line=<this beat VO line> | scene_type=hook | BRAND (verbatim JSON): <brand.json contents> | typing_ui_dir=<TYPING_UI_DIR> | gsap_vendor_dir=<absolute path to f-gsap/vendor — i.e. $SKILL_DIR/.hub/f-gsap/vendor in the pack or $SKILL_DIR/../f-gsap/vendor in the source repo, whichever exists> | RULES: read f-hyperframes/SKILL.md, follow p-reels-faceless Visual doctrine (FOREGROUND HERO; gsap.from() ends-visible; AMBIENT MOTION full window; SVG-only icons; ghost=beat index; Oswald+JetBrains Mono; no remote URLs). The composition's <head> loads GSAP via a LOCAL relative tag <script src=\"gsap.min.js\"></script> — NEVER a CDN URL (the render box blocks outbound library fetches). For scene_type=hook or scene_type=typing-ui: use c-typing-ui templates from typing_ui_dir (standalone render — strip <template> wrapper, wrap in full HTML doc; use FULL variant for faceless). For scene_type=standard or omitted: author a brand motion-graphic (chart/terminal/checklist/stat/diagram). RUN: npx hyperframes init beatN-slug --non-interactive -> author index.html -> cp \"$gsap_vendor_dir/gsap.min.js\" beatN-slug/gsap.min.js (REQUIRED before render so the local <script src=\"gsap.min.js\"> resolves; if it references TextPlugin/MotionPathPlugin copy those too) -> npx hyperframes lint (0 errors REQUIRED) -> npx hyperframes render --output beatN-slug.mp4 --fps 30 --quality high. RETURN: absolute MP4 path + confirm lint=0. ONLY touch your own beat folder.",
       "toolsets": ["terminal", "skills", "web"]
     }
   ]
@@ -427,7 +427,7 @@ terminal/checklist in the brand palette. The composition shape:
 
 ```html
 <!doctype html><html><head>
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script src="gsap.min.js"></script>
   <style>/* opaque bg, glow, faint grid, ghost number, scene flex column */</style>
 </head><body>
   <div id="root" data-composition-id="main" data-start="0" data-duration="<beat_span>"
@@ -472,13 +472,20 @@ with open(dst, "w") as f:
     # data-composition-id, data-start, data-duration for HyperFrames lint to pass.
     # window.__timelines["root"] = tl (dict form) is required — NOT .push().
     f.write(f"<!DOCTYPE html>\n<html><head><meta charset=\"utf-8\">"
-            "<script src=\"https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js\"></script>"
+            "<script src=\"gsap.min.js\"></script>"
             "<style>html,body{{margin:0;padding:0;width:1080px;height:1920px;overflow:hidden;}}</style>"
             f"</head><body>{tmpl}</body></html>")
 PY
 # box-compat: gpt-5.5 sometimes emits a double-hash hex (##0F172A) → white bg. Collapse it
 # before lint/render (brand accent + prompt content flow in from the scene spec).
 sed -i 's/##/#/g' "$WORK_GFX/beatN-typing/index.html"
+# Vendor GSAP into the comp dir so the local <script src="gsap.min.js"> resolves at render.
+# f-gsap is vendored under .hub/ in the pack and a sibling dir in the source repo.
+# NEVER fall back to a CDN — the render box blocks outbound library fetches.
+# Prefer the child-passed $gsap_vendor_dir; else resolve from $SKILL_DIR.
+GSAP=$(for p in "$gsap_vendor_dir" "$SKILL_DIR/.hub/f-gsap/vendor" "$SKILL_DIR/../f-gsap/vendor"; do [ -n "$p" ] && [ -f "$p/gsap.min.js" ] && echo "$p/gsap.min.js" && break; done)
+[ -n "$GSAP" ] || { echo "[p-reels-faceless] FATAL: vendored gsap.min.js not found (expected under .hub/f-gsap/vendor/ or ../f-gsap/vendor/)"; exit 1; }
+cp "$GSAP" "$WORK_GFX/beatN-typing/gsap.min.js"
 # Lint + render
 cd "$WORK_GFX/beatN-typing" && npx hyperframes lint && npx hyperframes render --output beatN-typing.mp4 --fps 30 --quality high
 ```
@@ -603,6 +610,17 @@ AFTER the last content beat. Sequence it at the END of `seglist.txt` before the 
 - "Follow for more" CTA chip + `@handle` if known.
 - ~3–4s, same ghost/grid/glow system, brand palette. Animate with `gsap.from()`.
 - SVG/CSS only — no tofu.
+- The outro `index.html` loads GSAP via a LOCAL `<script src="gsap.min.js"></script>` (never a CDN).
+  **Copy the vendored GSAP into the outro comp dir before rendering** so that tag resolves:
+
+```bash
+# Before `npx hyperframes render` in the outro comp dir (e.g. $W/gfx/outro-brand):
+OUTRO_DIR="$W/gfx/outro-brand"
+GSAP=$(for p in "$SKILL_DIR/.hub/f-gsap/vendor" "$SKILL_DIR/../f-gsap/vendor"; do [ -f "$p/gsap.min.js" ] && echo "$p/gsap.min.js" && break; done)
+[ -n "$GSAP" ] || { echo "[p-reels-faceless] FATAL: vendored gsap.min.js not found (expected under .hub/f-gsap/vendor/ or ../f-gsap/vendor/)"; exit 1; }
+cp "$GSAP" "$OUTRO_DIR/gsap.min.js"
+# then: cd "$OUTRO_DIR" && npx hyperframes lint && npx hyperframes render --output outro-brand.mp4 --fps 30 --quality high
+```
 
 ```bash
 # After authoring and rendering outro-brand/outro-brand.mp4:
@@ -821,6 +839,23 @@ $FF -i "$W/beatN_a.png" -i "$W/beatN_b.png" -lavfi psnr -f null - 2>&1 | grep av
 **If ANY check fails: fix the composition and re-render. NEVER upload a reel that fails this gate.**
 
 ---
+
+### QA gate (MANDATORY — run before upload)
+
+Run the shared short-form pre-delivery gate on the final MP4. **Do NOT upload if it
+exits non-zero.**
+
+```bash
+bash .hub/c-shorts-qa-gate/scripts/qa-gate.sh <FINAL_MP4> --format reel
+```
+
+- HARD (blocks delivery): integrated loudness ≈ -14 LUFS, frame-0 brightness > 0x30,
+  resolution/fps/duration, audio track present.
+- ADVISORY (review the `qa/` artifacts, never blocks): captions present/position,
+  b-roll coverage, brand outro, lip-sync drift, green-screen residual.
+
+If a HARD check fails, fix the render and re-run — never deliver a failing gate.
+See `.hub/c-shorts-qa-gate/SKILL.md` (mirrors brain doctrine `short-form-qa-gate`).
 
 ### 15 — Upload to R2 and print the URL (FINAL LINE)
 

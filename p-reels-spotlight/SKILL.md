@@ -11,10 +11,10 @@ produces:
   format: 9:16 vertical video
   duration: 20-60s
 inputs: [talking_head_video, broll, script]
-dependsOn: [c-reel-premium, c-broll-sync, c-typing-ui, f-hyperframes, f-hyperframes-cli, c-ffmpeg, c-cloud-media, c-overlay-fx]
+dependsOn: [c-reel-premium, c-broll-sync, c-typing-ui, f-hyperframes, f-hyperframes-cli, c-ffmpeg, c-cloud-media, c-overlay-fx, c-shorts-qa-gate]
 metadata:
   hermes:
-    vendored: [c-overlay-fx, c-reel-premium, c-broll-sync, c-typing-ui, f-hyperframes, f-hyperframes-cli, c-ffmpeg, c-cloud-media]
+    vendored: [c-overlay-fx, c-reel-premium, c-broll-sync, c-typing-ui, f-hyperframes, f-hyperframes-cli, c-ffmpeg, c-cloud-media, c-shorts-qa-gate]
 ---
 
 
@@ -479,6 +479,17 @@ fi
 python3 - "$W" "$SKILL_DIR" "$TYPING_DIR" <<'PY'
 import json, html, os, shutil, sys
 W, SKILL, TYPING = sys.argv[1], sys.argv[2], sys.argv[3]
+
+def find_gsap(skill_dir):
+    # f-gsap is vendored under .hub/ in the pack, and a sibling in the source repo.
+    for c in (f"{skill_dir}/.hub/f-gsap/vendor/gsap.min.js",
+              f"{skill_dir}/../f-gsap/vendor/gsap.min.js"):
+        if os.path.exists(c):
+            return c
+    raise SystemExit("[p-reels-spotlight] FATAL: vendored gsap.min.js not found "
+                     "(expected under .hub/f-gsap/vendor/ or ../f-gsap/vendor/). "
+                     "NEVER fall back to a CDN — the render box blocks outbound library fetches.")
+
 plan = json.load(open(f"{W}/plan.json"))
 beat_list_path = f"{W}/beat_list.json"
 have_broll = os.path.exists(beat_list_path)
@@ -486,6 +497,12 @@ dur, brand = round(float(plan["duration"]), 2), plan["brand"]
 proj = f"{W}/comp"
 os.makedirs(f"{proj}/compositions", exist_ok=True)
 shutil.copy(f"{W}/base.mp4", f"{proj}/base.mp4")
+# Vendor GSAP into the comp root AND the compositions/ subdir so the local
+# <script src="gsap.min.js"> in root-shell.html (root) + tk-*/typing-scene
+# sub-compositions (compositions/) resolves at render — never a CDN.
+gsap_src = find_gsap(SKILL)
+shutil.copy(gsap_src, f"{proj}/gsap.min.js")
+shutil.copy(gsap_src, f"{proj}/compositions/gsap.min.js")
 
 def fill(t, m):
     for k, v in m.items(): t = t.replace("{{%s}}" % k, str(v))
@@ -874,6 +891,23 @@ print(f'cover OK: {cov:.2f}s (raw {raw:.2f}s + 0.40s freeze)')
 # Frame 1 of $OUT must NOT be black — eyeball $COVER_PNG (already extracted):
 echo "[spotlight] cover frame: $COVER_PNG"
 ```
+
+### QA gate (MANDATORY — run before upload)
+
+Run the shared short-form pre-delivery gate on the final MP4. **Do NOT upload if it
+exits non-zero.**
+
+```bash
+bash .hub/c-shorts-qa-gate/scripts/qa-gate.sh <FINAL_MP4> --format reel
+```
+
+- HARD (blocks delivery): integrated loudness ≈ -14 LUFS, frame-0 brightness > 0x30,
+  resolution/fps/duration, audio track present.
+- ADVISORY (review the `qa/` artifacts, never blocks): captions present/position,
+  b-roll coverage, brand outro, lip-sync drift, green-screen residual.
+
+If a HARD check fails, fix the render and re-run — never deliver a failing gate.
+See `.hub/c-shorts-qa-gate/SKILL.md` (mirrors brain doctrine `short-form-qa-gate`).
 
 ### Step 11 — Upload to R2 and print the URL (LAST LINE)
 

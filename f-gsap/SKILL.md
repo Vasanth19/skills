@@ -7,6 +7,22 @@ visibility: internal
 
 # GSAP
 
+## Loading GSAP — local vendor, never a CDN
+
+A pinned, vetted GSAP build ships with this skill at `f-gsap/vendor/` (`gsap.min.js`, `TextPlugin.min.js`). In a vendored recipe it lives at `<recipe>/.hub/f-gsap/vendor/`.
+
+**Never** reference a CDN (`cdn.jsdelivr.net`, `unpkg`, `cdnjs`) — the render box flags and blocks outbound library fetches, which silently breaks renders. Instead copy the vendored file into the composition dir next to `index.html` and reference it relatively:
+
+```bash
+cp "$SKILL_DIR/.hub/f-gsap/vendor/gsap.min.js" "$COMP_DIR/gsap.min.js"
+```
+
+```html
+<script src="gsap.min.js"></script>
+```
+
+Do not write a version-pinned CDN URL from memory; the only supported GSAP is the vendored one.
+
 ## Core Tween Methods
 
 - **gsap.to(targets, vars)** — animate from current state to `vars`. Most common.

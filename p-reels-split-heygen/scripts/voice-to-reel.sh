@@ -8,7 +8,8 @@
 #   cfw-marketing/creatives/productions/fnb-split-screen-short/voice-to-reel.sh
 # and generalized: no hardcoded production folder; output path + work dir are parameterized.
 #
-# Env required: ELEVENLABS_API_KEY, HEYGEN_API_KEY
+# Keys: ELEVENLABS_API_KEY, HEYGEN_API_KEY — taken from the environment, else auto-loaded
+#       from ~/.gsai/secrets.env (override path with SECRETS_FILE=...).
 # Usage:
 #   bash voice-to-reel.sh "Script text here" /path/to/out/th.mp4
 #   SCRIPT="..." OUT=/path/th.mp4 bash voice-to-reel.sh
@@ -17,8 +18,16 @@
 # Prints the absolute path of the finished MP4 as its LAST line.
 set -euo pipefail
 
-: "${ELEVENLABS_API_KEY:?set ELEVENLABS_API_KEY}"
-: "${HEYGEN_API_KEY:?set HEYGEN_API_KEY}"
+# Load keys from the canonical secrets file if not already in the environment.
+# Single source of truth: ~/.gsai/secrets.env (also feeds heygen-credit-check.sh).
+SECRETS_FILE="${SECRETS_FILE:-${HOME}/.gsai/secrets.env}"
+if { [ -z "${ELEVENLABS_API_KEY:-}" ] || [ -z "${HEYGEN_API_KEY:-}" ]; } && [ -f "$SECRETS_FILE" ]; then
+  # shellcheck source=/dev/null
+  set +u; source "$SECRETS_FILE"; set -u
+fi
+
+: "${ELEVENLABS_API_KEY:?set ELEVENLABS_API_KEY (env or $SECRETS_FILE)}"
+: "${HEYGEN_API_KEY:?set HEYGEN_API_KEY (env or $SECRETS_FILE)}"
 
 EL_VOICE="${EL_VOICE:-qfNHzU5pVyzMLm53FhzY}"          # ElevenLabs cloned "Vasanth-042026"
 EL_MODEL="${EL_MODEL:-eleven_v3}"

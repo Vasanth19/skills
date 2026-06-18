@@ -10,10 +10,10 @@ produces:
   format: 9:16 vertical video
   duration: 20-60s
 inputs: [talking_head_video, broll, known_transcript, outro, broll_style, bottom_cutzoom]
-dependsOn: [c-ffmpeg, c-audio, c-reel-premium, c-broll-sync, c-typing-ui, f-hyperframes, f-hyperframes-cli, f-gsap, c-overlay-fx, wowx-motions]
+dependsOn: [c-ffmpeg, c-audio, c-reel-premium, c-broll-sync, c-typing-ui, f-hyperframes, f-hyperframes-cli, f-gsap, c-overlay-fx, wowx-motions, c-shorts-qa-gate]
 metadata:
   hermes:
-    vendored: [c-reel-premium, c-broll-sync, c-typing-ui, c-ffmpeg, c-audio, f-hyperframes, f-hyperframes-cli, f-gsap, c-overlay-fx, wowx-motions]
+    vendored: [c-reel-premium, c-broll-sync, c-typing-ui, c-ffmpeg, c-audio, f-hyperframes, f-hyperframes-cli, f-gsap, c-overlay-fx, wowx-motions, c-shorts-qa-gate]
 ---
 
 
@@ -445,7 +445,17 @@ N_BEATS=$(python3 -c "import json; print(len(json.load(open('$W/beat_list.json')
 build_top_beat() {
   local i=$1
   python3 - "$i" "$W/beat_list.json" "$W" "$FF" "$TYPING_UI_DIR" "$SKILL_DIR" <<'PY'
-import json, sys, os, subprocess, html, re
+import json, sys, os, subprocess, html, re, shutil
+
+def find_gsap(skill_dir):
+    # f-gsap is vendored under .hub/ in the pack, and a sibling in the source repo.
+    for c in (f"{skill_dir}/.hub/f-gsap/vendor/gsap.min.js",
+              f"{skill_dir}/../f-gsap/vendor/gsap.min.js"):
+        if os.path.exists(c):
+            return c
+    raise SystemExit("[p-reels-split] FATAL: vendored gsap.min.js not found "
+                     "(expected under .hub/f-gsap/vendor/ or ../f-gsap/vendor/). "
+                     "NEVER fall back to a CDN — the render box blocks outbound library fetches.")
 
 i = int(sys.argv[1])
 bl = json.load(open(sys.argv[2]))
@@ -531,7 +541,7 @@ else:
         # Standalone full HTML doc; constrain viewport to 1080×960 (top half only)
         idx_html = (
             f'<!DOCTYPE html>\n<html><head><meta charset="utf-8">\n'
-            f'<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>\n'
+            f'<script src="gsap.min.js"></script>\n'  # vendored locally — never a CDN (copied into gdir below)
             f'<style>html,body{{margin:0;padding:0;width:1080px;height:960px;overflow:hidden;}}</style>\n'
             f'</head><body>{body}</body></html>'
         )
@@ -560,7 +570,7 @@ else:
             body, count=1)
         idx_html = (
             f'<!DOCTYPE html>\n<html><head><meta charset="utf-8">\n'
-            f'<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>\n'
+            f'<script src="gsap.min.js"></script>\n'  # vendored locally — never a CDN (copied into gdir below)
             f'<style>html,body{{margin:0;padding:0;width:1080px;height:960px;overflow:hidden;}}</style>\n'
             f'</head><body>{body}</body></html>'
         )
@@ -568,6 +578,8 @@ else:
     # box-compat: gpt-5.5 sometimes emits a double-hash hex (##0F172A) → white bg. Collapse it.
     idx_html = idx_html.replace("##", "#")
     open(f"{gdir}/index.html", "w").write(idx_html)
+    # Vendor GSAP into the comp dir so the local <script src="gsap.min.js"> resolves at render.
+    shutil.copy(find_gsap(SKILL_DIR), f"{gdir}/gsap.min.js")
     # --width/--height flags are NOT supported by the hyperframes CLI; canvas size is set via
     # data-width/data-height on the root div and CSS (html,body width/height 1080px/960px).
     subprocess.run(
@@ -737,7 +749,7 @@ mkdir -p "$W/cta"
 cat > "$W/cta/index.html" <<HTML
 <!DOCTYPE html>
 <html><head><meta charset="utf-8">
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<script src="gsap.min.js"></script>
 <style>
 html,body{margin:0;padding:0;width:1080px;height:1920px;overflow:hidden;background:rgba(15,23,42,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;}
 h1{color:#F1F5F9;font-family:Oswald,sans-serif;font-size:120px;font-weight:900;text-align:center;margin:0;padding:0 80px;}
@@ -766,6 +778,10 @@ HTML
 # box-compat: gpt-5.5 sometimes emits a double-hash hex (--bg: ##0F172A) → white bg.
 # Collapse any double-hash to single before lint/render.
 sed -i 's/##/#/g' "$W/cta/index.html"
+# Vendor GSAP into the CTA comp dir so the local <script src="gsap.min.js"> resolves at render.
+GSAP=$(for p in "$SKILL_DIR/.hub/f-gsap/vendor" "$SKILL_DIR/../f-gsap/vendor"; do [ -f "$p/gsap.min.js" ] && echo "$p/gsap.min.js" && break; done)
+[ -n "$GSAP" ] || { echo "[p-reels-split] FATAL: vendored gsap.min.js not found (expected under .hub/f-gsap/vendor/ or ../f-gsap/vendor/) — NEVER fall back to a CDN"; exit 1; }
+cp "$GSAP" "$W/cta/gsap.min.js"
 cd "$W/cta" && npx hyperframes lint && npx hyperframes render --output "$W/cta-card.mp4" --fps 30 --quality high
 cd -
 
@@ -881,6 +897,12 @@ root = open(f"{PREMIUM}/templates/root-shell-polish.html").read()
 open(f"{proj}/index.html","w").write(fill(root, {"DURATION": dur, "VIDEO_SRC": "reel-in.mp4"}))
 print(f"premium comp: {len(plan['caption_groups'])} groups, {dur}s, cap_top={CAP_TOP}")
 PY
+  # Vendor GSAP into the premium comp dir (and the compositions/ subdir) so the local
+  # <script src="gsap.min.js"> in root-shell-polish.html + caption-overlay.html resolves at render.
+  GSAP=$(for p in "$SKILL_DIR/.hub/f-gsap/vendor" "$SKILL_DIR/../f-gsap/vendor"; do [ -f "$p/gsap.min.js" ] && echo "$p/gsap.min.js" && break; done)
+  [ -n "$GSAP" ] || { echo "[p-reels-split] FATAL: vendored gsap.min.js not found (expected under .hub/f-gsap/vendor/ or ../f-gsap/vendor/) — NEVER fall back to a CDN"; exit 1; }
+  cp "$GSAP" "$PW/comp/gsap.min.js"
+  cp "$GSAP" "$PW/comp/compositions/gsap.min.js"
   cd "$PW/comp" && npx hyperframes lint && npx hyperframes validate && \
     npx hyperframes render --output "$PW/visuals.mp4" --fps 30 --quality high
   cd - >/dev/null
@@ -1024,6 +1046,23 @@ done
 - [ ] **(g) Frame 0 (cover)** is the money-shot — not black or a hook frame.
 
 **If ANY check fails: fix, re-render, re-check. Never upload a failing reel.**
+
+### QA gate (MANDATORY — run before upload)
+
+Run the shared short-form pre-delivery gate on the final MP4. **Do NOT upload if it
+exits non-zero.**
+
+```bash
+bash .hub/c-shorts-qa-gate/scripts/qa-gate.sh <FINAL_MP4> --format reel
+```
+
+- HARD (blocks delivery): integrated loudness ≈ -14 LUFS, frame-0 brightness > 0x30,
+  resolution/fps/duration, audio track present.
+- ADVISORY (review the `qa/` artifacts, never blocks): captions present/position,
+  b-roll coverage, brand outro, lip-sync drift, green-screen residual.
+
+If a HARD check fails, fix the render and re-run — never deliver a failing gate.
+See `.hub/c-shorts-qa-gate/SKILL.md` (mirrors brain doctrine `short-form-qa-gate`).
 
 ### Step 12 — Upload to R2 and print the URL (LAST LINE)
 

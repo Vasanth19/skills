@@ -367,8 +367,35 @@ that already carry strong camera motion (avoids motion-on-motion).
 The build_beat python mirrors `p-reels-pip` Step 6 with two changes: (1) canvas 1920×1080;
 (2) graphics templates are the p-vsl `*-ls.html` (which already bake `data-composition-id="root"`
 and register `window.__timelines["root"]` — so only strip `<template>` + HTML comments, fill
-placeholders, wrap in a full HTML doc, then `npx hyperframes lint && render`). FIT+blurred-fill
-filter for broll beats:
+placeholders, wrap in a full HTML doc, then `npx hyperframes lint && render`).
+
+> **⚠️ Vendor GSAP into EVERY graphics comp dir before rendering (MANDATORY).** The `-ls.html`
+> templates load GSAP via `<script src="gsap.min.js"></script>` (vendored locally — NEVER a CDN).
+> The HyperFrames file server serves only the comp dir, so that tag resolves ONLY if `gsap.min.js`
+> exists in the comp dir. For each graphics beat, after writing `index.html` and BEFORE
+> `npx hyperframes lint && render`, copy the vendored file in:
+> ```bash
+> # GDIR = this graphics beat's comp dir (the one holding index.html, cwd of the render).
+> # SKILL_DIR is set in Setup (find_dir p-vsl). f-gsap is vendored under .hub/ in the pack,
+> # and a sibling dir in the source repo.
+> GSAP=$(for p in "$SKILL_DIR/.hub/f-gsap/vendor" "$SKILL_DIR/../f-gsap/vendor"; do [ -f "$p/gsap.min.js" ] && echo "$p/gsap.min.js" && break; done)
+> [ -n "$GSAP" ] || { echo "[p-vsl] FATAL: vendored gsap.min.js not found (expected under .hub/f-gsap/vendor/ or ../f-gsap/vendor/) — NEVER fall back to a CDN"; exit 1; }
+> cp "$GSAP" "$GDIR/gsap.min.js"
+> ```
+> (Equivalent Python inside a `<<'PY'` heredoc — pass `SKILL_DIR` via `sys.argv`:
+> ```python
+> import shutil, os, sys
+> def find_gsap(skill_dir):
+>     for c in (f"{skill_dir}/.hub/f-gsap/vendor/gsap.min.js",
+>               f"{skill_dir}/../f-gsap/vendor/gsap.min.js"):
+>         if os.path.exists(c):
+>             return c
+>     raise SystemExit("[p-vsl] FATAL: vendored gsap.min.js not found "
+>                      "(expected under .hub/f-gsap/vendor/ or ../f-gsap/vendor/) — NEVER fall back to a CDN")
+> shutil.copy(find_gsap(SKILL_DIR), f"{GDIR}/gsap.min.js")  # before hyperframes render
+> ```)
+
+FIT+blurred-fill filter for broll beats:
 
 ```
 [0:v]scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,boxblur=40:2,setsar=1[bg];
@@ -473,6 +500,17 @@ the FINAL seconds via a time-gated `enable=` window (the video ENDS when the spe
 Optional `outro` appended via normalized concat. Output: `$W/pre-premium.mp4`. Verify the CTA did
 NOT extend duration (±0.1s).
 
+> **⚠️ Vendor GSAP into the CTA comp dir before rendering (MANDATORY).** The CTA card loads GSAP via
+> `<script src="gsap.min.js"></script>` (vendored locally — NEVER a CDN). After writing the CTA
+> `index.html` and BEFORE `npx hyperframes lint && render`, copy the vendored file into the CTA comp
+> dir (the render cwd):
+> ```bash
+> # $W/cta = the CTA comp dir holding index.html (cwd of the render). SKILL_DIR is set in Setup.
+> GSAP=$(for p in "$SKILL_DIR/.hub/f-gsap/vendor" "$SKILL_DIR/../f-gsap/vendor"; do [ -f "$p/gsap.min.js" ] && echo "$p/gsap.min.js" && break; done)
+> [ -n "$GSAP" ] || { echo "[p-vsl] FATAL: vendored gsap.min.js not found (expected under .hub/f-gsap/vendor/ or ../f-gsap/vendor/) — NEVER fall back to a CDN"; exit 1; }
+> cp "$GSAP" "$W/cta/gsap.min.js"
+> ```
+
 ---
 
 ## Step 10 — c-reel-premium pass (SFX + grade always; captions optional)
@@ -484,6 +522,15 @@ landscape adaptations:
 - **P2 (caption render):** ONLY when `CAPTIONS=on`. Use the LOCAL landscape templates
   `templates/caption-overlay-ls.html` + `templates/root-shell-polish-ls.html` (1920×1080) instead
   of the portrait ones in `$PREMIUM_DIR/templates`. When `CAPTIONS=off`, `visuals.mp4 = pre-premium.mp4`.
+  Both `-ls` caption templates load GSAP via `<script src="gsap.min.js"></script>` (vendored
+  locally — NEVER a CDN). **Before `npx hyperframes lint && render`, copy the vendored gsap into the
+  caption comp dir** (the render cwd) so the local tag resolves:
+  ```bash
+  # $CAPDIR = the caption comp dir holding index.html (cwd of the render). SKILL_DIR is set in Setup.
+  GSAP=$(for p in "$SKILL_DIR/.hub/f-gsap/vendor" "$SKILL_DIR/../f-gsap/vendor"; do [ -f "$p/gsap.min.js" ] && echo "$p/gsap.min.js" && break; done)
+  [ -n "$GSAP" ] || { echo "[p-vsl] FATAL: vendored gsap.min.js not found (expected under .hub/f-gsap/vendor/ or ../f-gsap/vendor/) — NEVER fall back to a CDN"; exit 1; }
+  cp "$GSAP" "$CAPDIR/gsap.min.js"
+  ```
 - **P3 (grade + SFX):** reuse `$PREMIUM_DIR` grade map + `$PREMIUM_DIR/assets/sfx/*.wav`, one pass,
   `amix=normalize=0` (NEVER re-loudnorm — the master was normed once in Step 2). SFX always on by default.
 - **P4:** QA gate (frame spot-checks + clean decode).
@@ -552,6 +599,12 @@ is confirmed.
 - **HyperFrames authoring:** root = FULL HTML doc; strip `<template>` + HTML comments before render;
   `data-composition-id="root"`; mapped font names (`'Oswald'`/`'JetBrains Mono'`/`'Inter'`, never
   `var(--font-*)`); bare `getComputedStyle`; no `Math.random`; run `lint` AND `validate` before `render`.
+- **GSAP is vendored, never a CDN.** Every `-ls.html` template loads `<script src="gsap.min.js">`
+  (relative). The HyperFrames file server serves only the comp dir, so before EVERY
+  `hyperframes render` you MUST copy `f-gsap/vendor/gsap.min.js` into that comp dir (Steps 7, 9, 10·P2).
+  Locate it under `$SKILL_DIR/.hub/f-gsap/vendor/` (pack) or `$SKILL_DIR/../f-gsap/vendor/` (source repo).
+  A missing copy → 404 on gsap → blank/black graphics. The p-vsl templates need only `gsap.min.js`
+  (no TextPlugin / MotionPathPlugin).
 - **No `#` comments inside `filter_complex`** — keep long graphs in `.sh`.
 - **Chroma-key only on the HeyGen path.** Uploaded opaque clips never go through `colorkey`.
 - **Longform cost:** most beats are `full`/`hidden` (cheap); HyperFrames renders only on `graphics`

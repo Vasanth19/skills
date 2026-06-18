@@ -139,6 +139,29 @@ Layered effects (glow behind text, shadow elements, background patterns) and z-s
 | `data-width` / `data-height` | Yes      | Pixel dimensions (1920x1080 or 1080x1920)    |
 | `data-composition-src`       | No       | Path to external HTML file                   |
 
+## Loading GSAP — local vendor only, NEVER a CDN
+
+<HARD-GATE>
+Every composition loads GSAP from a **local file copied next to its `index.html`** — never from a CDN.
+
+```html
+<script src="gsap.min.js"></script>          <!-- ✅ local, served from the comp dir -->
+<script src="https://cdn.jsdelivr.net/..."></script>  <!-- ❌ NEVER -->
+```
+
+**Why:** the render box treats outbound CDN fetches (`cdn.jsdelivr.net`, `unpkg`, `cdnjs`, …) as an unapproved supply-chain pull — they are flagged and blocked, which silently breaks the render. A pinned, vetted GSAP is vendored with this skill.
+
+**How:** before rendering a comp dir, copy the vendored build in beside `index.html`:
+
+```bash
+cp "$SKILL_DIR/.hub/f-gsap/vendor/gsap.min.js" "$COMP_DIR/gsap.min.js"
+# TextPlugin too, only if you use it:
+cp "$SKILL_DIR/.hub/f-gsap/vendor/TextPlugin.min.js" "$COMP_DIR/TextPlugin.min.js"
+```
+
+(`$SKILL_DIR` is the recipe root; outside a vendored recipe the source is `f-gsap/vendor/`.) Then reference them relatively: `<script src="gsap.min.js"></script>`. Do NOT write a version-pinned CDN URL from memory — the only supported GSAP is the vendored one.
+</HARD-GATE>
+
 ## Composition Structure
 
 Sub-compositions loaded via `data-composition-src` use a `<template>` wrapper. **Standalone compositions (the main index.html) do NOT use `<template>`** — they put the `data-composition-id` div directly in `<body>`. Using `<template>` on a standalone file hides all content from the browser and breaks rendering.
@@ -154,7 +177,7 @@ Sub-composition structure:
         /* scoped styles */
       }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="gsap.min.js"></script>
     <script>
       window.__timelines = window.__timelines || {};
       const tl = gsap.timeline({ paused: true });

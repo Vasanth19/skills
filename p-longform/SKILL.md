@@ -11,7 +11,7 @@ produces:
   format: 16:9 video
   duration: 5-20 min
 inputs: [script, format, broll_dir, talking_head_video, source, known_transcript, captions, outro]
-dependsOn: [c-script, c-heygen, c-broll, c-broll-sync, c-reel-premium, c-typing-ui, c-html-gfx, c-audio, c-production, c-ffmpeg, c-ai-media, f-remotion, f-hyperframes, f-hyperframes-cli, f-gsap, wowx-motions]
+dependsOn: [c-script, c-heygen, c-broll, c-broll-sync, c-reel-premium, c-typing-ui, c-html-gfx, c-audio, c-production, c-ffmpeg, c-ai-media, f-remotion, f-hyperframes, f-hyperframes-cli, f-gsap, wowx-motions, c-shorts-qa-gate]
 ---
 
 
@@ -491,6 +491,25 @@ ffmpeg -i composite.mp4 \
 **8c. Captions** (if `captions: true`):
 → Burn word-level captions from SRT → top-center, yellow active word
 → Skill: `c-ffmpeg`
+
+---
+
+### QA gate (MANDATORY — run before delivery)
+
+Run the shared short-form pre-delivery gate on the final MP4. **Do NOT deliver if it
+exits non-zero.**
+
+```bash
+bash .hub/c-shorts-qa-gate/scripts/qa-gate.sh <FINAL_MP4> --format vsl
+```
+
+- HARD (blocks delivery): integrated loudness ≈ -14 LUFS, frame-0 brightness > 0x30,
+  resolution/fps/duration, audio track present.
+- ADVISORY (review the `qa/` artifacts, never blocks): captions present/position,
+  b-roll coverage, brand outro, lip-sync drift, green-screen residual.
+
+If a HARD check fails, fix the render and re-run — never deliver a failing gate.
+See `.hub/c-shorts-qa-gate/SKILL.md` (mirrors brain doctrine `short-form-qa-gate`).
 
 ---
 

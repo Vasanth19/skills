@@ -18,8 +18,9 @@ Reveal text character by character using GSAP's TextPlugin.
 ### Required Plugin
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/TextPlugin.min.js"></script>
+<!-- Vendored locally and copied into the comp dir — never a CDN. See "Loading GSAP" in f-hyperframes / f-gsap. -->
+<script src="gsap.min.js"></script>
+<script src="TextPlugin.min.js"></script>
 <script>
   gsap.registerPlugin(TextPlugin);
 </script>
