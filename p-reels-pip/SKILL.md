@@ -102,6 +102,7 @@ band in CSS (`--pip-band: 680px`).
 | PIP source | uploaded talking-head | NOT HeyGen. Opaque by default — no chroma-key. |
 | PIP fit | scale-to-FIT (face never cropped) | `scale=CARD_W:CARD_H:force_original_aspect_ratio=decrease` — whole face shows, scaled to fit. Never crop the face. |
 | PIP card | 364×504 default, bottom-center | Portrait box sized to the upload's aspect (70% of the earlier 520×720 — smaller, less obtrusive PIP, 2026-06-13). Rounded corners (yuva444p mask at scaled size). |
+| PIP ring | brand-accent ring + soft shadow, BAKED IN (2026-06-19) | Every card gets a rounded ring in the **brand accent** (Visual Identity Gate → `$W/brand.json {accent}`, override `PIP_RING_COLOR`; never hardcoded) plus a subtle drop shadow. Thickness `PIP_RING` (default 8px, `0`=off), shadow `PIP_SHADOW` (default 22px). Frame PNG = card+2·(ring+shadow), overlaid behind the masked head. |
 | PIP position | `overlay=(W-w)/2:(H-h-110)` | 110px bottom margin, always centered (all aspect ratios). BUG FIX bake-off #2: portrait sources were incorrectly placed bottom-left; now centered for all uploads. |
 | Audio | talking head's own track | No TTS, no music bed unless explicitly requested. Loudnormed once in Step 2. |
 | Target duration | = talking-head length | The VO is the master; background is built to cover it exactly (`shortest=1`). |
@@ -577,8 +578,8 @@ else:
     # Vendor GSAP into the comp dir so the local <script src="gsap.min.js"> resolves at render.
     shutil.copy(find_gsap(SKILL_DIR), f"{gdir}/gsap.min.js")
     subprocess.run(
-        f"npx hyperframes lint >/dev/null 2>&1 && "
-        f"npx hyperframes render --output {out} --quality high --fps 30",
+        f"npx hyperframes@0.7.5 lint >/dev/null 2>&1 && "
+        f"npx hyperframes@0.7.5 render --output {out} --quality high --fps 30",
         shell=True, cwd=gdir, check=True
     )
 
@@ -639,20 +640,48 @@ CARD_W=364; CARD_H=504; MARGIN=110
 # center for all aspect ratios — the PIP card is centered over the frame.
 XPOS="(W-w)/2"
 
-# Optional: generate rounded-corner mask at the SCALED dimensions
-# (PIL rounded rect r≈40 at the actual ${CARD_W}x${CARD_H} after scale-to-FIT)
-# If mask does not exist at this size, skip alphamerge (sharp corners are acceptable)
-MASK_PATH=""
-if python3 -c "
-from PIL import Image, ImageDraw
+# PIP brand-accent ring + soft shadow — BAKED-IN premium treatment (2026-06-19).
+# Every PIP card gets a rounded brand-accent ring (+ subtle drop shadow) so the
+# speaker reads as a deliberate card, not a floating cutout. The ring color comes
+# from the BRAND (Visual Identity Gate), never hardcoded — resolve order:
+#   $PIP_RING_COLOR override → $W/brand.json {accent} → coral default (#F97316).
+ACCENT_HEX=$(python3 -c "import json;print((json.load(open('$W/brand.json')).get('accent','') or '').lstrip('#'))" 2>/dev/null)
+PIP_RING_COLOR="${PIP_RING_COLOR:-${ACCENT_HEX:-F97316}}"   # 6-hex, no leading '#'
+PIP_RING="${PIP_RING:-8}"          # ring thickness in px (set 0 to disable the ring)
+PIP_SHADOW="${PIP_SHADOW:-22}"     # soft-shadow blur pad in px (set 0 to disable)
+PIP_PAD=$(( PIP_RING + PIP_SHADOW ))
+
+# Generate rounded-corner mask (card-sized) AND the ring+shadow frame (card+2*PAD)
+# at the SCALED dimensions. If PIL is unavailable both are skipped → sharp-corner
+# fallback (no ring) so the recipe never hard-fails on the cosmetic layer.
+MASK_PATH=""; FRAME_PATH=""
+if python3 - "$W" "$CARD_W" "$CARD_H" "$PIP_RING" "$PIP_SHADOW" "$PIP_RING_COLOR" 2>/dev/null <<'PIPPY'
 import sys
-W, H, R = $CARD_W, $CARD_H, 40
-img = Image.new('RGBA', (W, H), (0, 0, 0, 0))
-draw = ImageDraw.Draw(img)
-draw.rounded_rectangle([0, 0, W-1, H-1], radius=R, fill=(255, 255, 255, 255))
-img.save('$W/pip-mask-${CARD_W}x${CARD_H}.png')
-" 2>/dev/null; then
+from PIL import Image, ImageDraw, ImageFilter
+W, CW, CH = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
+RING, SH, HEX = int(sys.argv[4]), int(sys.argv[5]), sys.argv[6]
+R = 40
+# 1) rounded mask at card size (alpha plane for the talking head)
+m = Image.new('RGBA', (CW, CH), (0, 0, 0, 0))
+ImageDraw.Draw(m).rounded_rectangle([0, 0, CW-1, CH-1], radius=R, fill=(255, 255, 255, 255))
+m.save(f"{W}/pip-mask-{CW}x{CH}.png")
+# 2) ring + soft-shadow frame (transparent center; avatar overlays on top → ring shows)
+if RING > 0:
+    acc = tuple(int(HEX[i:i+2], 16) for i in (0, 2, 4)) if len(HEX) >= 6 else (249, 115, 22)
+    P = RING + SH
+    FW, FH = CW + 2*P, CH + 2*P
+    fr = Image.new('RGBA', (FW, FH), (0, 0, 0, 0))
+    rr = [P - RING, P - RING, FW - (P - RING) - 1, FH - (P - RING) - 1]   # ring outer rect
+    if SH > 0:
+        sh = Image.new('RGBA', (FW, FH), (0, 0, 0, 0))
+        ImageDraw.Draw(sh).rounded_rectangle([rr[0], rr[1]+6, rr[2], rr[3]+6], radius=R+RING, fill=(0, 0, 0, 150))
+        fr = Image.alpha_composite(fr, sh.filter(ImageFilter.GaussianBlur(max(1, int(SH*0.6)))))
+    ImageDraw.Draw(fr).rounded_rectangle(rr, radius=R+RING, fill=acc + (255,))
+    fr.save(f"{W}/pip-frame-{CW}x{CH}.png")
+PIPPY
+then
   MASK_PATH="$W/pip-mask-${CARD_W}x${CARD_H}.png"
+  [ "${PIP_RING:-0}" -gt 0 ] && [ -f "$W/pip-frame-${CARD_W}x${CARD_H}.png" ] && FRAME_PATH="$W/pip-frame-${CARD_W}x${CARD_H}.png"
 fi
 
 # Build filter_complex — one line, no comments, no embedded newlines
@@ -673,14 +702,29 @@ fi
 # Note: alphamerge preserves luma/chroma from [thfit] and replaces the alpha
 # channel with the luma of [MASK]. The PIL mask has 255 inside the rounded rect
 # and 0 outside, so the talking-head appears only inside the rounded corners.
-if [ -n "$MASK_PATH" ]; then
+if [ -n "$MASK_PATH" ] && [ -n "$FRAME_PATH" ]; then
+  # PREMIUM (default): rounded card + brand-accent ring + soft shadow baked in.
+  # Layer order: bg → ring/shadow frame (input 3) → masked talking head (rounded).
+  # The frame PNG is card+2*PIP_PAD; it sits PIP_PAD lower than the card so the
+  # ring/shadow extends evenly. eof_action defaults to 'repeat' so the static frame
+  # persists for the whole bed (NO shortest on the frame overlay — only on the TH).
+  # pad=...:(ow-iw)/2:0 letterbox-centers the scale-to-FIT result to exactly the
+  # card dims so alphamerge dimensions match (bake-off #2 fix preserved).
+  PFROM=$(( MARGIN - PIP_PAD ))
+  FC="[1:v]scale=${CARD_W}:${CARD_H}:force_original_aspect_ratio=decrease,pad=${CARD_W}:${CARD_H}:(ow-iw)/2:0,setsar=1,format=yuva444p[thfit];[thfit][2:v]alphamerge[avpip];[0:v]format=yuv420p[bg];[bg][3:v]overlay=(W-w)/2:(H-h-${PFROM}):format=auto[bgf];[bgf][avpip]overlay=${XPOS}:(H-h-${MARGIN}):format=auto:shortest=1[v];[1:a]anull[a]"
+  $FF -y -i "$W/bg-all.mp4" -i "$W/bed.mp4" -i "$MASK_PATH" -i "$FRAME_PATH" \
+    -filter_complex "$FC" \
+    -map "[v]" -map "[a]" \
+    -c:v libx264 -preset medium -crf 19 -pix_fmt yuv420p -r 30 \
+    -c:a aac -b:a 192k -ar 48000 -ac 2 -movflags +faststart \
+    "$W/composed.mp4"
+elif [ -n "$MASK_PATH" ]; then
+  # Rounded card, no ring (PIP_RING=0 or frame gen skipped).
   # BUG FIX (bake-off #2 2026-06-12 — alphamerge AVERROR(EINVAL) dim mismatch):
-  # A 9:16 talking head scales to FIT inside the 520×720 card as 404×720, leaving
-  # a 116px horizontal gap. alphamerge requires both inputs (scaled TH and the mask)
-  # to have IDENTICAL dimensions. The mask is always 520×720 (PIL-generated).
-  # Without pad, the 404×720 scaled TH fails alphamerge with AVERROR(EINVAL).
-  # Fix: add pad=${CARD_W}:${CARD_H}:(ow-iw)/2:0 after scale to letterbox-center
-  # the FIT result to exactly the card dimensions before the format conversion.
+  # A 9:16 talking head scales to FIT inside the card leaving a horizontal gap.
+  # alphamerge requires both inputs (scaled TH and the mask) to have IDENTICAL
+  # dimensions. Fix: pad=${CARD_W}:${CARD_H}:(ow-iw)/2:0 letterbox-centers to the
+  # card dims before the format conversion.
   FC="[1:v]scale=${CARD_W}:${CARD_H}:force_original_aspect_ratio=decrease,pad=${CARD_W}:${CARD_H}:(ow-iw)/2:0,setsar=1,format=yuva444p[thfit];[thfit][2:v]alphamerge[avpip];[0:v]format=yuv420p[bg];[bg][avpip]overlay=${XPOS}:(H-h-${MARGIN}):format=auto:shortest=1[v];[1:a]anull[a]"
   $FF -y -i "$W/bg-all.mp4" -i "$W/bed.mp4" -i "$MASK_PATH" \
     -filter_complex "$FC" \
@@ -757,7 +801,7 @@ HTML
   GSAP=$(for p in "$SKILL_DIR/.hub/f-gsap/vendor" "$SKILL_DIR/../f-gsap/vendor"; do [ -f "$p/gsap.min.js" ] && echo "$p/gsap.min.js" && break; done)
   [ -n "$GSAP" ] || { echo "[p-reels-pip] FATAL: vendored gsap.min.js not found (expected under .hub/f-gsap/vendor/ or ../f-gsap/vendor/) — NEVER fall back to a CDN"; exit 1; }
   cp "$GSAP" "$W/cta/gsap.min.js"
-  cd "$W/cta" && npx hyperframes lint && npx hyperframes render --output "$W/cta-card.mp4" --fps 30 --quality high
+  cd "$W/cta" && npx hyperframes@0.7.5 lint && npx hyperframes@0.7.5 render --output "$W/cta-card.mp4" --fps 30 --quality high
   cd -
 }
 
@@ -889,8 +933,8 @@ PY
   [ -n "$GSAP" ] || { echo "[p-reels-pip] FATAL: vendored gsap.min.js not found (expected under .hub/f-gsap/vendor/ or ../f-gsap/vendor/) — NEVER fall back to a CDN"; exit 1; }
   cp "$GSAP" "$PW/comp/gsap.min.js"
   cp "$GSAP" "$PW/comp/compositions/gsap.min.js"
-  cd "$PW/comp" && npx hyperframes lint && npx hyperframes validate && \
-    npx hyperframes render --output "$PW/visuals.mp4" --fps 30 --quality high
+  cd "$PW/comp" && npx hyperframes@0.7.5 lint && npx hyperframes@0.7.5 validate && \
+    npx hyperframes@0.7.5 render --output "$PW/visuals.mp4" --fps 30 --quality high
   cd - >/dev/null
 else
   cp "$REEL_IN" "$PW/visuals.mp4"

@@ -204,7 +204,7 @@ fi
 ### Step 3 — Transcribe with WORD timestamps
 
 ```bash
-# Fallback chain: cfw-transcribe (preferred) → mlx_whisper → whisper → npx hyperframes transcribe.
+# Fallback chain: cfw-transcribe (preferred) → mlx_whisper → whisper → npx hyperframes@0.7.5 transcribe.
 # known_transcript path: if provided externally (e.g. by p-reels-spotlight-heygen wrapper), write
 # it to $W/words.json and skip this block.
 # box-compat: cfw-transcribe (Gemini backend) needs GEMINI_API_KEY; source from box
@@ -248,8 +248,8 @@ for block in lines:
 json.dump(words, open(sys.argv[2], 'w'))
 PY
 else
-  echo "[spotlight] falling back to npx hyperframes transcribe"
-  cd "$W" && npx hyperframes transcribe base.mp4 --model small
+  echo "[spotlight] falling back to npx hyperframes@0.7.5 transcribe"
+  cd "$W" && npx hyperframes@0.7.5 transcribe base.mp4 --model small
 fi
 # NO .en suffix unless audio is confirmed English — .en models TRANSLATE non-English.
 # Hinglish/multilingual → --model medium. Output: word-level transcript JSON.
@@ -567,8 +567,8 @@ PY
 # box-compat: gpt-5.5 sometimes emits a double-hash hex (##0F172A) → white bg. Collapse it
 # before lint/render (BG + takeover content flow in from the LLM plan).
 sed -i 's/##/#/g' "$W/comp/index.html"
-cd "$W/comp" && npx hyperframes lint && npx hyperframes validate && \
-  npx hyperframes render --output "$W/visuals.mp4" --fps 30 --quality high
+cd "$W/comp" && npx hyperframes@0.7.5 lint && npx hyperframes@0.7.5 validate && \
+  npx hyperframes@0.7.5 render --output "$W/visuals.mp4" --fps 30 --quality high
 ffprobe -v error -select_streams v:0 -show_entries stream=width,height,duration -of csv=p=0 "$W/visuals.mp4"
 ```
 
@@ -925,7 +925,7 @@ Clean up `$W` after both URLs are confirmed.
 
 ## Fallback assembly (v0.4 ffmpeg overlay — if HyperFrames render fails)
 
-If `npx hyperframes render` fails after `hyperframes doctor` (chromium/memory), fall back to the
+If `npx hyperframes@0.7.5 render` fails after `hyperframes doctor` (chromium/memory), fall back to the
 proven v0.4 ffmpeg technique: render each takeover as a standalone HyperFrames composition, overlay
 on the bed with `overlay=enable='between(t,a,b)'` + `setpts=PTS-STARTPTS+start/TB`, `-map 0:a` for
 the unbroken audio, then burn plain SRT captions. B-roll beats are handled the same way as Step 6b

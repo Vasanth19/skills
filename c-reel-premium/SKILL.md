@@ -28,7 +28,7 @@ layer, then muxes the original audio + SFX and grades in ONE ffmpeg pass.
 |---|---|---|---|
 | `REEL_IN` | Yes | — | The assembled reel (1080×1920 H.264 + final AAC audio). |
 | `REEL_OUT` | Yes | — | Output path. |
-| `WORDS_JSON` | Yes | — | Word-level transcript `[{text,start,end}]`. Recipes usually have this already; if not: `npx hyperframes transcribe "$REEL_IN" --model small` (NO `.en` unless confirmed English) + the quality check from `f-hyperframes/references/transcript-guide.md`. |
+| `WORDS_JSON` | Yes | — | Word-level transcript `[{text,start,end}]`. Recipes usually have this already; if not: `npx hyperframes@0.7.5 transcribe "$REEL_IN" --model small` (NO `.en` unless confirmed English) + the quality check from `f-hyperframes/references/transcript-guide.md`. |
 | `CAP_TOP` | No | `1180` | Caption band top edge (px). **Use `1020` when the format has a bottom PIP** (fmt1/fmt2/fmt5 siblings) so the band clears the card. |
 | `CAPTIONS` | No | `on` | `off` → skip the overlay render entirely (SFX+grade still run). |
 | `SFX` | No | `on` | `off` → no cues mixed. |
@@ -113,8 +113,8 @@ root = open(f"{PREMIUM}/templates/root-shell-polish.html").read()
 open(f"{proj}/index.html","w").write(fill(root, {"DURATION": dur, "VIDEO_SRC": "reel-in.mp4"}))
 print(f"assembled polish comp: {len(plan['caption_groups'])} groups, {dur}s, cap_top={CAP_TOP}")
 PY
-cd "$PW/comp" && npx hyperframes lint && npx hyperframes validate && \
-  npx hyperframes render --output "$PW/visuals.mp4" --fps 30 --quality high
+cd "$PW/comp" && npx hyperframes@0.7.5 lint && npx hyperframes@0.7.5 validate && \
+  npx hyperframes@0.7.5 render --output "$PW/visuals.mp4" --fps 30 --quality high
 cd - >/dev/null
 ```
 

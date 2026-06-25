@@ -367,13 +367,13 @@ that already carry strong camera motion (avoids motion-on-motion).
 The build_beat python mirrors `p-reels-pip` Step 6 with two changes: (1) canvas 1920×1080;
 (2) graphics templates are the p-vsl `*-ls.html` (which already bake `data-composition-id="root"`
 and register `window.__timelines["root"]` — so only strip `<template>` + HTML comments, fill
-placeholders, wrap in a full HTML doc, then `npx hyperframes lint && render`).
+placeholders, wrap in a full HTML doc, then `npx hyperframes@0.7.5 lint && render`).
 
 > **⚠️ Vendor GSAP into EVERY graphics comp dir before rendering (MANDATORY).** The `-ls.html`
 > templates load GSAP via `<script src="gsap.min.js"></script>` (vendored locally — NEVER a CDN).
 > The HyperFrames file server serves only the comp dir, so that tag resolves ONLY if `gsap.min.js`
 > exists in the comp dir. For each graphics beat, after writing `index.html` and BEFORE
-> `npx hyperframes lint && render`, copy the vendored file in:
+> `npx hyperframes@0.7.5 lint && render`, copy the vendored file in:
 > ```bash
 > # GDIR = this graphics beat's comp dir (the one holding index.html, cwd of the render).
 > # SKILL_DIR is set in Setup (find_dir p-vsl). f-gsap is vendored under .hub/ in the pack,
@@ -502,7 +502,7 @@ NOT extend duration (±0.1s).
 
 > **⚠️ Vendor GSAP into the CTA comp dir before rendering (MANDATORY).** The CTA card loads GSAP via
 > `<script src="gsap.min.js"></script>` (vendored locally — NEVER a CDN). After writing the CTA
-> `index.html` and BEFORE `npx hyperframes lint && render`, copy the vendored file into the CTA comp
+> `index.html` and BEFORE `npx hyperframes@0.7.5 lint && render`, copy the vendored file into the CTA comp
 > dir (the render cwd):
 > ```bash
 > # $W/cta = the CTA comp dir holding index.html (cwd of the render). SKILL_DIR is set in Setup.
@@ -523,7 +523,7 @@ landscape adaptations:
   `templates/caption-overlay-ls.html` + `templates/root-shell-polish-ls.html` (1920×1080) instead
   of the portrait ones in `$PREMIUM_DIR/templates`. When `CAPTIONS=off`, `visuals.mp4 = pre-premium.mp4`.
   Both `-ls` caption templates load GSAP via `<script src="gsap.min.js"></script>` (vendored
-  locally — NEVER a CDN). **Before `npx hyperframes lint && render`, copy the vendored gsap into the
+  locally — NEVER a CDN). **Before `npx hyperframes@0.7.5 lint && render`, copy the vendored gsap into the
   caption comp dir** (the render cwd) so the local tag resolves:
   ```bash
   # $CAPDIR = the caption comp dir holding index.html (cwd of the render). SKILL_DIR is set in Setup.

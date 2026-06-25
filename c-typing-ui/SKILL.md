@@ -109,7 +109,7 @@ with open(dst, "w") as f:
 </head><body>{body}</body></html>""")
 PY
 
-cd "$BEAT_DIR" && npx hyperframes lint && npx hyperframes render --output "$W/typing_beat.mp4" --fps 30 --quality high
+cd "$BEAT_DIR" && npx hyperframes@0.7.5 lint && npx hyperframes@0.7.5 render --output "$W/typing_beat.mp4" --fps 30 --quality high
 ```
 
 ## Usage — as sub-composition (in a multi-scene index.html)
