@@ -89,7 +89,7 @@ Build each composition following the storyboard. After each one: self-review for
 
 Lint, validate, snapshot, preview. Deliver the preview to the user first — only render to MP4 on explicit request.
 
-**Gate:** `npx hyperframes lint` and `npx hyperframes validate` pass with zero errors.
+**Gate:** `npx hyperframes@0.7.5 lint` and `npx hyperframes@0.7.5 validate` pass with zero errors.
 
 ---
 

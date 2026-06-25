@@ -578,8 +578,8 @@ else:
     # Vendor GSAP into the comp dir so the local <script src="gsap.min.js"> resolves at render.
     shutil.copy(find_gsap(SKILL_DIR), f"{gdir}/gsap.min.js")
     subprocess.run(
-        f"npx hyperframes lint >/dev/null 2>&1 && "
-        f"npx hyperframes render --output {out} --quality high --fps 30",
+        f"npx hyperframes@0.7.5 lint >/dev/null 2>&1 && "
+        f"npx hyperframes@0.7.5 render --output {out} --quality high --fps 30",
         shell=True, cwd=gdir, check=True
     )
 
@@ -801,7 +801,7 @@ HTML
   GSAP=$(for p in "$SKILL_DIR/.hub/f-gsap/vendor" "$SKILL_DIR/../f-gsap/vendor"; do [ -f "$p/gsap.min.js" ] && echo "$p/gsap.min.js" && break; done)
   [ -n "$GSAP" ] || { echo "[p-reels-pip] FATAL: vendored gsap.min.js not found (expected under .hub/f-gsap/vendor/ or ../f-gsap/vendor/) — NEVER fall back to a CDN"; exit 1; }
   cp "$GSAP" "$W/cta/gsap.min.js"
-  cd "$W/cta" && npx hyperframes lint && npx hyperframes render --output "$W/cta-card.mp4" --fps 30 --quality high
+  cd "$W/cta" && npx hyperframes@0.7.5 lint && npx hyperframes@0.7.5 render --output "$W/cta-card.mp4" --fps 30 --quality high
   cd -
 }
 
@@ -933,8 +933,8 @@ PY
   [ -n "$GSAP" ] || { echo "[p-reels-pip] FATAL: vendored gsap.min.js not found (expected under .hub/f-gsap/vendor/ or ../f-gsap/vendor/) — NEVER fall back to a CDN"; exit 1; }
   cp "$GSAP" "$PW/comp/gsap.min.js"
   cp "$GSAP" "$PW/comp/compositions/gsap.min.js"
-  cd "$PW/comp" && npx hyperframes lint && npx hyperframes validate && \
-    npx hyperframes render --output "$PW/visuals.mp4" --fps 30 --quality high
+  cd "$PW/comp" && npx hyperframes@0.7.5 lint && npx hyperframes@0.7.5 validate && \
+    npx hyperframes@0.7.5 render --output "$PW/visuals.mp4" --fps 30 --quality high
   cd - >/dev/null
 else
   cp "$REEL_IN" "$PW/visuals.mp4"

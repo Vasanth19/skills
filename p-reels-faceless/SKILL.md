@@ -392,7 +392,7 @@ This JSON is forwarded VERBATIM into every `delegate_task` child's context strin
 
 > **HARD GATE — DELEGATE ALL GRAPHICS BEATS (mirrors fmt4 Step 4 HARD GATE).**
 > Author beats by calling `delegate_task` with a `tasks` array — one task per `graphics` beat.
-> Running `npx hyperframes init` yourself in this loop is a HARD FAILURE.
+> Running `npx hyperframes@0.7.5 init` yourself in this loop is a HARD FAILURE.
 > Exception: `delegate_task` errors "unavailable" → serial fallback (inline authoring only).
 
 **Parent (Director) does the shared setup ONCE, then delegates ALL graphics beats in a SINGLE call.**
@@ -405,7 +405,7 @@ delegate_task({
   "tasks": [
     {
       "goal": "Author + render ONE 1080x1920 animated HyperFrames composition for beat 0 (hook); return its MP4 path.",
-      "context": "WORK_GFX=<abs_path>/work/gfx | index=0 slug=hook | start=0.0 end=4.2 | data-duration=4.2 | script_line=<this beat VO line> | scene_type=hook | BRAND (verbatim JSON): <brand.json contents> | typing_ui_dir=<TYPING_UI_DIR> | gsap_vendor_dir=<absolute path to f-gsap/vendor — i.e. $SKILL_DIR/.hub/f-gsap/vendor in the pack or $SKILL_DIR/../f-gsap/vendor in the source repo, whichever exists> | RULES: read f-hyperframes/SKILL.md, follow p-reels-faceless Visual doctrine (FOREGROUND HERO; gsap.from() ends-visible; AMBIENT MOTION full window; SVG-only icons; ghost=beat index; Oswald+JetBrains Mono; no remote URLs). The composition's <head> loads GSAP via a LOCAL relative tag <script src=\"gsap.min.js\"></script> — NEVER a CDN URL (the render box blocks outbound library fetches). For scene_type=hook or scene_type=typing-ui: use c-typing-ui templates from typing_ui_dir (standalone render — strip <template> wrapper, wrap in full HTML doc; use FULL variant for faceless). For scene_type=standard or omitted: author a brand motion-graphic (chart/terminal/checklist/stat/diagram). RUN: npx hyperframes init beatN-slug --non-interactive -> author index.html -> cp \"$gsap_vendor_dir/gsap.min.js\" beatN-slug/gsap.min.js (REQUIRED before render so the local <script src=\"gsap.min.js\"> resolves; if it references TextPlugin/MotionPathPlugin copy those too) -> npx hyperframes lint (0 errors REQUIRED) -> npx hyperframes render --output beatN-slug.mp4 --fps 30 --quality high. RETURN: absolute MP4 path + confirm lint=0. ONLY touch your own beat folder.",
+      "context": "WORK_GFX=<abs_path>/work/gfx | index=0 slug=hook | start=0.0 end=4.2 | data-duration=4.2 | script_line=<this beat VO line> | scene_type=hook | BRAND (verbatim JSON): <brand.json contents> | typing_ui_dir=<TYPING_UI_DIR> | gsap_vendor_dir=<absolute path to f-gsap/vendor — i.e. $SKILL_DIR/.hub/f-gsap/vendor in the pack or $SKILL_DIR/../f-gsap/vendor in the source repo, whichever exists> | RULES: read f-hyperframes/SKILL.md, follow p-reels-faceless Visual doctrine (FOREGROUND HERO; gsap.from() ends-visible; AMBIENT MOTION full window; SVG-only icons; ghost=beat index; Oswald+JetBrains Mono; no remote URLs). The composition's <head> loads GSAP via a LOCAL relative tag <script src=\"gsap.min.js\"></script> — NEVER a CDN URL (the render box blocks outbound library fetches). For scene_type=hook or scene_type=typing-ui: use c-typing-ui templates from typing_ui_dir (standalone render — strip <template> wrapper, wrap in full HTML doc; use FULL variant for faceless). For scene_type=standard or omitted: author a brand motion-graphic (chart/terminal/checklist/stat/diagram). RUN: npx hyperframes@0.7.5 init beatN-slug --non-interactive -> author index.html -> cp \"$gsap_vendor_dir/gsap.min.js\" beatN-slug/gsap.min.js (REQUIRED before render so the local <script src=\"gsap.min.js\"> resolves; if it references TextPlugin/MotionPathPlugin copy those too) -> npx hyperframes@0.7.5 lint (0 errors REQUIRED) -> npx hyperframes@0.7.5 render --output beatN-slug.mp4 --fps 30 --quality high. RETURN: absolute MP4 path + confirm lint=0. ONLY touch your own beat folder.",
       "toolsets": ["terminal", "skills", "web"]
     }
   ]
@@ -487,7 +487,7 @@ GSAP=$(for p in "$gsap_vendor_dir" "$SKILL_DIR/.hub/f-gsap/vendor" "$SKILL_DIR/.
 [ -n "$GSAP" ] || { echo "[p-reels-faceless] FATAL: vendored gsap.min.js not found (expected under .hub/f-gsap/vendor/ or ../f-gsap/vendor/)"; exit 1; }
 cp "$GSAP" "$WORK_GFX/beatN-typing/gsap.min.js"
 # Lint + render
-cd "$WORK_GFX/beatN-typing" && npx hyperframes lint && npx hyperframes render --output beatN-typing.mp4 --fps 30 --quality high
+cd "$WORK_GFX/beatN-typing" && npx hyperframes@0.7.5 lint && npx hyperframes@0.7.5 render --output beatN-typing.mp4 --fps 30 --quality high
 ```
 
 ---
@@ -614,12 +614,12 @@ AFTER the last content beat. Sequence it at the END of `seglist.txt` before the 
   **Copy the vendored GSAP into the outro comp dir before rendering** so that tag resolves:
 
 ```bash
-# Before `npx hyperframes render` in the outro comp dir (e.g. $W/gfx/outro-brand):
+# Before `npx hyperframes@0.7.5 render` in the outro comp dir (e.g. $W/gfx/outro-brand):
 OUTRO_DIR="$W/gfx/outro-brand"
 GSAP=$(for p in "$SKILL_DIR/.hub/f-gsap/vendor" "$SKILL_DIR/../f-gsap/vendor"; do [ -f "$p/gsap.min.js" ] && echo "$p/gsap.min.js" && break; done)
 [ -n "$GSAP" ] || { echo "[p-reels-faceless] FATAL: vendored gsap.min.js not found (expected under .hub/f-gsap/vendor/ or ../f-gsap/vendor/)"; exit 1; }
 cp "$GSAP" "$OUTRO_DIR/gsap.min.js"
-# then: cd "$OUTRO_DIR" && npx hyperframes lint && npx hyperframes render --output outro-brand.mp4 --fps 30 --quality high
+# then: cd "$OUTRO_DIR" && npx hyperframes@0.7.5 lint && npx hyperframes@0.7.5 render --output outro-brand.mp4 --fps 30 --quality high
 ```
 
 ```bash
@@ -925,7 +925,7 @@ rule, and premium polish are all applied. **There is no degradation in the no-br
 - **`##` CSS guard.** gpt-5.5 occasionally emits a double-hash hex (`--bg: ##0F172A`) → white background.
   After writing ANY generated HyperFrames HTML, collapse double-hash to single — `sed -i 's/##/#/g'`.
   Applied in-skill to the typing-ui HTML (Step 7). **Every `delegate_task` graphics CHILD must do the
-  same** on its authored `index.html` before `npx hyperframes lint` (add `sed -i 's/##/#/g' index.html`
+  same** on its authored `index.html` before `npx hyperframes@0.7.5 lint` (add `sed -i 's/##/#/g' index.html`
   to the per-beat authoring step).
 - **Three.js linter no-op.** The HyperFrames linter false-flags any composition whose text contains the
   literal "THREE" (e.g. a beat hero "THREE.") as a missing-Three.js error. Inject a harmless Three.js
@@ -943,7 +943,7 @@ rule, and premium polish are all applied. **There is no degradation in the no-br
 ## Fallbacks
 
 - **TTS unavailable:** skip VO; use a music bed. The beat compositions + b-roll still carry the story.
-- **HyperFrames render genuinely fails** (`npx hyperframes doctor`; report EXACT error first):
+- **HyperFrames render genuinely fails** (`npx hyperframes@0.7.5 doctor`; report EXACT error first):
   only then drop to still + `zoompan` Ken Burns (v3 path, last resort — not acceptable as default).
 - **c-broll-sync unavailable:** fall back to 100% graphics (fmt4 path) and log a warning.
 - **c-reel-premium unavailable:** output the assembled reel without captions/SFX/grade; log warning.

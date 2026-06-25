@@ -92,9 +92,9 @@ print(f"[c-typing-ui] Wrote {out_path}")
 PY
 
 echo "[c-typing-ui] Linting typing scene..."
-cd "$TYPING_DIR" && npx hyperframes lint
+cd "$TYPING_DIR" && npx hyperframes@0.7.5 lint
 echo "[c-typing-ui] Rendering typing scene → $OUT_DIR/typing-scene.mp4"
-npx hyperframes render --output "$OUT_DIR/typing-scene.mp4" --fps 30 --quality standard
+npx hyperframes@0.7.5 render --output "$OUT_DIR/typing-scene.mp4" --fps 30 --quality standard
 cd -
 
 # ── Sample 2: HOOK SCENE ────────────────────────────────────────────────────
@@ -142,9 +142,9 @@ print(f"[c-typing-ui] Wrote {out_path}")
 PY
 
 echo "[c-typing-ui] Linting hook scene..."
-cd "$HOOK_DIR" && npx hyperframes lint
+cd "$HOOK_DIR" && npx hyperframes@0.7.5 lint
 echo "[c-typing-ui] Rendering hook scene → $OUT_DIR/hook-scene.mp4"
-npx hyperframes render --output "$OUT_DIR/hook-scene.mp4" --fps 30 --quality standard
+npx hyperframes@0.7.5 render --output "$OUT_DIR/hook-scene.mp4" --fps 30 --quality standard
 cd -
 
 # ── Extract frames from both renders ────────────────────────────────────────

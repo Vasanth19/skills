@@ -162,6 +162,33 @@ cp "$SKILL_DIR/.hub/f-gsap/vendor/TextPlugin.min.js" "$COMP_DIR/TextPlugin.min.j
 (`$SKILL_DIR` is the recipe root; outside a vendored recipe the source is `f-gsap/vendor/`.) Then reference them relatively: `<script src="gsap.min.js"></script>`. Do NOT write a version-pinned CDN URL from memory — the only supported GSAP is the vendored one.
 </HARD-GATE>
 
+## Loading fonts — compiler-embedded or local vendor, NEVER a CDN
+
+<HARD-GATE>
+**NEVER add a `fonts.googleapis.com` (or any CDN) `<link>` or CSS `@import` for fonts.**
+
+```html
+<link href="https://fonts.googleapis.com/css2?family=Poppins...">   <!-- ❌ NEVER -->
+<style>@import url('https://fonts.googleapis.com/...');</style>      <!-- ❌ NEVER -->
+```
+
+**Why:** the render box blocks outbound CDN fetches, so a Google-Fonts link silently fails — the font never loads (text falls back to a system font) AND lint flags `google_fonts_import`. It is never needed: the HyperFrames compiler **auto-embeds supported fonts** at render time.
+
+**How — supported fonts (the common case):** just write the `font-family` in CSS and do nothing else. The compiler embeds it automatically:
+
+```css
+body { font-family: 'Oswald', system-ui, sans-serif; }   /* ✅ compiler embeds Oswald */
+```
+
+**How — an unsupported font** (lint warns `font_family_without_font_face`, or the compiler warns it can't resolve the family): vendor the `.woff2` next to `index.html` and declare a local `@font-face` (same pattern as `gsap.min.js`), never a CDN URL:
+
+```css
+@font-face { font-family: 'Brand Display'; src: url('brand-display.woff2') format('woff2'); font-weight: 700; }
+```
+
+Prefer a supported family over vendoring whenever the design allows. Do NOT write a CDN URL from memory to "fix" a missing font — remove the link and rely on the compiler, or vendor locally.
+</HARD-GATE>
+
 ## Composition Structure
 
 Sub-compositions loaded via `data-composition-src` use a `<template>` wrapper. **Standalone compositions (the main index.html) do NOT use `<template>`** — they put the `data-composition-id` div directly in `<body>`. Using `<template>` on a standalone file hides all content from the browser and breaks rendering.
@@ -303,7 +330,7 @@ When no `visual-style.md` or animation direction is provided, follow [house-styl
 
 ## Output Checklist
 
-- [ ] `npx hyperframes lint` and `npx hyperframes validate` both pass
+- [ ] `npx hyperframes@0.7.5 lint` and `npx hyperframes@0.7.5 validate` both pass
 - [ ] Contrast warnings addressed (see Quality Checks below)
 - [ ] Animation choreography verified (see Quality Checks below)
 

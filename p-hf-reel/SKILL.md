@@ -65,7 +65,7 @@ animated HyperFrames motion graphics driven off the VO timeline.
 | Canvas | `1080x1920` | 9:16 portrait, `data-width="1080" data-height="1920"` |
 | FPS | `30` | uniform |
 | Target duration | `20-40s` | the VO duration IS the composition duration |
-| Composition render | `npx hyperframes render --quality draft` (iterate) → `--quality high` (final) | TRUE motion graphics |
+| Composition render | `npx hyperframes@0.7.5 render --quality draft` (iterate) → `--quality high` (final) | TRUE motion graphics |
 | VO loudness | `loudnorm I=-14 TP=-1.5 LRA=11` | applied once |
 | Music bed | mixed ~ -22 to -26 LUFS under the VO | optional, never overpowers VO |
 
@@ -215,7 +215,7 @@ These remain accents, not the spine: the motion graphics carry the reel; the loc
 punctuate it on the beats they illustrate.
 
 ```bash
-npx hyperframes init hf-reel --non-interactive   # scaffold; then author index.html (1080x1920)
+npx hyperframes@0.7.5 init hf-reel --non-interactive   # scaffold; then author index.html (1080x1920)
 ```
 
 Author the end-state layout first (see `f-hyperframes` § "Layout Before Animation"), THEN add
@@ -226,11 +226,11 @@ entrances/transitions. The composition has **no audio track** — the VO is muxe
 ## Step 3 — Lint + validate + render via the hyperframes CLI
 
 ```bash
-npx hyperframes lint                              # 0 errors before rendering
-npx hyperframes validate                          # WCAG contrast audit — clear AA warnings
-npx hyperframes render --output interim/render/visuals.mp4 --fps 30 --quality draft   # iterate
+npx hyperframes@0.7.5 lint                              # 0 errors before rendering
+npx hyperframes@0.7.5 validate                          # WCAG contrast audit — clear AA warnings
+npx hyperframes@0.7.5 render --output interim/render/visuals.mp4 --fps 30 --quality draft   # iterate
 # final pass once happy:
-npx hyperframes render --output interim/render/visuals.mp4 --fps 30 --quality high
+npx hyperframes@0.7.5 render --output interim/render/visuals.mp4 --fps 30 --quality high
 ffprobe -v error -show_entries stream=width,height -of default=noprint_wrappers=1 interim/render/visuals.mp4  # expect 1080x1920
 ```
 

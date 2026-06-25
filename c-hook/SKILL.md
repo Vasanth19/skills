@@ -168,7 +168,7 @@ ffmpeg -v error -i "$HOOK_OUT/hook-clip.mp4" -f null - \
 ```bash
 if [ "${TRANSCRIBE:-false}" = "true" ]; then
   # Whisper — use 'small' model; do NOT use '.en' suffix (multilingual hooks are common)
-  npx hyperframes transcribe "$HOOK_OUT/hook-clip.mp4" --model small \
+  npx hyperframes@0.7.5 transcribe "$HOOK_OUT/hook-clip.mp4" --model small \
     --output-json "$HOOK_OUT/hook-words.json" 2>/dev/null \
   || whisper "$HOOK_OUT/hook-clip.mp4" --model small --output_format json \
        --output_dir "$HOOK_OUT" 2>/dev/null

@@ -5,8 +5,8 @@
 Run in sequence. Fix all errors before proceeding to the next command.
 
 ```bash
-npx hyperframes lint
-npx hyperframes validate
+npx hyperframes@0.7.5 lint
+npx hyperframes@0.7.5 validate
 ```
 
 `lint` checks HTML structure statically — missing attributes, timeline registration, tween conflicts, CSS transform + GSAP conflicts (including inline styles).
@@ -17,7 +17,7 @@ npx hyperframes validate
 After lint and validate pass, capture snapshot frames to SEE your own output. **Always use `hyperframes snapshot`** — do not roll your own ffmpeg/headless Chrome script; the default naming (`frame-XX-at-Ys.png`) is expected by later tooling.
 
 ```bash
-npx hyperframes snapshot <project-dir> --at <beat-midpoints>
+npx hyperframes@0.7.5 snapshot <project-dir> --at <beat-midpoints>
 ```
 
 If the snapshot command isn't available, fall back to:
@@ -29,7 +29,7 @@ npx tsx packages/cli/src/cli.ts snapshot <project-dir> --at <beat-midpoints>
 Calculate the midpoint of each beat from your STORYBOARD.md timings. For a 4-beat video with beats at 0-5.8s, 5.8-15.0s, 15.0-22.5s, 22.5-25.3s:
 
 ```bash
-npx hyperframes snapshot <project-dir> --at 2.9,10.4,18.7,23.9
+npx hyperframes@0.7.5 snapshot <project-dir> --at 2.9,10.4,18.7,23.9
 ```
 
 This renders one frame per beat at the moment when content is most visible. Use timestamps where the most content is on screen — usually 60-70% into each beat, after entrances finish but before exits start. Output lands in `<project-dir>/snapshots/` with filenames like `frame-00-at-2.9s.png`.
@@ -66,7 +66,7 @@ If any frame has issues, go back to Step 6 and fix that composition before proce
 ## Preview
 
 ```bash
-npx hyperframes preview
+npx hyperframes@0.7.5 preview
 ```
 
 Open the studio in a browser. Scrub through every beat.
@@ -80,9 +80,9 @@ Only run `hyperframes render` when the user **explicitly asks** — e.g. "render
 When the user does ask to render, always pass `--output renders/<project-name>.mp4` so the final file has a predictable, human-readable name. The CLI default is timestamped (`<project>_YYYY-MM-DD_HH-MM-SS.mp4`) which is hard to reference from docs or later iterations.
 
 ```bash
-npx hyperframes render --output renders/<project-name>.mp4
+npx hyperframes@0.7.5 render --output renders/<project-name>.mp4
 ```
 
-Example: `npx hyperframes render --output renders/stripe-launch.mp4`
+Example: `npx hyperframes@0.7.5 render --output renders/stripe-launch.mp4`
 
-For social-media vertical output, check `npx hyperframes render --help` for viewport/format flags.
+For social-media vertical output, check `npx hyperframes@0.7.5 render --help` for viewport/format flags.
