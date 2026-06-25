@@ -931,6 +931,9 @@ PY
   [ -n "$GSAP" ] || { echo "[p-reels-split] FATAL: vendored gsap.min.js not found (expected under .hub/f-gsap/vendor/ or ../f-gsap/vendor/) — NEVER fall back to a CDN"; exit 1; }
   cp "$GSAP" "$PW/comp/gsap.min.js"
   cp "$GSAP" "$PW/comp/compositions/gsap.min.js"
+  # ⚠ RENDER IS 60–600s: run this comp render via the terminal tool with background=true +
+  #   notify_on_complete=true, then process(action="wait") — a foreground render is killed at the
+  #   runtime ceiling and the cook fails with no resume. See the f-hyperframes-cli render gate.
   cd "$PW/comp" && npx hyperframes@0.7.5 lint && npx hyperframes@0.7.5 validate && \
     npx hyperframes@0.7.5 render --output "$PW/visuals.mp4" --fps 30 --quality high
   cd - >/dev/null

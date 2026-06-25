@@ -567,8 +567,18 @@ PY
 # box-compat: gpt-5.5 sometimes emits a double-hash hex (##0F172A) → white bg. Collapse it
 # before lint/render (BG + takeover content flow in from the LLM plan).
 sed -i 's/##/#/g' "$W/comp/index.html"
-cd "$W/comp" && npx hyperframes@0.7.5 lint && npx hyperframes@0.7.5 validate && \
-  npx hyperframes@0.7.5 render --output "$W/visuals.mp4" --fps 30 --quality high
+cd "$W/comp" && npx hyperframes@0.7.5 lint && npx hyperframes@0.7.5 validate
+```
+
+**Render in the BACKGROUND** (per the f-hyperframes-cli render gate — this render runs 60–600s; a
+foreground call gets killed at the runtime ceiling and the cook fails with no resume):
+
+- `terminal(command="cd $W/comp && npx hyperframes@0.7.5 render --output $W/visuals.mp4 --fps 30 --quality high", background=true, notify_on_complete=true)` → returns a `session_id`
+- `process(action="wait", session_id=<id>)` to block until done (or `poll` to check progress)
+
+Only after the render completes, verify the output:
+
+```bash
 ffprobe -v error -select_streams v:0 -show_entries stream=width,height,duration -of csv=p=0 "$W/visuals.mp4"
 ```
 
