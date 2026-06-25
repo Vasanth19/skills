@@ -80,6 +80,26 @@ npx hyperframes@0.7.5 render --docker                       # byte-identical
 
 **Quality guidance:** `draft` while iterating, `standard` for review, `high` for final delivery.
 
+### Always run `render` in the BACKGROUND (long jobs)
+
+<HARD-GATE>
+A `high`/`standard` render of a real reel runs **60–600+ seconds** — longer than a foreground
+tool call should block, and a foreground command that exceeds the runtime's ceiling is **killed
+or rejected** (the whole cook fails with no resume). So **never** run `render` as a plain
+foreground command.
+
+Run it via the terminal tool with **`background=true` + `notify_on_complete=true`**, then block on
+it explicitly:
+
+1. `terminal(command="cd $W/comp && npx hyperframes@0.7.5 lint && npx hyperframes@0.7.5 render --output $W/visuals.mp4 --fps 30 --quality high", background=true, notify_on_complete=true)` → returns a `session_id`.
+2. `process(action="wait", session_id=<id>)` to block until it finishes (or `action="poll"` to check progress while you prep the next step).
+3. Only after it completes, `ffprobe` the output and continue.
+
+Lint/validate (fast, &lt;10s) may stay foreground; it is the **render** specifically that must be
+backgrounded. Do NOT use shell backgrounding (`&`, `nohup`, `setsid`) — the runtime blocks those;
+use the tool's `background=true` so the job lifecycle is tracked and you get notified on completion.
+</HARD-GATE>
+
 ## Transcription
 
 ```bash
