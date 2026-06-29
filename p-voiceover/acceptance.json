@@ -1,0 +1,28 @@
+{
+  "recipe": "p-voiceover",
+  "spec_version": 1,
+  "_note": "Final gate for Flow A (script → mp3/aac voiceover) — run on the finished audio file before upload. No video or image checks. Loudness target is -14 LUFS (podcast/social standard; recipe specifies 'target podcast/social LUFS' without a tighter value — -14 is the canonical default). Duration window reflects the recipe's stated output band (15s–10min). Strict, recipe-owned spec read by c-eval-runner.",
+  "checks": [
+    {
+      "id": "vo_loudness",
+      "kind": "mechanical",
+      "type": "loudness",
+      "target": -14,
+      "tol": 1.5
+    },
+    {
+      "id": "vo_has_speech",
+      "kind": "mechanical",
+      "type": "mean_volume",
+      "min_db": -32,
+      "max_db": -8
+    },
+    {
+      "id": "vo_duration",
+      "kind": "mechanical",
+      "type": "duration_window",
+      "min_s": 15,
+      "max_s": 600
+    }
+  ]
+}

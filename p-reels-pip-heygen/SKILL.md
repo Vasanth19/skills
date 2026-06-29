@@ -130,6 +130,8 @@ run_skill p-reels-pip \
 # are passed through if set in the calling environment — p-reels-pip reads them from env.
 ```
 
+> **Eval gate:** Delivery is gated by `p-reels-pip`'s `acceptance.json` via `c-eval-runner` — see p-reels-pip QA-gate step. This wrapper needs no `acceptance.json` of its own; the gate runs inside the base recipe before upload.
+
 The R2 URL is emitted by `p-reels-pip` as its final output line. This wrapper prints nothing additional.
 
 ## What this wrapper does NOT do

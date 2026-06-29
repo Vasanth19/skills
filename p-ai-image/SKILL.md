@@ -11,7 +11,7 @@ produces:
   format: image (single or multi)
   duration: n/a
 inputs: [prompt, count, provider]
-dependsOn: [c-ai-media, c-kie-ai, c-replicate, c-ffmpeg, c-thumbnail]
+dependsOn: [c-ai-media, c-kie-ai, c-replicate, c-ffmpeg, c-thumbnail, c-eval-runner, c-vision-qa]
 ---
 
 # p-ai-image-posts — AI Image Post(s)
@@ -25,3 +25,17 @@ dependsOn: [c-ai-media, c-kie-ai, c-replicate, c-ffmpeg, c-thumbnail]
 
 ## Output
 - One or many AI-generated images, brand-aspect (square / portrait / landscape per request).
+
+## QA Gate (run per produced image — MANDATORY before delivery)
+
+```bash
+SKILL_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" "$HOME/.hermes/profiles" /Users/vasanth/Code/skills -maxdepth 5 -type d -name p-ai-image 2>/dev/null | head -1)
+bash .hub/c-eval-runner/scripts/eval-run.sh <OUTPUT_IMAGE.png> --recipe-dir "$SKILL_DIR" --brand "$BRAND_SLUG"
+```
+
+The runner writes `<image_dir>/eval/scorecard.json` and prints the verdict:
+- **PASS** — image passes all hard checks; deliver.
+- **NEEDS_VISION** — hard checks passed but `perceptual` checks are `PENDING`. Read
+  `<image_dir>/eval/frame0.png` or run `c-vision-qa` with `--intent "..."` and
+  `--aspect 1080x1080` to resolve every PENDING item before delivery.
+- **FAIL** (exit 1) — a hard check failed (wrong dims, black frame). Fix and re-render; do not deliver.

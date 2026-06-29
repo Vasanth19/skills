@@ -133,6 +133,8 @@ run_skill p-reels-spotlight \
 # are passed through if set in the calling environment — p-reels-spotlight reads them from env.
 ```
 
+> **Eval gate:** Delivery is gated by `p-reels-spotlight`'s `acceptance.json` via `c-eval-runner` — see p-reels-spotlight QA-gate step. This wrapper needs no `acceptance.json` of its own; the gate runs inside the base recipe before upload.
+
 The R2 URL is emitted by `p-reels-spotlight` as its final output line. This wrapper prints nothing additional.
 
 ## What this wrapper does NOT do

@@ -1,0 +1,47 @@
+{
+  "recipe": "p-hf-reel",
+  "spec_version": 1,
+  "_note": "Strict, recipe-owned spec read by c-eval-runner. Final target is interim/render/reel.mp4 (before R2 upload). A brand may layer brand-overrides/<slug>/acceptance.json to TIGHTEN thresholds (same id wins; new ids appended). See c-eval-runner/SKILL.md for the spec format.",
+  "checks": [
+    { "id": "qa_gate",          "kind": "mechanical", "type": "qa_gate", "format": "reel",
+      "desc": "Mechanical gate (loudness ≈ -14 LUFS, frame-0 brightness, resolution 1080×1920, fps, audio present) delegated to c-shorts-qa-gate." },
+    { "id": "duration_window",  "kind": "mechanical", "type": "duration_window", "min_s": 18, "max_s": 42,
+      "desc": "Faceless HyperFrames reel: 20–40s target (VO is the duration master); 18–42s allows ±2s for mux rounding and short/long VO scripts." },
+    { "id": "canvas_1080x1920", "kind": "geometry",   "type": "dims", "w": 1080, "h": 1920,
+      "desc": "Exact 9:16 portrait canvas. HyperFrames must be authored with data-width=1080 data-height=1920." },
+    { "id": "cover_not_black",  "kind": "geometry",   "type": "luma_floor",
+      "crop": "1080:1920:0:0", "floor": 30, "samples": [0.02],
+      "desc": "Frame 0 must not be black — YAVG ≥ 30 on the full frame at the 2% mark (≈0.4s in on a 20s reel). Enforces the mandatory 'Frame 0 is NEVER black' rule; GSAP entrances must land by this point." },
+
+    { "id": "no_text_overlap", "kind": "perceptual", "type": "perceptual",
+      "desc": "(a) Exactly one text beat is visible at any sampled timestamp — no two beats' text are stacked or jumbled on screen simultaneously. Verify each sample frame has a single legible headline, not multiple overlapping lines from different scenes." },
+    { "id": "broll_visible_in_windows", "kind": "perceptual", "type": "perceptual",
+      "desc": "(b) B-roll clips (if supplied) are visible in their allocated scene windows — no dark or blank rectangle where footage should appear. A blank b-roll window means the clip was not localized (remote URL in <video src> fails in the headless render)." },
+    { "id": "text_legible", "kind": "perceptual", "type": "perceptual",
+      "desc": "(c) All on-screen text is legible at mobile size — headlines ≥60px, body ≥20px, adequate contrast against the background per the Step 0 identity palette. No text is clipped by the canvas edge." },
+    { "id": "brand_palette_applied", "kind": "perceptual", "type": "perceptual",
+      "desc": "(d) Brand palette from Step 0 (dark-premium or DESIGN.md) is applied — not defaulted to generic white-on-black or unbranded colors (#333, #3b82f6 defaults are a skip-gate defect)." },
+    { "id": "no_static_stretch", "kind": "perceptual", "type": "perceptual",
+      "desc": "(e) No static stretch exceeding 3 seconds — every sampled window shows entrance, ambient, or transition motion. A frozen composition for more than 3s is a defect (GSAP ambient must be present on decoratives between beats)." },
+    { "id": "cover_is_moneyshot", "kind": "perceptual", "type": "perceptual",
+      "desc": "(f) Frame 0 is a bright money-shot composition — not black, not a blank pre-entrance state, not a loading artifact. The first frame must be the cover-freeze of the strongest illustrative beat (as required by the frame integrity rule)." }
+  ],
+  "steps": {
+    "vo": {
+      "artifact": "interim/audio/vo.mp3",
+      "checks": [
+        { "id": "vo_loudness",   "kind": "mechanical", "type": "loudness",    "target": -14, "tol": 1.5,
+          "desc": "ElevenLabs VO must be loudnormed to -14 LUFS ±1.5 before mux — the VO is the audio spine of the reel." },
+        { "id": "vo_has_speech", "kind": "mechanical", "type": "mean_volume", "min_db": -35, "max_db": -10,
+          "desc": "VO must contain clear speech signal: mean_volume between -35 and -10 dBFS. Below -35 = near-silent; above -10 = clipping." }
+      ]
+    },
+    "visuals": {
+      "artifact": "interim/render/visuals.mp4",
+      "checks": [
+        { "id": "visuals_dims", "kind": "geometry", "type": "dims", "w": 1080, "h": 1920,
+          "desc": "HyperFrames render must produce exact 1080×1920 before VO mux. A mismatched canvas means the composition data-width/height were wrong." }
+      ]
+    }
+  }
+}

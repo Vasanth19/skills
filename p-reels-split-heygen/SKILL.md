@@ -146,6 +146,8 @@ run_skill p-reels-split \
 # broll_clip_seconds, etc.) through the calling environment unchanged.
 ```
 
+> **Eval gate:** Delivery is gated by `p-reels-split`'s `acceptance.json` via `c-eval-runner` — see p-reels-split QA-gate step (Step 11). This wrapper needs no `acceptance.json` of its own; the gate runs inside the base recipe before upload.
+
 The R2 URL is emitted by `p-reels-split` as its final output line. This wrapper prints nothing additional.
 
 ## What this wrapper does NOT do

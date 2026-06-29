@@ -11,7 +11,7 @@ produces:
   format: 16:9 video
   duration: 5-20 min
 inputs: [script, format, broll_dir, talking_head_video, source, known_transcript, captions, outro]
-dependsOn: [c-script, c-heygen, c-broll, c-broll-sync, c-reel-premium, c-typing-ui, c-html-gfx, c-audio, c-production, c-ffmpeg, c-ai-media, f-remotion, f-hyperframes, f-hyperframes-cli, f-gsap, wowx-motions, c-shorts-qa-gate]
+dependsOn: [c-script, c-heygen, c-broll, c-broll-sync, c-reel-premium, c-typing-ui, c-html-gfx, c-audio, c-production, c-ffmpeg, c-ai-media, f-remotion, f-hyperframes, f-hyperframes-cli, f-gsap, wowx-motions, c-shorts-qa-gate, c-eval-runner]
 ---
 
 
@@ -496,20 +496,39 @@ ffmpeg -i composite.mp4 \
 
 ### QA gate (MANDATORY — run before delivery)
 
-Run the shared short-form pre-delivery gate on the final MP4. **Do NOT deliver if it
-exits non-zero.**
+Run the shared eval engine (`c-eval-runner`) on the final MP4. It reads this
+recipe's `acceptance.json`, delegates the mechanical gate to `c-shorts-qa-gate`,
+runs the longform-specific geometry checks, and writes a structured `scorecard.json`.
+**Do NOT deliver if it exits non-zero (verdict FAIL).**
 
 ```bash
-bash .hub/c-shorts-qa-gate/scripts/qa-gate.sh <FINAL_MP4> --format vsl
+bash .hub/c-eval-runner/scripts/eval-run.sh <FINAL_MP4> --recipe-dir "$SKILL_DIR" --brand "$BRAND_SLUG"
+# scorecard → <video_dir>/eval/scorecard.json ; frame sweep → <video_dir>/eval/
 ```
 
-- HARD (blocks delivery): integrated loudness ≈ -14 LUFS, frame-0 brightness > 0x30,
-  resolution/fps/duration, audio track present.
-- ADVISORY (review the `qa/` artifacts, never blocks): captions present/position,
-  b-roll coverage, brand outro, lip-sync drift, green-screen residual.
+- **HARD** (verdict FAIL, exit 1, blocks delivery): mechanical gate (loudness ≈ -14
+  LUFS, frame-0 brightness YAVG > 30, resolution 1920×1080, fps, audio present),
+  duration 300–1200 s, canvas exactly 1920×1080.
+- **PERCEPTUAL** (verdict NEEDS_VISION until resolved): the (a)–(k) vision checks are
+  emitted as PENDING criteria with a frame sweep — resolve them with a vision pass
+  (read the frames or run `c-vision-qa`) and set each pass/fail before delivery.
 
 If a HARD check fails, fix the render and re-run — never deliver a failing gate.
-See `.hub/c-shorts-qa-gate/SKILL.md` (mirrors brain doctrine `short-form-qa-gate`).
+The full checklist lives in `acceptance.json` (the per-recipe spec). A brand may layer
+`brand-overrides/<brand-slug>/acceptance.json` to tighten thresholds (same id wins,
+new ids appended).
+
+**Interim fail-fast gates (recommended before expensive post-processing steps):**
+
+```bash
+bash .hub/c-eval-runner/scripts/eval-run.sh interim/audio/master.m4a \
+  --recipe-dir "$SKILL_DIR" --step master_audio          # after Step 2 (VSL engine loudnorm)
+bash .hub/c-eval-runner/scripts/eval-run.sh interim/video/compositing/composite-v1.mp4 \
+  --recipe-dir "$SKILL_DIR" --step composite             # after Step 7 (composite)
+```
+
+See `.hub/c-eval-runner/SKILL.md` for the spec format + built-in check types, and
+`cfw-skills-pack/docs/skills-audit.md` §4 for the generic eval architecture.
 
 ---
 

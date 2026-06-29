@@ -1,0 +1,22 @@
+{
+  "recipe": "p-gfx-carousel",
+  "spec_version": 1,
+  "_note": "Gate runs ONE slide at a time — caller iterates over all rendered PNGs (slide-01.png … slide-NN.png) and calls eval-run.sh on each. All checks are per-image. cover_is_moneyshot applies to slide-01 during the vision pass; the perceptual reviewer skips it for content/hero/cta slides.",
+  "checks": [
+    { "id": "canvas_1080x1350",   "kind": "geometry",   "type": "dims", "w": 1080, "h": 1350 },
+    { "id": "slide_not_black",    "kind": "geometry",   "type": "luma_floor",
+      "crop": "1080:1350:0:0", "floor": 16, "samples": [0.5] },
+    { "id": "no_text_clipping",   "kind": "perceptual", "type": "perceptual",
+      "desc": "(a) No text is clipped, cut at an edge, or overflowing its container — headline, eyebrow, body, stat, nodes, and footer are all fully visible within the 1080x1350 canvas." },
+    { "id": "legible_contrast",   "kind": "perceptual", "type": "perceptual",
+      "desc": "(b) Text-to-background contrast is strong and legible at thumbnail size — no light-grey-on-dark, no same-hue collisions." },
+    { "id": "on_brand_palette",   "kind": "perceptual", "type": "perceptual",
+      "desc": "(c) Palette matches the carousel spec theme (bg, accent, text fields) — not off-brand or generic stock-template colors." },
+    { "id": "premium_hierarchy",  "kind": "perceptual", "type": "perceptual",
+      "desc": "(d) Clear premium hierarchy — oversized condensed headline dominant, ghost keyword present as background atmosphere, glow adds depth; slide kind (cover/content/hero/cta) reads as intended per the spec." },
+    { "id": "consistent_margins", "kind": "perceptual", "type": "perceptual",
+      "desc": "(e) Margins and padding are consistent with the other slides in the set — same grid rhythm and spacing; no slide looks out-of-family." },
+    { "id": "cover_is_moneyshot", "kind": "perceptual", "type": "perceptual",
+      "desc": "(f) Cover slide (slide-01) is the strongest, most eye-catching beat — bright, high-contrast, a hook that makes a viewer stop scrolling. (Non-cover slides: skip this check during the vision pass.)" }
+  ]
+}

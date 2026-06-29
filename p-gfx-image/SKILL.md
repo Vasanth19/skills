@@ -10,7 +10,7 @@ produces:
   format: image (single or multi)
   duration: n/a
 inputs: [topic, count]
-dependsOn: [c-html-gfx, c-ffmpeg, c-banner]
+dependsOn: [c-html-gfx, c-ffmpeg, c-banner, c-eval-runner, c-vision-qa]
 ---
 
 # p-gfx-image-posts — HTML-GFX Explainer Images
@@ -23,3 +23,17 @@ dependsOn: [c-html-gfx, c-ffmpeg, c-banner]
 
 ## Output
 - One or many 1080×1080 (or 1080×1920) brand-styled images (PNG), navy/green palette.
+
+## QA Gate (run per produced image — MANDATORY before delivery)
+
+```bash
+SKILL_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" "$HOME/.hermes/profiles" /Users/vasanth/Code/skills -maxdepth 5 -type d -name p-gfx-image 2>/dev/null | head -1)
+bash .hub/c-eval-runner/scripts/eval-run.sh <OUTPUT_IMAGE.png> --recipe-dir "$SKILL_DIR" --brand "$BRAND_SLUG"
+```
+
+The runner writes `<image_dir>/eval/scorecard.json` and prints the verdict:
+- **PASS** — image passes all hard checks; deliver.
+- **NEEDS_VISION** — hard checks passed but `perceptual` checks are `PENDING`. Read
+  `<image_dir>/eval/frame0.png` or run `c-vision-qa` with `--intent "..."` and
+  `--aspect 1080x1080` to resolve every PENDING item before delivery.
+- **FAIL** (exit 1) — a hard check failed (wrong dims, blank/black render). Fix and re-render; do not deliver.

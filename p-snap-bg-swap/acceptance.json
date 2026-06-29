@@ -1,0 +1,38 @@
+{
+  "recipe": "p-snap-bg-swap",
+  "spec_version": 1,
+  "_note": "Strict, recipe-owned spec read by c-eval-runner. Targets the default 9:16 format — if format=16:9 is used the dims check will catch it. A brand may layer brand-overrides/<slug>/acceptance.json to TIGHTEN thresholds (same id wins; new ids appended). See c-eval-runner/SKILL.md for the spec format.",
+  "checks": [
+    { "id": "qa_gate",          "kind": "mechanical", "type": "qa_gate", "format": "reel",
+      "desc": "Mechanical gate (loudness ≈ -14 LUFS, frame-0 brightness, resolution 1080×1920, fps, audio present) delegated to c-shorts-qa-gate." },
+    { "id": "duration_window",  "kind": "mechanical", "type": "duration_window", "min_s": 27, "max_s": 63,
+      "desc": "Snap bg-swap reel: 30–60s nominal; 27–63s allows ±3s for snap-boundary trim and encode rounding." },
+    { "id": "canvas_1080x1920", "kind": "geometry",   "type": "dims", "w": 1080, "h": 1920,
+      "desc": "Exact 9:16 portrait canvas (default format=9:16). A landscape output fails here — check that format param was not overridden." },
+    { "id": "backgrounds_not_black", "kind": "geometry", "type": "luma_floor",
+      "crop": "1080:960:0:480", "floor": 16, "samples": [0.05, 0.20, 0.40, 0.60, 0.80, 0.95],
+      "desc": "Center zone must have YAVG ≥ 16 at every sample — ensures each background segment has visible content and no composite segment came out as a black rectangle." },
+
+    { "id": "snap_sync", "kind": "perceptual", "type": "perceptual",
+      "desc": "(a) Each background change fires exactly at the detected snap timestamp — the cut lands on the audible snap, not noticeably before or after it. Verify that snap-points.json timestamps align with visible cut frames." },
+    { "id": "no_greenscreen_residue", "kind": "perceptual", "type": "perceptual",
+      "desc": "(b) Chroma-key is clean on every segment — no green fringe or halo around the avatar; the two-pass colorkey (0.25:0.05 + 0.40:0.01) has fully removed green-screen residue across all background composites." },
+    { "id": "avatar_on_each_bg", "kind": "perceptual", "type": "perceptual",
+      "desc": "(c) Avatar is clearly composited over each background at the PIP position — well-framed, not floating off-center, not clipped, not smaller than the source PIP circle detected in Step 3." },
+    { "id": "backgrounds_distinct", "kind": "perceptual", "type": "perceptual",
+      "desc": "(d) Each background segment has a visually distinct color palette or scene from the adjacent segments — the swap is immediately noticeable, matching the 'each bg: different color palette / scene / mood' requirement from Step 2." },
+    { "id": "cover_is_moneyshot", "kind": "perceptual", "type": "perceptual",
+      "desc": "(e) Frame 0 (cover) shows the avatar clearly composited over the first background — not black, not mid-transition, not the raw green-screen source." }
+  ],
+  "steps": {
+    "snapconcat": {
+      "artifact": "video/compositing/snap-bg-swap-v1.mp4",
+      "checks": [
+        { "id": "snapconcat_dims",      "kind": "geometry",   "type": "dims", "w": 1080, "h": 1920,
+          "desc": "Assembled snap concat must be full portrait canvas before final delivery processing." },
+        { "id": "snapconcat_has_audio", "kind": "mechanical", "type": "mean_volume", "min_db": -40, "max_db": -6,
+          "desc": "Snap audio from the source greenscreen avatar must be present in the concat — snap sounds are needed for the sync effect; silent output means audio was dropped during colorkey composite." }
+      ]
+    }
+  }
+}

@@ -12,7 +12,7 @@ produces:
   format: 9:16 vertical video
   duration: 30-60s
 inputs: [story_concept]
-dependsOn: [c-ai-media, c-ffmpeg, c-music]
+dependsOn: [c-ai-media, c-ffmpeg, c-music, c-shorts-qa-gate, c-eval-runner]
 ---
 
 # pipeline-ai-character — AI Character Short (9:16)
@@ -156,6 +156,33 @@ If `$audio_track` is already a local path, skip this step.
 → Output: `video/compositing/composite-v1.mp4`
 
 ---
+
+## QA gate (MANDATORY — run before upload)
+
+Run the shared eval engine (`c-eval-runner`) on the final assembled MP4 before delivery.
+It reads this recipe's `acceptance.json`, delegates the mechanical gate to `c-shorts-qa-gate`,
+runs geometry and luma checks, and writes a structured `scorecard.json`.
+**Do NOT deliver if it exits non-zero (verdict FAIL).**
+
+```bash
+SKILL_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" /Users/vasanth/Code/skills -maxdepth 5 -type d -name p-ai-character 2>/dev/null | head -1)
+bash .hub/c-eval-runner/scripts/eval-run.sh <FINAL_MP4> --recipe-dir "$SKILL_DIR" --brand "$BRAND_SLUG"
+# scorecard → <video_dir>/eval/scorecard.json ; frame sweep → <video_dir>/eval/
+```
+
+Replace `<FINAL_MP4>` with the assembled output (e.g. `final/pr-aimg01-<name>.mp4`).
+
+- **HARD** (verdict FAIL, exit 1, blocks delivery): mechanical gate (loudness ≈ -14 LUFS,
+  frame-0 brightness, resolution/fps, audio present), duration 27–63s, canvas exactly 1080×1920,
+  center zone (y 480–1440) not dark at 6 sampled points across the reel.
+- **PERCEPTUAL** (verdict NEEDS_VISION until resolved): 6-attribute character consistency,
+  no diverged frames, smooth crossfades, character fills the frame, cover money-shot check —
+  emitted as PENDING with a frame sweep; resolve with a vision pass before delivery.
+
+**Interim gate (fail-fast, recommended before Step 6):**
+```bash
+bash .hub/c-eval-runner/scripts/eval-run.sh video/compositing/composite-v1.mp4 --recipe-dir "$SKILL_DIR" --step composite
+```
 
 ## Step 6 — Delivery ⛔ CHECKPOINT
 

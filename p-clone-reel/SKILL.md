@@ -12,7 +12,7 @@ produces:
   format: 9:16 vertical video
   duration: 30-60s
 inputs: [source_url]
-dependsOn: [c-script, c-heygen, c-html-gfx, c-audio, c-production, c-ffmpeg]
+dependsOn: [c-script, c-heygen, c-html-gfx, c-audio, c-production, c-ffmpeg, c-shorts-qa-gate, c-eval-runner]
 ---
 
 # p-clone-reel — Viral Reel Recreation
@@ -91,6 +91,32 @@ Identify viral format type: hook structure, pacing, visual rhythm.
 → Output: `video/compositing/composite-v1.mp4`
 
 ---
+
+## QA gate (MANDATORY — run before upload)
+
+Run the shared eval engine (`c-eval-runner`) on the final assembled MP4 before delivery.
+It reads this recipe's `acceptance.json`, delegates the mechanical gate to `c-shorts-qa-gate`,
+runs geometry checks, and writes a structured `scorecard.json`.
+**Do NOT deliver if it exits non-zero (verdict FAIL).**
+
+```bash
+SKILL_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" /Users/vasanth/Code/skills -maxdepth 5 -type d -name p-clone-reel 2>/dev/null | head -1)
+bash .hub/c-eval-runner/scripts/eval-run.sh <FINAL_MP4> --recipe-dir "$SKILL_DIR" --brand "$BRAND_SLUG"
+# scorecard → <video_dir>/eval/scorecard.json ; frame sweep → <video_dir>/eval/
+```
+
+Replace `<FINAL_MP4>` with the path to the assembled output (e.g. `final/pr-viral01-<name>.mp4`).
+
+- **HARD** (verdict FAIL, exit 1, blocks delivery): mechanical gate (loudness ≈ -14 LUFS,
+  frame-0 brightness, resolution/fps, audio present), duration 27–63s, canvas exactly 1080×1920.
+- **PERCEPTUAL** (verdict NEEDS_VISION until resolved): avatar PIP visibility, greenscreen
+  cleanliness, source content visible in background, cover money-shot check — emitted as PENDING
+  with a frame sweep; resolve with a vision pass before delivery.
+
+**Interim gate (fail-fast, recommended before Step 6):**
+```bash
+bash .hub/c-eval-runner/scripts/eval-run.sh video/compositing/composite-v1.mp4 --recipe-dir "$SKILL_DIR" --step composite
+```
 
 ## Step 6 — Outro + Delivery ⛔ CHECKPOINT
 

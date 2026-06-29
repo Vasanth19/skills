@@ -11,7 +11,7 @@ produces:
   format: mp3 audio / structured text
   duration: 15s–10min audio
 inputs: [script_text, audio_or_video_upload]
-dependsOn: [c-audio, c-script, c-cloud-media]
+dependsOn: [c-audio, c-script, c-cloud-media, c-eval-runner]
 ---
 
 # p-voiceover — Voiceover & Transcription Recipe
@@ -41,7 +41,12 @@ The audio recipe. Three flows, one skill — pick the flow from what the user ga
    - No brand voice? Present the `c-audio` voice presets and ask the user to pick. Do not guess.
 3. **Synthesize** → delegate to `c-audio` TTS (Floe API primary, direct ElevenLabs fallback) with the cleaned script + voice ID.
 4. **Normalize loudness** → `c-audio` loudnorm pass (target podcast/social LUFS).
-5. **Deliver** → upload the `.mp3` via `c-cloud-media` to R2 and return the public URL as the output asset. Attach it to the run/composition as an audio output.
+5. **QA gate (MANDATORY — run before delivery):**
+   ```bash
+   bash .hub/c-eval-runner/scripts/eval-run.sh <FINAL.mp3_or_aac> --recipe-dir "$SKILL_DIR" --brand "$BRAND_SLUG"
+   ```
+   A `FAIL` (exit 1) means loudness, mean-volume, or duration is out of spec — re-run the loudnorm pass or re-synthesize, then re-gate. Do NOT deliver until verdict is `PASS`.
+6. **Deliver** → upload the `.mp3` via `c-cloud-media` to R2 and return the public URL as the output asset. Attach it to the run/composition as an audio output.
 
 **Output contract:** one `.mp3` R2 URL + the final script text used.
 

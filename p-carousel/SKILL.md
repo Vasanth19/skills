@@ -11,7 +11,7 @@ produces:
   format: PDF carousel
   duration: n/a
 inputs: [topic]
-dependsOn: [c-script, c-vision-qa]
+dependsOn: [c-script, c-vision-qa, c-eval-runner]
 requires: node, chromium
 ---
 
@@ -99,6 +99,16 @@ margins, premium hierarchy, on-brand palette, charset, set consistency).
 → **Any FAIL → fix the HTML for that slide → re-render (Step 4) → re-run this gate.**
 Loop until every slide PASSes (max 3 iterations, then surface remaining issues to the owner).
 Do NOT proceed to assembly with a slide that has not passed.
+
+→ **Eval-runner gate (MANDATORY — run per slide, after c-vision-qa PASSes):**
+```bash
+for SLIDE in slides/*.png; do
+  bash .hub/c-eval-runner/scripts/eval-run.sh "$SLIDE" --recipe-dir "$SKILL_DIR" --brand "$BRAND_SLUG"
+done
+```
+- `FAIL` (exit 1) on any slide → fix and re-render before assembly.
+- `NEEDS_VISION` → perceptual checks are still `PENDING`; resolve with a c-vision-qa pass before delivery.
+- Do NOT proceed to Step 6 until every slide is `PASS` or all perceptual pending items are resolved.
 
 ### Step 6 — Assemble PDF
 

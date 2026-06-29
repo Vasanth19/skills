@@ -12,7 +12,7 @@ produces:
   format: 1080×1350 PNG slides (2–10)
   duration: n/a
 inputs: [brief]
-dependsOn: [c-html-gfx, c-cloud-media]
+dependsOn: [c-html-gfx, c-cloud-media, c-eval-runner, c-vision-qa]
 ---
 
 > # ⛔ DEPRECATED (2026-06-16) — use **`p-carousel`**
@@ -144,6 +144,28 @@ Find the skill directory first if `$0` isn't set in your shell context:
 SKILL_DIR=$(dirname "$(find /home/node/.claude/skills -name render-carousel.mjs -path '*p-gfx-carousel*' 2>/dev/null | head -1)")
 node "$SKILL_DIR/render-carousel.mjs" <BRAND_ID> <TASK_ID> /tmp/carousel-spec.json
 ```
+
+## Step 2.5 — QA Gate (run per slide — MANDATORY before Step 3)
+
+After the render script completes, gate every produced PNG through `c-eval-runner`
+before delivering URLs. The gate runs one file at a time:
+
+```bash
+SKILL_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" "$HOME/.hermes/profiles" /Users/vasanth/Code/skills -maxdepth 5 -type d -name p-gfx-carousel 2>/dev/null | head -1)
+
+for slide in /tmp/<BRAND_ID>/carousels/<TASK_ID>/slide-*.png; do
+  bash .hub/c-eval-runner/scripts/eval-run.sh "$slide" --recipe-dir "$SKILL_DIR" --brand "$BRAND_SLUG"
+done
+```
+
+Verdicts:
+- **PASS** — slide clears all hard checks; proceed to delivery.
+- **NEEDS_VISION** — hard checks passed but `perceptual` checks are `PENDING`. Read
+  `<slide_dir>/eval/frame0.png` or invoke `c-vision-qa` with `--intent "Slide N — <kind>"` and
+  `--aspect 1080x1350` to resolve every PENDING item. Note: `cover_is_moneyshot` (check f)
+  applies to slide-01 only — skip it when reviewing content/hero/cta slides.
+- **FAIL** (exit 1) — a hard check failed (wrong dims or blank slide). Fix the render and
+  re-run Step 2 before proceeding. Do not deliver a FAIL slide.
 
 ## Step 3 — Deliver
 

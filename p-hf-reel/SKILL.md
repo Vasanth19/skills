@@ -11,7 +11,7 @@ produces:
   format: 9:16 vertical video
   duration: 20-40s
 inputs: [topic, voiceover_script, broll_clips]
-dependsOn: [c-audio, f-hyperframes, f-hyperframes-cli, c-ffmpeg]
+dependsOn: [c-audio, f-hyperframes, f-hyperframes-cli, c-ffmpeg, c-shorts-qa-gate, c-eval-runner]
 ---
 
 
@@ -316,6 +316,33 @@ look again. Repeat until all 6 frames pass every check. NEVER upload a reel that
 gate.**
 
 ---
+
+## QA gate (MANDATORY — run before upload)
+
+Run the shared eval engine (`c-eval-runner`) on `interim/render/reel.mp4` (the muxed final reel)
+before uploading to R2. It reads this recipe's `acceptance.json`, delegates the mechanical gate
+to `c-shorts-qa-gate`, runs geometry and luma checks, and writes a structured `scorecard.json`.
+**Do NOT upload if it exits non-zero (verdict FAIL).**
+
+```bash
+SKILL_DIR=$(find "$HOME/.claude/skills" "$HOME/.hermes/skills" /Users/vasanth/Code/skills -maxdepth 5 -type d -name p-hf-reel 2>/dev/null | head -1)
+bash .hub/c-eval-runner/scripts/eval-run.sh interim/render/reel.mp4 --recipe-dir "$SKILL_DIR" --brand "$BRAND_SLUG"
+# scorecard → interim/render/eval/scorecard.json ; frame sweep → interim/render/eval/
+```
+
+- **HARD** (verdict FAIL, exit 1, blocks upload): mechanical gate (VO loudness ≈ -14 LUFS,
+  frame-0 YAVG ≥ 30, resolution 1080×1920, 30fps, audio present), duration 18–42s, canvas
+  exactly 1080×1920, full-frame luma ≥ 30 at the 2% mark (frame-0 not black).
+- **PERCEPTUAL** (verdict NEEDS_VISION until resolved): no text-beat overlap, b-roll clips
+  visible in their windows, text legibility, brand palette applied, no >3s static stretch, cover
+  money-shot — emitted as PENDING with a frame sweep; complements the vision checks in Step 5;
+  resolve before uploading.
+
+**Interim gates (fail-fast, recommended):**
+```bash
+bash .hub/c-eval-runner/scripts/eval-run.sh interim/audio/vo.mp3            --recipe-dir "$SKILL_DIR" --step vo        # after Step 1
+bash .hub/c-eval-runner/scripts/eval-run.sh interim/render/visuals.mp4      --recipe-dir "$SKILL_DIR" --step visuals   # after Step 3
+```
 
 ## Step 6 — Upload to R2 and print the URL (LAST LINE)
 
