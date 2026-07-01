@@ -44,7 +44,7 @@ Take a viral format → adapt to brand → deliver 9:16 short (avatar PIP).
 ## Step 1 — Download + Transcribe
 
 ```bash
-yt-dlp -f "bestvideo[height<=1080]+bestaudio" \
+yt-dlp -f "bestvideo[height<=1080]+bestaudio/best" \
   --merge-output-format mp4 -o "source.mp4" "$SOURCE_URL"
 ```
 → Skill: `c-audio` → MLX Whisper → `interim/audio/source.srt`
