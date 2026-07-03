@@ -1,122 +1,154 @@
 ---
 name: c-ab-scheduler
-description: Operate the CFW AB Scheduler — the unattended hourly worker that drains the cfw-social and cfw-agent backlog queues by running /ab-work-on-it on approved (status:ready) tasks, then pings when it hits a hard block. Use this to check what's running, approve/hold tasks, see and clear blockers (unblock), trigger an immediate run, read run logs, or explain/tune the system.
-when_to_use: Trigger on "AB scheduler", "scheduler status", "what's the scheduler doing", "what will run next", "approve <task>", "hold <task>", "unhold", "what's blocked", "unblock <task>", "clear the blocker", "run the backlog now", "scheduler logs", "turn the scheduler on/off", "is the hourly task running", "BLOCKED.md", "why didn't my task run", "make a task ready".
+description: Operate ab-hustler (formerly AB Scheduler) — the unified unattended worker that drains approved Paperclip issues (marketing + dev lanes) and file-queue backlogs for registered CODE repos. Use this to check what's running, register/unregister repos, approve/hold file-queue tasks, see and clear blockers (unblock/watch), trigger an immediate run, read run logs, fire a test notification, run an emergency drain (bypass Paperclip), or explain/tune the system.
+when_to_use: Trigger on "AB scheduler", "ab-hustler", "scheduler status", "what's the scheduler doing", "what will run next", "register a project", "add a repo to the loop", "file-approve <task>", "file-hold <task>", "unhold", "what's blocked", "unblock <task>", "clear the blocker", "run the backlog now", "scheduler logs", "turn the scheduler on/off", "BLOCKED.md", "why didn't my task run", "make a task ready", "test notification", "auto-unblock", "watch the blockers", "emergency drain", "Paperclip offline".
 allowed-tools: Bash, Read, Edit
 ---
 
-# c-ab-scheduler — operate the CFW unattended backlog worker
+# c-ab-scheduler — operate ab-hustler (the unified unattended dispatcher)
 
-The **CFW AB Scheduler** runs `/ab-work-on-it` on a timer for two repos and pings the user
-only when it gets genuinely stuck. This skill is the operator manual + the exact commands to
-drive it. Full docs live at `/Users/vasanth/Code/cfw/scripts/AB-SCHEDULER.md`.
+**ab-hustler** is the unified dispatcher for approved Paperclip issues (marketing + dev lanes)
+AND file-queue backlogs for registered CODE repos. Formerly known as "AB Scheduler". The skill
+name is kept for trigger compatibility. Full docs: `~/ecosystem/ab-hustler/README.md`.
 
-## Mental model (say this if the user asks "what is it")
+Binary: `~/ecosystem/ab-hustler/ab-hustler.sh`
+CTL:    `~/ecosystem/ab-hustler/ab-hustler-ctl.sh`
+Config: `~/ecosystem/ab-hustler/engine.conf` (Paperclip orgs) + `projects.conf` (file-queue repos)
+
+## Mental model
 
 ```
-launchd
-  ├─ :00 hourly → ab-scheduler.sh cfw-social → picks ONE approved task → /ab-work-on-it → merge to develop
-  └─ :30 hourly → ab-scheduler.sh cfw-agent  → (same)
+launchd — ONE job: com.gsai.ab-hustler (twice-hourly at :22 and :52)
+  │
+  ├── file-inbox bridge: scan each registered org's backlog/queue/ for status:ready files
+  │     → convert to Paperclip issues (hustle:ready + lane:dev) → move to wip/
+  │
+  ├── marketing lane (hustle:ready + no lane:dev): headless CD/CM worker
+  │     → claude -p "<issue>" --dangerously-skip-permissions
+  │     → outcome: in_review / done / blocked
+  │
+  └── dev lane (hustle:ready + lane:dev): full AB pipeline per repo
+        → architect → dev → QA → serial integrate → merge to develop
+        → outcome: done (merged) / in_review (coding_done) / blocked / timeout
 ```
 
-- **One task per run**, never the whole queue. Cadence ≈ 1 task/hour/repo.
-- **Approval gate:** it ONLY works tasks whose frontmatter is `status: ready`. Everything
-  else in `queue/` (`backlog`, `blocked`, `coding_done`, `in_progress`) is ignored. Highest
-  priority first (`high > normal/medium > low`), oldest-file tie-break. No `ready` task ⇒ the
-  run is a silent no-op (logged `SKIP`).
-- **Fully autonomous** once a task is `ready`: code → tests → `/ab-test-and-complete` →
-  merge to **`develop`** (never `main`). It stops only on a hard block.
-- **Hard block ⇒** it writes `<repo>/backlog/blocked/<TASK-ID>.md` with a concrete
-  *How to unblock* section, never guesses, never half-merges.
+**Single launchd job replaces all per-repo `com.absched.*` timers (retired).**
 
 ## The one command you drive everything with
 
-`/Users/vasanth/Code/cfw/scripts/ab-scheduler-ctl.sh <verb> [args]`
-(the user runs it relative as `scripts/ab-scheduler-ctl.sh …` from the cfw root; when YOU run
-it via Bash, always use the absolute path — your cwd is not guaranteed.)
+`~/ecosystem/ab-hustler/ab-hustler-ctl.sh <verb> [args]`
+
+### Paperclip-board verbs
 
 | Verb | What it does |
 |---|---|
-| `status` | are the two launchd jobs loaded? |
-| `ready` | list approved+eligible tasks per repo (what WILL run next) |
-| `approve <id>` | flip a queued task to `status: ready` (the approval valve) |
-| `unhold <id>` | flip a task back to `status: backlog` (scheduler will skip it) |
-| `blockers` | print all open blockers + their *reply with* line |
-| `unblock <id> "<answer>"` | clear a blocker: fold the answer into the task, set `ready`, requeue, delete the note |
-| `run-now [social\|agent\|both]` | trigger an immediate run (don't wait for the hour) |
-| `logs [social\|agent]` | tail run history |
-| `on` / `off` | enable / disable both jobs |
+| `status` | board state (ready/running/blocked) across all orgs + launchd job status |
+| `history [n]` | last N runs from telemetry DB (default 20) |
+| `ready <id> [--lane dev\|marketing]` | add hustle:ready to a Paperclip issue |
+| `run-now [org]` | trigger an immediate drain (⚠️ real work) |
+| `bridge-now [org]` | file-inbox bridge only (no workers) |
+| `blockers` | all open Paperclip blockers |
+| `unblock <id>` | remove hustle:blocked, add hustle:ready |
+| `logs [n]` | tail drainer log |
+
+### File-queue verbs
+
+| Verb | What it does |
+|---|---|
+| `list` | repos in projects.conf |
+| `register <name> <dir>` | add a code repo to projects.conf + create backlog dirs |
+| `unregister <name>` | remove a repo (leaves backlog/ intact) |
+| `file-queue [repo]` | show eligible (status:ready) file-queue tasks |
+| `file-approve <pattern>` | flip matching queue file to status: ready |
+| `file-hold <pattern>` | pull matching queue file back to status: backlog |
+| `watch` | auto-unblock notes with answer: field filled (loop-safe) |
+| `test-notify` | fire a test notification |
+| `locks [project]` | show held ab-locks (via ab-lock.sh) |
+| `reap [project]` | clear expired leases (via ab-lock.sh) |
+
+### launchd control
+
+| Verb | What it does |
+|---|---|
+| `enable` | load + enable com.gsai.ab-hustler plist |
+| `disable` | unload + disable com.gsai.ab-hustler plist |
+
+### Emergency
+
+| Verb | What it does |
+|---|---|
+| `emergency-drain <repo-dir>` | bypass Paperclip; drain queue/ via ab-lib directly |
 
 ## Operator playbook — map intent → action
 
-**"What's it going to work next?" / "what's approved?"**
-→ `ab-scheduler-ctl.sh ready`. Report the per-repo list and the top of each (that's next).
+**"Add project X to the loop" / "I want X on the scheduler"**
+→ `ab-hustler-ctl.sh register <name> <dir>`. Note: this adds to projects.conf for file-queue
+operations. To have the org polled for Paperclip issues, add a line to `engine.conf` as well.
+The ab-* command suite must be in `<dir>/.claude/commands/` for the dev pipeline to work.
 
-**"Approve X" / "make X ready" / "let it work X"**
-→ `ab-scheduler-ctl.sh approve <id>`. Then remind: it'll be picked at the next :00/:30 and
-merged to develop. If they approve several, note they run one-per-hour in priority order.
-Before approving anything that ships a **Prisma migration / schema change**, flag the blast
-radius (it merges to develop unattended) and confirm they want it autonomous.
+**"What's it going to work next?"** → `status` (Paperclip board) + `file-queue` (file tasks).
 
-**"Hold X" / "don't run X yet" / "pull X back"**
-→ `ab-scheduler-ctl.sh unhold <id>` (sets it back to `backlog`).
+**"Approve X" (Paperclip issue)** → `ready <id>` or `ready <id> --lane dev`.
 
-**"What's blocked?"**
-→ `ab-scheduler-ctl.sh blockers` (or `Read /Users/vasanth/Code/cfw/BLOCKED.md`). Relay the
-*needs* + the suggested *reply with* line. NEVER invent the answer — it's the user's call.
+**"Approve X" (file-queue task)** → `file-approve <id-substring>`.
 
-**User replies with an unblock answer** (e.g. "use STRIPE_PRICE_PRO_M", "the key is hg_live_…")
-→ this is the core loop. Run:
-`ab-scheduler-ctl.sh unblock <TASK-ID> "<their exact answer>"`.
-That appends an `## Owner resolution` block to the task, sets it `status: ready`, moves it
-back to `queue/`, and deletes the blocked note. Then offer `run-now` so it retries now
-instead of waiting for the hour.
+**"Hold X" (file-queue task)** → `file-hold <id-substring>`.
 
-**"Run it now" / "don't wait an hour"**
-→ `ab-scheduler-ctl.sh run-now both` (or `social`/`agent`). Then `logs` to watch.
-⚠️ This does real work and merges to develop — confirm before triggering if unprompted.
+**"What's blocked (Paperclip)?"** → `blockers`. Relay *needs* + *how to unblock*. NEVER invent the answer.
 
-**"Why didn't my task run?"** — check in order:
-1. `status:` is not `ready` (most common — it's still `backlog`). → `approve` it.
-2. It has an unresolved `blocked-by:` dependency.
-3. The job is off (`status` shows nothing loaded) → `on`.
-4. A higher-priority `ready` task ran instead (one-per-hour).
+**User gives an unblock answer (Paperclip)** → `unblock <ISSUE-ID>`, then offer `run-now`.
 
-**"Turn it off/on" / pause the automation** → `off` / `on`.
+**User gives an unblock answer (file-queue)** → fill the `answer:` field in the blocked note,
+then `watch` picks it up. Or run `emergency-drain <repo>` to drain without Paperclip.
 
-## Surfacing — how blockers reach the user ("the terminal here")
+**"Paperclip is offline, I need to drain the queue"** → `emergency-drain <repo-dir>`. This runs
+the full ab-lib pipeline (worktree→build→merge) with zero Paperclip calls. File lifecycle:
+`queue/ → wip/ → done/<YYYY-MM>/ or blocked/`. Reconcile the board manually afterwards.
 
-Four overlapping surfaces (see AB-SCHEDULER.md): macOS notification on block; root
-`/Users/vasanth/Code/cfw/BLOCKED.md` (auto-generated, self-clears); SessionStart hook prints
-blockers when the cfw folder opens; Stop hook injects a *new* mid-session block once.
-Hooks are wired in `/Users/vasanth/Code/cfw/.claude/settings.local.json`.
+**"Run it now"** → `run-now [org]`, then `logs`. ⚠️ Real work + merges to develop.
 
-## How a task becomes work the user creates
+**"Why didn't my task run?"** → check: (1) missing hustle:ready label → `ready <id>`;
+(2) Paperclip API unreachable; (3) job disabled → `enable`; (4) global cap reached →
+`locks` to see what's in-flight; (5) file-queue: status != ready → `file-approve`.
 
-The user creates work by writing AB-* task files into `<repo>/backlog/queue/` (per the
-`feedback-workflow-ab-tasks` convention / the `/ab-create-task` command) as `status: backlog`,
-then **approves** the ones they want built. Nothing runs until approved. See the project's
-existing `cfw-social/.claude/commands/ab-*.md` for the underlying task engine.
+**"Turn it off/on"** → `disable` / `enable`.
 
-## Files (all under /Users/vasanth/Code/cfw)
+## Task file frontmatter (file-queue)
+
+```yaml
+---
+task-id: "MYPROJ-42"
+title: "Short title"
+status: ready             # ready = eligible; backlog = parked
+priority: normal          # high | normal | low
+model: sonnet             # optional: opus | sonnet | haiku | glm
+effort: high              # optional: low | medium | high | max (native only)
+---
+```
+
+`model:` and `effort:` are honoured in both emergency-drain and via the bridge (translated to
+Paperclip `hustle:model-*` / `hustle:effort-*` labels on the created issue).
+
+## Config knobs (still honoured in ab-lib)
+
+Set via env or `<repo>/backlog/.scheduler/config`:
+
+- `AB_FANOUT` — tasks in parallel per batch (default 3)
+- `AB_MERGE_TARGET` — branch to merge into (default develop)
+- `AB_AGENT_TIMEOUT` — per-agent wall-clock cap, seconds (default 1500 = 25 min)
+
+## Files
 
 | Path | Role |
 |---|---|
-| `scripts/ab-scheduler.sh` | per-repo hourly worker (launchd calls it); holds the approval gate |
-| `scripts/ab-scheduler-ctl.sh` | the control panel — every verb above |
-| `scripts/ab-blocked-write-root.sh` | regenerates root `BLOCKED.md` (single source of truth) |
-| `scripts/ab-blocked-surface.sh` | SessionStart hook |
-| `scripts/ab-blocked-stop-hook.sh` | Stop hook (mid-session blocker injection) |
-| `scripts/AB-SCHEDULER.md` | full human docs |
-| `~/Library/LaunchAgents/com.cfw.ab-scheduler.cfw-{social,agent}.plist` | the :00 / :30 timers |
-| `<repo>/backlog/.scheduler/runs.log` | run history |
-| `<repo>/backlog/blocked/*.md` | open blockers awaiting an answer |
-
-## Tuning knobs
-
-- **One vs all per run:** the gate hands the agent ONE task ID. To drain the whole approved
-  set each run, you'd loop in `ab-scheduler.sh` — don't, unless the user explicitly asks.
-- **Approval keyword:** the gate matches `status: ready`; override per-run with
-  `AB_READY_STATUS=<word>`.
-- **Cadence:** edit `StartCalendarInterval` in the plists, then `ctl off && ctl on`.
-- **Autonomy:** runs with `--dangerously-skip-permissions`; blast radius is `develop` only.
+| `~/ecosystem/ab-hustler/engine.conf` | Paperclip org registry |
+| `~/ecosystem/ab-hustler/projects.conf` | file-queue repo registry |
+| `~/ecosystem/ab-hustler/ab-hustler.sh` | main drainer + bridge + emergency-drain |
+| `~/ecosystem/ab-hustler/ab-hustler-ctl.sh` | operator control CLI |
+| `~/ecosystem/ab-hustler/ab-lib.sh` | AB pipeline shared library |
+| `~/ecosystem/ab-hustler/ab-lock.sh` | cross-channel concurrency mutex |
+| `~/ecosystem/ab-hustler/ab-hustler.db` | telemetry DB (runs + counters + bridge_map) |
+| `~/Library/LaunchAgents/com.gsai.ab-hustler.plist` | the ONE launchd timer |
+| `~/.claude-worktrees/<repo>-<TASK-ID>` | per-task agent worktree (transient) |
+| `~/.claude-worktrees/<repo>-ab-develop` | dedicated serial-merge worktree |
+| `<repo>/backlog/{queue,wip,blocked,done}` | file-queue lifecycle folders |
