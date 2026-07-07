@@ -473,7 +473,7 @@ with open(dst, "w") as f:
     # window.__timelines["root"] = tl (dict form) is required — NOT .push().
     f.write(f"<!DOCTYPE html>\n<html><head><meta charset=\"utf-8\">"
             "<script src=\"gsap.min.js\"></script>"
-            "<style>html,body{{margin:0;padding:0;width:1080px;height:1920px;overflow:hidden;}}</style>"
+            "<style>html,body{{margin:0;padding:0;width:1080px;height:1920px;overflow:hidden;background:#0F172A;}}</style>"
             f"</head><body>{tmpl}</body></html>")
 PY
 # box-compat: gpt-5.5 sometimes emits a double-hash hex (##0F172A) → white bg. Collapse it
@@ -871,6 +871,44 @@ bash .hub/c-eval-runner/scripts/eval-run.sh body.mp4      --recipe-dir "$SKILL_D
 ```
 See `.hub/c-eval-runner/SKILL.md` for the spec format + built-in checks, and
 `cfw-skills-pack/docs/skills-audit.md` §4 for the generic eval architecture.
+
+### 14.9 — DELIVERY GATE (MECHANICAL · HARD · blocks upload)
+
+**Runs immediately before upload. If it exits non-zero, STOP — do NOT upload or propose.** It
+proves mechanically that the premium pass actually ran (via the stamp c-reel-premium writes) and
+that the eval scorecard is not FAIL, so a degraded reel can't ship silently.
+
+```bash
+FINAL="$OUT_DIR/faceless-reel-with-cover.mp4"
+python3 - "$FINAL" "$W" "$OUT_DIR" <<'PY' || { echo "🚫 DELIVERY BLOCKED — fix the render/premium pass and re-run; do NOT upload."; exit 1; }
+import os, sys, json, glob, subprocess
+FINAL, W, OUT_DIR = sys.argv[1], sys.argv[2], sys.argv[3]
+fail = []
+# 1) premium stamp (c-reel-premium writes .gate/premium.json next to its output — search the work tree)
+stamps = glob.glob(f"{W}/**/.gate/premium.json", recursive=True) + glob.glob(f"{OUT_DIR}/**/.gate/premium.json", recursive=True)
+if not any(json.load(open(s)).get("applied") for s in stamps if os.path.exists(s)):
+    fail.append("premium stamp missing — c-reel-premium did not run (raw caption burns are a defect).")
+# 2) eval scorecard present + not FAIL
+sc = os.path.join(os.path.dirname(os.path.abspath(FINAL)), "eval", "scorecard.json")
+if not os.path.exists(sc):
+    fail.append("c-eval-runner scorecard missing — run the QA gate before delivery.")
+elif json.load(open(sc)).get("verdict") == "FAIL":
+    fail.append("c-eval-runner scorecard verdict = FAIL.")
+# 3) final MP4 valid + 1080x1920
+p = subprocess.run(["ffprobe","-v","error","-select_streams","v:0","-show_entries","stream=width,height","-of","json", FINAL], capture_output=True, text=True)
+if p.returncode != 0:
+    fail.append(f"final MP4 {FINAL} not a valid video.")
+else:
+    s = json.loads(p.stdout)["streams"][0]
+    if (s["width"], s["height"]) != (1080, 1920):
+        fail.append(f"final dims {s['width']}x{s['height']} != 1080x1920.")
+if fail:
+    print("DELIVERY GATE FAILURES:")
+    for f in fail: print(f"  ✗ {f}")
+    sys.exit(1)
+print("✅ DELIVERY GATE PASSED — premium pass + eval verified. OK to upload.")
+PY
+```
 
 ### 15 — Upload to R2 and print the URL (FINAL LINE)
 
