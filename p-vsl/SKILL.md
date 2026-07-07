@@ -85,23 +85,42 @@ pipeline shape, `c-broll-sync` beat planning, `c-reel-premium` polish pass, Hype
 loudnorm-once discipline, parallel beat builds, and the R2-upload/URL-print contract — all kept.
 The VSL identity (16:9, HeyGen avatar, varied grammar) is preserved.
 
-## Layout — landscape, PIP bottom-right
+## Layout — landscape, bottom-corner framed-inset PIP
+
+> ⛔ DEPRECATED recipe — the **framed-inset PIP DEFAULT** is defined once in
+> `c-ffmpeg/references/landscape-pip.md` ("Framed-Inset PIP — DEFAULT") and carried by
+> **`p-longform format=vsl`**. Use that for new work; this note is kept in sync only so nobody
+> rebuilds the retired circular/plain PIP.
 
 ```
 ┌────────────────────────────────────────────────┐ 1920×1080
 │  full-frame background: b-roll (FIT+blurred-fill)│
 │  or HyperFrames motion graphics. Content lives   │
 │  in the upper/left band (above y≈680).           │
-│                                                  │
-│                          ┌───────────────┐       │  PIP zone (pip beats):
-│                          │ TALKING-HEAD  │       │  384×330 @ x=1512, y=726
-│                          │   PIP card    │       │  (bottom-right). Graphics +
-│                          └───────────────┘       │  captions never enter here.
+│                          ┌────────────┐          │  PIP zone (pip beats):
+│                          │ TALKING-HD │          │  framed-inset 304×380 (portrait ~4:5),
+│                          │ ▢ rounded  │          │  radius 24, gold #D4A84C border + soft
+│                          │  gold rim  │          │  shadow, 72px margin, bottom corner
+│                          └────────────┘          │  ALTERNATING L↔R across pip beats.
 └────────────────────────────────────────────────┘
 ```
 
-Per `c-ffmpeg/references/landscape-pip.md`. Graphics templates reserve the bottom band; captions
-sit in the lower-left ~76% (caption-overlay-ls clears the PIP).
+Per `c-ffmpeg/references/landscape-pip.md` ("Framed-Inset PIP — DEFAULT"). Right-beat `x=1544,y=628`;
+left-beat `x=72,y=628`. Graphics templates reserve the bottom band; captions clear whichever bottom
+corner the PIP occupies. (Old default was a circular/plain `384×330 @ 1512,726` — retired.)
+
+> ⚠️ **Clone-from-circular trap:** framed-inset applies ONLY the rounded-rect `pip-mask.png`
+> `alphamerge` + `pip-frame.png` overlay to the face — no `geq` circle/ellipse, no vignette. When
+> cloning a circular-PIP build, delete its `geq=...a='if(lte(...))'` ellipse step + any
+> `circle-mask.png`/`gold-ring.png` asset or a **black oval** shows over the face. Grep
+> `grep -nE "geq|circle|ellipse|gold-ring"` the build clean first. See landscape-pip.md § "Clone-From-Circular Trap".
+>
+> ⚠️ **Frame-shadow darkening trap:** `pip-frame.png` is overlaid ON TOP of the face, so its interior
+> MUST be fully transparent (alpha≈0) and the drop-shadow drawn strictly OUTSIDE the rounded-rect. A
+> frame built as a filled+blurred black rect (no interior punch-out) darkens the whole face ~55%.
+> **QA gate:** composited PIP face luminance must match the source avatar — if it's ~2–3× darker, the
+> frame shadow is bleeding inward; regenerate the frame with the interior punch-out (never mask it with
+> an `eq`/`curves` lift).
 
 ---
 
@@ -151,8 +170,13 @@ FF="ffmpeg"
 
 # Canvas — LANDSCAPE
 CW=1920 ; CH=1080 ; FPS=30
-# PIP card (bottom-right) per landscape-pip.md
-PIP_W=384 ; PIP_H=330 ; PIP_X=1512 ; PIP_Y=726
+# Framed-inset PIP card (DEFAULT) per landscape-pip.md "Framed-Inset PIP — DEFAULT".
+# Portrait ~4:5 card, gold border + soft shadow, bottom corner ALTERNATING L↔R across pip beats.
+PIP_W=304 ; PIP_H=380 ; PIP_R=24 ; PIP_BW=4 ; PIP_PAD=48 ; PIP_MARGIN=72
+PIP_Y=$(( CH - PIP_MARGIN - PIP_H ))          # 628 (bottom band)
+PIP_X_RIGHT=$(( CW - PIP_MARGIN - PIP_W ))    # 1544
+PIP_X_LEFT=$PIP_MARGIN                         # 72
+# per pip beat: side = even pip-counter → RIGHT, odd → LEFT (frame overlaid at X-PAD, Y-PAD)
 
 # Locate this skill + component dirs (box deployments live under ~/.hermes/profiles/<slug>/skills/cfw/)
 SEARCH=("$HOME/.claude/skills" "$HOME/.hermes/skills" "$HOME/.hermes/profiles" /Users/vasanth/Code/skills)
@@ -425,11 +449,29 @@ seeking** (`-i file -ss`) for accurate trims on 5+ min sources.
 N_BEATS=$(python3 -c "import json;print(len(json.load(open('$W/beat_list.json'))['beats']))")
 mapfile -t AV < <(python3 -c "import json;print('\n'.join(json.load(open('$W/avatar_plan.json'))['avatar']))")
 
-# Rounded PIP mask at PIP_W×PIP_H (uploaded path; sharp corners acceptable if PIL missing)
-python3 -c "
-from PIL import Image, ImageDraw
-img=Image.new('RGBA',($PIP_W,$PIP_H),(0,0,0,0)); d=ImageDraw.Draw(img)
-d.rounded_rectangle([0,0,$PIP_W-1,$PIP_H-1],radius=32,fill=(255,255,255,255)); img.save('$W/pip-mask.png')" 2>/dev/null && MASK="$W/pip-mask.png" || MASK=""
+# Framed-inset PIP assets (DEFAULT): rounded-rect mask + frame overlay (gold border + soft shadow).
+# See c-ffmpeg/references/landscape-pip.md "Framed-Inset PIP — DEFAULT". Sharp corners + no frame
+# are an acceptable degraded fallback only if PIL is missing.
+python3 - "$W" "$PIP_W" "$PIP_H" "$PIP_R" "$PIP_BW" "$PIP_PAD" <<'PY' 2>/dev/null && MASK="$W/pip-mask.png" && FRAME="$W/pip-frame.png" || { MASK=""; FRAME=""; }
+import sys
+from PIL import Image, ImageDraw, ImageFilter, ImageChops
+work,W,H,R,BW,PAD = sys.argv[1], *[int(x) for x in sys.argv[2:7]]
+GOLD=(212,168,76,255)  # #D4A84C
+m=Image.new("L",(W,H),0); ImageDraw.Draw(m).rounded_rectangle([0,0,W-1,H-1],radius=R,fill=255)
+m.save(f"{work}/pip-mask.png")
+CW,CH=W+2*PAD,H+2*PAD
+sh=Image.new("RGBA",(CW,CH),(0,0,0,0))
+ImageDraw.Draw(sh).rounded_rectangle([PAD,PAD+6,PAD+W-1,PAD+H-1+6],radius=R,fill=(0,0,0,150))
+sh=sh.filter(ImageFilter.GaussianBlur(22))
+# ⚠️ PUNCH OUT the card interior so the shadow is STRICTLY OUTSIDE the rounded-rect and NEVER
+# darkens the avatar face (pip-frame.png is overlaid ON TOP of the face). Without this the blurred
+# black fill covers the whole face → ~55% darker than source. Interior alpha MUST be ~0.
+cut=Image.new("L",(CW,CH),0); ImageDraw.Draw(cut).rounded_rectangle([PAD,PAD,PAD+W-1,PAD+H-1],radius=R,fill=255)
+sh.putalpha(ImageChops.subtract(sh.getchannel("A"),cut))
+bd=Image.new("RGBA",(CW,CH),(0,0,0,0))
+ImageDraw.Draw(bd).rounded_rectangle([PAD,PAD,PAD+W-1,PAD+H-1],radius=R,outline=GOLD,width=BW)
+Image.alpha_composite(sh,bd).save(f"{work}/pip-frame.png")
+PY
 
 KEY="colorkey=0x00FF00:0.25:0.05,colorkey=0x00FF00:0.40:0.01"
 
@@ -460,18 +502,28 @@ build_seg(){
     return
   fi
 
-  # grammar = pip : background fullscreen + avatar bottom-right PIP
-  if [ "$SOURCE_KIND" = "heygen" ]; then
-    $FF -y -i "$bg" -i "$AVATAR_SRC" -ss "$avstart" \
-      -filter_complex "[0:v]format=yuv420p[bg];[1:v]$KEY,crop=1258:1080:314:0,scale=$PIP_W:$PIP_H,setsar=1[pip];[bg][pip]overlay=$PIP_X:$PIP_Y:format=auto:shortest=1[v]" \
+  # grammar = pip : background fullscreen + framed-inset avatar PIP (bottom corner, ALTERNATING L↔R)
+  # pip-beat counter = # of pip beats before this one → even=RIGHT, odd=LEFT (card at px/py, frame at px-PAD/py-PAD)
+  local pipn=0 j px py fx fy
+  for j in $(seq 0 $((i-1))); do [ "${AV[$j]}" = "pip" ] && pipn=$((pipn+1)); done
+  if (( pipn % 2 == 0 )); then px=$PIP_X_RIGHT; else px=$PIP_X_LEFT; fi
+  py=$PIP_Y ; fx=$((px-PIP_PAD)) ; fy=$((py-PIP_PAD))
+
+  if [ "$SOURCE_KIND" = "heygen" ] && [ -n "$MASK" ] && [ -n "$FRAME" ]; then
+    # (a) green-screen: key green → drop person onto card backdrop (context-bg) → rounded mask → gold frame
+    $FF -y -i "$bg" -i "$AVATAR_SRC" -ss "$avstart" -loop 1 -i "$W/context-bg.png" -i "$MASK" -i "$FRAME" \
+      -filter_complex "[2:v]scale=$PIP_W:$PIP_H:force_original_aspect_ratio=increase,crop=$PIP_W:$PIP_H,eq=brightness=-0.05,setsar=1[cbg];[1:v]$KEY,scale=$PIP_W:$PIP_H:force_original_aspect_ratio=increase,crop=$PIP_W:$PIP_H,setsar=1[person];[cbg][person]overlay=0:0,format=rgba[craw];[craw][3:v]alphamerge[pip];[0:v]format=yuv420p[bg];[bg][pip]overlay=$px:$py:shortest=1[wp];[wp][4:v]overlay=$fx:$fy:shortest=1[v]" \
       -map "[v]" -an -t "$dur" -c:v libx264 -preset medium -crf 19 "$seg"
-  elif [ -n "$MASK" ]; then
-    $FF -y -i "$bg" -i "$AVATAR_SRC" -ss "$avstart" -i "$MASK" \
-      -filter_complex "[1:v]scale=$PIP_W:$PIP_H:force_original_aspect_ratio=decrease,pad=$PIP_W:$PIP_H:(ow-iw)/2:0,setsar=1,format=yuva444p[thfit];[thfit][2:v]alphamerge[pip];[0:v]format=yuv420p[bg];[bg][pip]overlay=$PIP_X:$PIP_Y:format=auto:shortest=1[v]" \
+  elif [ -n "$MASK" ] && [ -n "$FRAME" ]; then
+    # (b) uploaded / studio avatar: keep its own background inside the card (NO colorkey) → mask → gold frame
+    $FF -y -i "$bg" -i "$AVATAR_SRC" -ss "$avstart" -i "$MASK" -i "$FRAME" \
+      -filter_complex "[1:v]scale=$PIP_W:$PIP_H:force_original_aspect_ratio=increase,crop=$PIP_W:$PIP_H,setsar=1,format=rgba[craw];[craw][2:v]alphamerge[pip];[0:v]format=yuv420p[bg];[bg][pip]overlay=$px:$py:shortest=1[wp];[wp][3:v]overlay=$fx:$fy:shortest=1[v]" \
       -map "[v]" -an -t "$dur" -c:v libx264 -preset medium -crf 19 "$seg"
   else
+    # degraded fallback (PIL missing): plain rect, no rounding/border/shadow
+    local keyf=""; [ "$SOURCE_KIND" = "heygen" ] && keyf="$KEY,crop=1258:1080:314:0,"
     $FF -y -i "$bg" -i "$AVATAR_SRC" -ss "$avstart" \
-      -filter_complex "[1:v]scale=$PIP_W:$PIP_H:force_original_aspect_ratio=decrease,setsar=1[pip];[0:v]format=yuv420p[bg];[bg][pip]overlay=$PIP_X:$PIP_Y:format=auto:shortest=1[v]" \
+      -filter_complex "[1:v]${keyf}scale=$PIP_W:$PIP_H:force_original_aspect_ratio=increase,crop=$PIP_W:$PIP_H,setsar=1[pip];[0:v]format=yuv420p[bg];[bg][pip]overlay=$px:$py:shortest=1[v]" \
       -map "[v]" -an -t "$dur" -c:v libx264 -preset medium -crf 19 "$seg"
   fi
 }

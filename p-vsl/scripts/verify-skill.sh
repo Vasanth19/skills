@@ -44,7 +44,9 @@ done
 
 # SKILL.md guard rails
 check "landscape canvas 1920x1080"        grep -q "CW=1920" "$SKILL_DIR/SKILL.md"
-check "PIP bottom-right geometry"         grep -q "PIP_X=1512" "$SKILL_DIR/SKILL.md"
+check "framed-inset PIP default (304x380)" grep -q "PIP_W=304 ; PIP_H=380" "$SKILL_DIR/SKILL.md"
+check "framed-inset PIP alternation L/R"   grep -q "PIP_X_RIGHT" "$SKILL_DIR/SKILL.md"
+check "framed-inset PIP gold frame"        grep -q "pip-frame.png" "$SKILL_DIR/SKILL.md"
 check "loudnorm present"                  grep -q "loudnorm" "$SKILL_DIR/SKILL.md"
 check "amix normalize=0"                  grep -q "normalize=0" "$SKILL_DIR/SKILL.md"
 check "COVER_AT extraction"              grep -q "COVER_AT" "$SKILL_DIR/SKILL.md"
