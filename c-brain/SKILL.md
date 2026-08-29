@@ -1,60 +1,62 @@
 ---
 name: c-brain
 description: >-
-  How to use GBrain — the permanent, git-versioned knowledge base — across BOTH
-  of its instances: `brain-personal` (life + business knowledge: projects,
-  people, companies, decisions, SOPs) and `brain-competitive` (scraped community
-  intelligence, patterns, gap analysis — Research-agent only, hard firewall).
-  Load this whenever you need to STORE or RETRIEVE permanent knowledge, decide
-  WHERE a piece of information or a file belongs, navigate either brain on disk,
-  use the `brain-personal` / `brain-competitive` MCP tools or CLIs, or apply the
-  project-repo-vs-GBrain litmus test. Covers both brains, their MCP tool
-  surfaces, the firewall between them, recall/write order, the canonical
-  vasanth-hq folder structure, and the "where does X go?" decision matrix.
+  How to use GBrain — the permanent, git-versioned knowledge base
+  (`brain`: life + business knowledge — projects, people, companies,
+  decisions, SOPs). Load this whenever you need to STORE or RETRIEVE permanent
+  knowledge, decide WHERE a piece of information or a file belongs, navigate the
+  brain on disk, use the `brain` MCP tools or CLI, apply the type
+  taxonomy, or apply the project-repo-vs-GBrain litmus test. Covers the brain's
+  MCP tool surface, recall/write order, the controlled type vocabulary, the
+  canonical vasanth-hq folder structure, and the "where does X go?" decision
+  matrix.
 ---
 
 # GBrain — Using the Permanent Knowledge Base
 
 GBrain is the permanent, git-versioned knowledge base. It is the source of truth
-for projects, people, companies, decisions, SOPs, and competitive intelligence.
-There are **two isolated instances** — pick by content type, **NEVER mix them**.
+for projects, people, companies, decisions, and SOPs. There is a single instance,
+`brain`.
 
-| | `brain-personal` | `brain-competitive` |
-|---|---|---|
-| **Holds** | Life + business knowledge: projects (CFW, GrowthSystems, SellersCommerce, clients), people, companies, decisions, SOPs, email-to-brain ingestion, the `vasanth-hq/` HQ context | Scraped Skool communities (Mark Kashef Early AI Dopters, Nate Herk, etc.), extracted patterns/frameworks, gap analysis, opportunities |
-| **GBRAIN_HOME** | `/Users/vasanth/Code/Infra/brain-personal/` | `/Users/vasanth/Code/Infra/brain-competitive/` |
-| **Postgres DB** | `postgresql://localhost:5433/brain_personal` | `postgresql://localhost:5433/brain_competitive` |
-| **CLI** | `brain-personal` (in PATH) | `brain-competitive` (in PATH) |
-| **MCP tools** | `mcp__brain-personal__*` | `mcp__brain-competitive__*` |
-| **Read access** | All agents | **Research agent ONLY** |
-| **Write access** | All agents (per Write Order) | **Research agent ONLY** |
+| | `brain` |
+|---|---|
+| **Holds** | Life + business knowledge: projects (CFW, GrowthSystems, SellersCommerce, clients), people, companies, decisions, SOPs, email-to-brain ingestion, the `vasanth-hq/` HQ context |
+| **GBRAIN_HOME** | `/Users/vasanth/ecosystem/brain/` |
+| **Postgres DB** | `postgresql://localhost:5433/brain_personal` |
+| **CLI** | `brain` (in PATH) |
+| **MCP tools** | `mcp__brain__*` |
+| **Read / write access** | All agents (per Write Order) |
+
+> **Note:** A separate `brain-competitive` instance (scraped community intel,
+> Research-agent-only, firewalled) existed until **2026-06-20**, when it was
+> removed as unused. Backup: `~/.gsai/backups/brain-competitive-20260620.tar.gz`
+> (+ `brain_competitive-pg-20260620.sql`). If competitive intel is needed again,
+> restore from backup rather than reinventing the scheme.
 
 **What it is technically:** garrytan/gbrain — markdown on disk + Postgres (pgvector
 + FTS + graph). Git-versioned. Each page has compiled-truth at the top, an
-append-only timeline below. Fully rebuildable from disk via `<instance> reindex`.
+append-only timeline below. Fully rebuildable from disk via `brain reindex`.
 Survives reinstalls. Embeddings: Ollama `nomic-embed-text` (local, 768d).
 Reasoning: Anthropic Claude.
 
-## ⚠️ The brain-competitive Firewall (HARD RULE)
+## Type taxonomy (controlled vocabulary)
 
-`brain-competitive` is a competitive-intelligence vault. Read AND write are
-restricted:
+Every page carries a `type:` that says *what kind of knowledge* it is — distinct
+from its *folder* (where it lives). The controlled vocabulary is:
 
-- **Research agent only.** It reads to find gaps + patterns, and writes new intel
-  from scrapes.
-- **Content / Comms / CMO / Creative Director agents MUST NEVER query
-  `brain-competitive`.** Risk: semantic confusion and plagiarism.
-- If a non-Research agent needs a competitive insight, the Research agent first
-  extracts a *sanitized* note into `brain-personal/concepts/`. Content agents read
-  from there — never from the competitive brain directly.
-- Never call a `mcp__brain-competitive__*` tool, or the `brain-competitive` CLI,
-  unless you are operating as the Research agent.
+`doctrine · sop · pattern · practice · gotcha · decision · concept · reference ·
+observation · hub · project`
 
-## Using the brains — MCP tools
+`infra` is a **location** (`knowledge/concepts/infra/<system>/`), never a `type:`. Anything
+outside the vocabulary is a smell. The full doctrine — what each type means, the
+folder↔type contract, the synonym→canonical map, and the history-is-sacred rule —
+lives in **`brain/vasanth-hq/doctrine/knowledge-taxonomy.md`**. Read it
+before assigning or changing a page's `type:`.
 
-Both instances expose the same MCP tool surface. Use the `mcp__brain-personal__*`
-prefix for the personal brain and `mcp__brain-competitive__*` for the competitive
-brain (Research only). Prefer MCP tools over raw CLI/grep when the MCP is up.
+## Using the brain — MCP tools
+
+The brain exposes its tools under the `mcp__brain__*` prefix. Prefer MCP
+tools over raw CLI/grep when the MCP is up.
 
 **Retrieval — the everyday tools:**
 - `query` — natural-language question over the brain; the default for "what do we
@@ -92,55 +94,48 @@ brain (Research only). Prefer MCP tools over raw CLI/grep when the MCP is up.
 - `get_health`, `get_stats`, `run_doctor` — status
 - `sync_brain` — re-index after editing markdown on disk
 - `find_anomalies`, `find_orphans` — integrity checks
-- `get_brain_identity`, `whoami` — confirm which instance you're talking to
+- `get_brain_identity`, `whoami` — confirm the instance you're talking to
 
 **Takes / transcripts:** `takes_list`, `takes_search`, `takes_scorecard`,
 `takes_calibration`, `get_recent_transcripts`.
 
-## Using the brains — CLI quick reference
+## Using the brain — CLI quick reference
 
 ```bash
-brain-personal query "Sarah at Acme pricing history"
-brain-personal sync                # re-index after editing markdown on disk
-brain-personal reindex             # rebuild the DB from markdown
-brain-competitive query "Skool funnel patterns"   # Research agent ONLY
+brain query "Sarah at Acme pricing history"
+brain sync                # re-index after editing markdown on disk
+brain reindex             # rebuild the DB from markdown
 ```
 
 ## Background services (auto-start at login via launchd)
-- `com.gbrain.autopilot.brain-personal` — continuous (5-min) sync + embed + extract + dream cycle
-- `com.gbrain.sync.brain-competitive` — every 15 min
-- `com.gbrain.dream.brain-personal` — nightly 2 AM (11-phase maintenance)
-- `com.gbrain.dream.brain-competitive` — nightly 3 AM (staggered)
-- `com.gbrain.maintenance.brain-{personal,competitive}` — weekly Mon
+- `com.gbrain.autopilot.brain` — continuous (5-min) sync + embed + extract + dream cycle
+- `com.gbrain.dream.brain` — nightly 2 AM (11-phase maintenance)
+- `com.gbrain.maintenance.brain` — weekly Mon
 
-## When a GBrain MCP fails
+## When the GBrain MCP fails
 Fall back to grepping the markdown directly:
-`rg "term" /Users/vasanth/Code/Infra/brain-personal/`. Tell the user the MCP is
+`rg "term" /Users/vasanth/ecosystem/brain/`. Tell the user the MCP is
 down — do not silently switch knowledge stores or fabricate an answer.
 
 ## Recall Order (always follow)
 1. **File path / project location** → read `~/.gsai/ecosystem.yaml`
 2. **Business / life knowledge** (project decisions, people, companies, SOPs,
-   email history) → `brain-personal` MCP (`mcp__brain-personal__query` first)
-3. **Competitive intel** (scraped communities, frameworks, gap analysis) →
-   `brain-competitive` MCP — **Research agent only**
-4. **MCP unavailable** → grep the markdown:
-   `rg "..." /Users/vasanth/Code/Infra/brain-personal/`
+   email history) → `brain` MCP (`mcp__brain__query` first)
+3. **MCP unavailable** → grep the markdown:
+   `rg "..." /Users/vasanth/ecosystem/brain/`
 
 ## Write Order
 - **Business truth** (decision made, person met, company researched, SOP authored,
-  project milestone) → `mcp__brain-personal__put_page` (or write markdown to
-  `/Users/vasanth/Code/Infra/brain-personal/<projects|people|companies|concepts|skills>/...`
-  using the compiled-truth + timeline pattern, then `brain-personal sync`).
-- **Competitive intel** (scraped post, extracted framework, gap analysis) → the
-  `brain-competitive` brain. **Research agent only.** Content / Comms / CMO /
-  Creative Director agents must NEVER write here.
+  project milestone) → `mcp__brain__put_page` (or write markdown to
+  `/Users/vasanth/ecosystem/brain/<projects|entities|knowledge|observations|vasanth-hq>/...`
+  using the compiled-truth + timeline pattern, then `brain sync`).
 - **Never invent a top-level GBrain folder** — follow the existing structure
-  (`projects/`, `people/`, `companies/`, `concepts/`, `skills/`, `vasanth-hq/`).
+  (`projects/`, `entities/` — people, brands, companies — `knowledge/` — concepts,
+  sops, reference, gotchas — `observations/`, `vasanth-hq/`).
 
 ## Canonical `vasanth-hq/` structure (HQ-level context)
 
-`brain-personal/vasanth-hq/` is for HQ-LEVEL context that sits ABOVE individual
+`brain/vasanth-hq/` is for HQ-LEVEL context that sits ABOVE individual
 projects — Vasanth-the-person, not Vasanth-on-a-project. Master `_README.md` lives
 at the folder root; each subfolder has its own `_README.md` describing what does
 and does NOT belong.
@@ -164,6 +159,7 @@ and does NOT belong.
 | `logs/` | Action logs, decision logs, assistant-actions logs |
 | `meetings/` | Meeting notes (`YYYY-MM-DD - title.md`) |
 | `north-star/` | Life/business north-star, metrics, periodic reviews |
+| `doctrine/` | Governing principles (`type: doctrine`) — e.g. `knowledge-taxonomy.md` |
 | `project-index.md` | One-line summary of every project + paths |
 | `skill-registry.md` | Where every reusable skill lives on disk |
 | `agents.md` | Instructions for AI agents reading the brain |
@@ -172,7 +168,7 @@ and does NOT belong.
 **Never invent a top-level `vasanth-hq/` folder.** If a fit isn't obvious, STOP
 and ask Vasanth.
 
-**Project decisions go in `brain-personal/projects/<project>/decisions/`** — not in
+**Project decisions go in `brain/projects/<project>/decisions/`** — not in
 `vasanth-hq/decisions/`. The HQ decisions folder is for things like "should I move
 to Austin," "Solo CTO vs build a team" — org-structure choices that affect all of
 Vasanth's work.
@@ -209,26 +205,23 @@ GBrain stores the rationale, not the artifact.
 
 | If I want to store... | It goes in... |
 |---|---|
-| "CFW picked Redis Streams over RabbitMQ on 2026-02-14" | brain-personal/projects/cfw/decisions/ |
-| "Sarah at Acme prefers concise emails, last spoke 2026-04-12" | brain-personal/people/sarah-acme.md |
-| "SOP for onboarding a new client" | brain-personal/skills/client-onboarding.md |
-| "GrowthSystems quarterly revenue trend" | brain-personal/projects/growthsystems/ |
-| "Email from John about pricing" | brain-personal/accounts/<acct>/threads/ |
-| "Mark Kashef's funnel pattern from Skool post" | brain-competitive/communities/early-ai-dopters/ (Research only) |
-| "Extracted: how top AI creators monetize" | brain-competitive/patterns/ (Research only) |
-| "Sanitized takeaway for Content agents to use" | brain-personal/concepts/ (so Content can read it) |
-| "Chase Sapphire — 2% on dining, billing cycle 14th" | brain-personal/vasanth-hq/banks/ |
-| "Anthropic API monthly: $X, why kept" | brain-personal/vasanth-hq/subscriptions/ |
-| "Angel check into startup Y, valuation, vesting" | brain-personal/vasanth-hq/finance/investments/ |
-| "2026 LLC vs S-corp decision rationale" | brain-personal/vasanth-hq/finance/taxes/ |
-| "M4 MacBook Pro — 64GB / 2TB, primary work machine" | brain-personal/vasanth-hq/assets/ |
-| "Accountant John — phone, scope of work" | brain-personal/vasanth-hq/contacts/ |
-| "Should I move to Austin? Decision + reasoning" | brain-personal/vasanth-hq/decisions/ |
-| "Friday weekly-review structure" | brain-personal/vasanth-hq/workflow/ |
-| "Where does the X skill live?" | brain-personal/vasanth-hq/skill-registry.md |
-| "Quick summary of every project" | brain-personal/vasanth-hq/project-index.md |
-| "How does GBrain delete/sync/embed actually work?" | brain-personal/concepts/infra/gbrain/ |
-| "Paperclip routine spec or platform gotcha" | brain-personal/concepts/infra/paperclip/ |
+| "CFW picked Redis Streams over RabbitMQ on 2026-02-14" | brain/projects/cfw/decisions/ |
+| "Sarah at Acme prefers concise emails, last spoke 2026-04-12" | brain/entities/people/sarah-acme.md |
+| "SOP for onboarding a new client" | brain/knowledge/sops/client-onboarding.md (cross-org SOPs instead go in brain/vasanth-hq/sops/) |
+| "GrowthSystems quarterly revenue trend" | brain/projects/growthsystems/ |
+| "Email from John about pricing" | brain/observations/ (dated, e.g. observations/2026-07-06-john-pricing.md) |
+| "Chase Sapphire — 2% on dining, billing cycle 14th" | brain/vasanth-hq/banks/ |
+| "Anthropic API monthly: $X, why kept" | brain/vasanth-hq/subscriptions/ |
+| "Angel check into startup Y, valuation, vesting" | brain/vasanth-hq/finance/investments/ |
+| "2026 LLC vs S-corp decision rationale" | brain/vasanth-hq/finance/taxes/ |
+| "M4 MacBook Pro — 64GB / 2TB, primary work machine" | brain/vasanth-hq/assets/ |
+| "Accountant John — phone, scope of work" | brain/vasanth-hq/contacts/ |
+| "Should I move to Austin? Decision + reasoning" | brain/vasanth-hq/decisions/ |
+| "Friday weekly-review structure" | brain/vasanth-hq/workflow/ |
+| "Where does the X skill live?" | brain/vasanth-hq/skill-registry.md |
+| "Quick summary of every project" | brain/vasanth-hq/project-index.md |
+| "How does GBrain delete/sync/embed actually work?" | brain/knowledge/concepts/infra/gbrain/ |
+| "Paperclip routine spec or platform gotcha" | brain/knowledge/concepts/infra/paperclip/ |
 
 **Never invent a top-level GBrain folder** — follow the existing structure, and
 check `~/.gsai/ecosystem.yaml` for where projects live.

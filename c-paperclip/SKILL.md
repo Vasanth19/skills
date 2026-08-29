@@ -174,8 +174,8 @@ at `~/Code/paperclip/skills/paperclip/` and its `references/api-reference.md`.
 ## Org-wide PM structure & weekly sprints
 
 Every Paperclip org follows one operating model. The canonical, full SOP lives in
-GBrain — `brain-personal` page `concepts/infra/paperclip/pm-structure-sprint-playbook`
-(read it with `mcp__brain-personal__get_page` or `brain-personal query`). The
+GBrain — `brain` page `concepts/infra/paperclip/pm-structure-sprint-playbook`
+(read it with `mcp__brain__get_page` or `brain query`). The
 essentials:
 
 **The Goal tree is a full OKR tree** — all four `level` values are used:

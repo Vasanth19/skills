@@ -1,7 +1,7 @@
 ---
-name: pc-board
-description: Board member's assistant — summarize all Paperclip orgs, create issues, monitor completion, and sponsor local agents to drive work forward. No browser tabs needed.
-when_to_use: board brief, board summary, create issue, spawn agent, trigger agent, sponsor work, monitor issues, issue status, what's blocked, what's running, approve, cross-org view, morning brief
+name: board
+description: Board member's assistant — summarize all Paperclip orgs, create issues, monitor completion, sponsor local agents, launch/audit the managers (cmux awake-loop panes), and onboard new projects (rig up managers + runbooks + hustler lanes). No browser tabs needed.
+when_to_use: board brief, board summary, create issue, spawn agent, trigger agent, sponsor work, monitor issues, issue status, what's blocked, what's running, approve, cross-org view, morning brief, bring up the managers, launch the managers, manager status, onboard a project, rig up an org, new project setup
 allowed-tools: Bash, Read
 ---
 
@@ -150,6 +150,12 @@ If agent-name given → match by name. If no agent given → suggest best-fit ba
 - Infra / deploy / DevOps → DevOps
 - Outreach / leads → SDR
 
+**CD vs CM (orgs with Community Managers, e.g. COM) — route by the PRIMARY VERB, not the topic:**
+- *Produce an artifact* (video, image, copy, script, template, ad, brief) → **Creative Director**, even if it's about a community.
+- *Act inside a community* (post, reply, DM, seed feed, sequence courses, onboard members, deploy an asset) → **that community's CM** (`cm-<community>`).
+- *Both* → split into two issues: CD first (produce), CM second (deploy), CM issue `blockedBy` the CD issue. Never bundle.
+- The assignee IS the routing signal: ab-hustler stamps the worker persona from the issue's `assigneeAgentId` (fallback: org CD; unresolvable → hard block). Assigning correctly here is what makes the right persona execute.
+
 Show candidate and confirm: "Sponsor this to [Agent Name]? (y/n)"
 
 **Step 3 — Checkout issue to agent**:
@@ -232,6 +238,98 @@ After update, offer to add a comment.
 ```bash
 cd /Users/vasanth/Code/paperclip && paperclipai issue comment <identifier> --body "<body>"
 ```
+
+---
+
+### `/board up [projects…] [--dry-run|--status|--down]` — Launch the managers
+
+One command → the managers, laid out as **one cmux workspace per org, one TAB per
+manager** (a workspace-per-manager sprawl is overwhelming — ratified 2026-07-03). Wraps:
+
+```bash
+~/ecosystem/bin/managers-up             # ensure every manager tab in managers.conf is up
+~/ecosystem/bin/managers-up cfw,gsai    # only those orgs/projects (comma or space separated)
+~/ecosystem/bin/managers-up --status    # UP/down per manager tab
+~/ecosystem/bin/managers-up --down gsai # close matching manager TABS (kills those loops only)
+```
+
+Roster: `~/ecosystem/managers.conf` (`WORKSPACE|ROLE-TAB|CWD|COMMAND`). Workspaces are matched
+by title case-insensitively and REUSED — Vasanth's own hand-made workspaces (e.g. `CFW`) count,
+so a `cto loop` tab he opened himself is detected and never duplicated. Idempotency is
+per-tab: each tab is its own claude session, so adding a manager tab never disturbs a running
+loop in a sibling tab; only closing a tab kills its loop. cmux refs renumber on close — always
+resolve fresh, never cache them.
+
+A filter that matches nothing in the conf prints a WARN telling you to add the line — that's
+the cue to run `/board onboard <project>` first if the org isn't rigged at all.
+
+**Interacting with a running manager from this session** (no window-switching needed):
+
+```bash
+cmux list-pane-surfaces --workspace <ws-ref>                       # find the manager's tab
+cmux send --workspace <ws> --surface <tab> "<message>"             # talk to that manager
+cmux send-key --workspace <ws> --surface <tab> enter               # submit it
+cmux read-screen --workspace <ws> --surface <tab> --lines 40       # read its reply
+```
+
+The board session is the switchboard: relay Vasanth's instructions into a manager tab and read
+back the reply.
+
+**Cost note:** each tab is a live Claude loop. Show `managers-up --dry-run` first if more than
+3 managers would start.
+
+---
+
+### `/board managers` — Managers + rig audit (are all orgs fully managed?)
+
+Two sweeps, report as one table:
+
+**1. Managers (who is awake):** `~/ecosystem/bin/managers-up --status` + `cmux list-workspaces`.
+
+**2. Rig (is the org manageable at all):** for each org home (from `~/.gsai/ecosystem.yaml`
++ the identity map in `~/.gsai/OPERATING-SYSTEM.md`), check the five rig components:
+
+| Component | Check |
+|---|---|
+| OKRs | `<home>/planning/OKRS.md` exists and has a current cycle |
+| Roster | `<home>/planning/agents/*.md` — cmo/ceo + CD, plus `cm-<community>.md` where communities exist |
+| Paperclip agents | `GET /api/companies/<id>/agents` — each roster file wired via `AGENT_IDENTITY_FILE` |
+| Hustler lanes | org line present in `~/ecosystem/ab-hustler/engine.conf` (labels + lanes + CWD) |
+| Runbooks | `<home>/planning/{CEO,CMO,CTO}-RUNBOOK.md` exist (awake loops create on first pass — flag only if org is active with none) |
+
+Output: `ORG │ managers: up/down │ rig: ✓✓✓✓✓ or the missing pieces`. A missing rig component is
+an offer: "run `/board onboard <org>` to fix."
+
+---
+
+### `/board onboard <project-or-org>` — Rig up a new project (managers + runbook + lanes)
+
+The permanent version of the get-organized rollout, for ONE new project/org. Conductor
+altitude: dispatch subagents per step, verify evidence, never skip the order.
+
+1. **Registry** — add/verify the org + project entry in `~/.gsai/ecosystem.yaml` (org key,
+   Paperclip company UUID, prefix, `local` path, brain home). Never guess paths.
+2. **Paperclip** — company + project exist (`paperclipai company/project create` if not);
+   create the 6 labels: `hustle:ready`, `hustle:running`, `hustle:needs-review`,
+   `hustle:blocked`, `lane:dev`, `lane:marketing`. Record all UUIDs.
+3. **Roster** — scaffold `<home>/planning/agents/`: `ceo.md`, `cmo.md`, `creative-director.md`
+   (+ `cto.md` if it has repos, `cm-<community>.md` per community). Identity content only —
+   personas live once at `~/ecosystem/agents/roles/<role>/SOUL.md`, never duplicated.
+4. **Paperclip agents** — create one agent per roster file, `instructionsFilePath` →
+   `roles/<role>/AGENTS.md`, `adapterConfig.env.AGENT_IDENTITY_FILE` → the roster file.
+   Heartbeats OFF for implementers; C-suite backstop 6h/`skipTimerWhenNoActionableWork`.
+5. **Hustler** — append the org line to `~/ecosystem/ab-hustler/engine.conf` (label UUIDs from
+   step 2, CWD, FANOUT 2); `ab-hustler-ctl.sh status` must list it afterwards.
+6. **Planning scaffold** — `<home>/planning/OKRS.md` (stub with cycle + placeholder
+   objectives for Vasanth to ratify — flag as (YOU)); runbooks are created by the awake loops
+   themselves on first pass.
+7. **Managers-conf entry** — append the org's manager lines to `~/ecosystem/managers.conf`
+   (commented out by default; Vasanth uncomments what should run daily).
+8. **Verify end-to-end** — create a throwaway `lane:marketing` test issue, assign to the CD,
+   `ab-hustler-ctl.sh ready <id>`, confirm pickup at the next tick (or `run-now`), then cancel it.
+
+Evidence per step (UUIDs, file paths, ctl output) goes in the completion report. Anything
+destructive or ambiguous → stop and ask.
 
 ---
 
