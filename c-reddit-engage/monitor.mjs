@@ -19,7 +19,7 @@ import os from 'os';
 import path from 'path';
 import fs from 'fs';
 
-const SECRETS = path.join(os.homedir(), '.gsai/secrets');
+const SECRETS = path.join(os.homedir(), 'ecosystem/vault');
 const PROFILE = process.env.REDDIT_PROFILE || path.join(SECRETS, 'reddit-profile');
 const AUTO_LOG = path.join(SECRETS, 'reddit-engage-auto.log');
 const DIGEST = path.join(SECRETS, 'reddit-engage-digest.log');

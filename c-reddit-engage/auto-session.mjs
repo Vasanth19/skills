@@ -14,7 +14,7 @@
  *
  * Env:
  *   AUTO_POST=1     actually post (default: DRY-RUN — drafts logged, nothing posted)
- *   KILL_SWITCH     if ~/.gsai/secrets/reddit-engage.OFF exists, the session exits immediately
+ *   KILL_SWITCH     if ~/ecosystem/vault/reddit-engage.OFF exists, the session exits immediately
  *   SUBS            comma list (default rotation below)
  *   N_PER_SESSION   default 3
  *   ACTIVE_START/ACTIVE_END   hours, default 7 / 22 (local time)
@@ -33,7 +33,7 @@ const NODE = process.execPath;
 const CLAUDE = process.env.CLAUDE_BIN || '/Applications/cmux.app/Contents/Resources/bin/claude';
 const RE = path.join(HERE, 'reddit-engage.mjs');
 
-const SECRETS = path.join(os.homedir(), '.gsai/secrets');
+const SECRETS = path.join(os.homedir(), 'ecosystem/vault');
 const LOG = path.join(SECRETS, 'reddit-engage-auto.log');
 const OFF = path.join(SECRETS, 'reddit-engage.OFF');
 
